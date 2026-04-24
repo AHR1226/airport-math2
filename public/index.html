@@ -112,19 +112,28 @@ button.tap{
 .hideNav .navTap{
   display:none;
 }
-  display:none;
-}
 </style></head><body><div class="app" id="app">
-<section id="splash" class="screen active" onclick="show('onboard1')" style="cursor:pointer;">
+<section id="splash" class="screen active">
   <img class="shot" src="/assets/splash.png">
+  <button class="tap" data-to="onboard1"></button>
 </section>
-<section id="onboard1" class="screen" onclick="show('onboard2')" style="cursor:pointer;"><img class="shot" src="/assets/onboard1.png"></section>
-<section id="onboard2" class="screen" onclick="show('onboard3')" style="cursor:pointer;"><img class="shot" src="/assets/onboard2.png"></section>
-<section id="onboard3" class="screen" onclick="show('onboard4')" style="cursor:pointer;"><img class="shot" src="/assets/onboard3.png"></section>
-<section id="onboard4" class="screen" onclick="show('calculate')" style="cursor:pointer;"><img class="shot" src="/assets/onboard4.png"></section>
-<section id="calculate" class="screen scroll" onclick="show('loading')" style="cursor:pointer;">
-  <img class="shot" src="/assets/calculate.png">
+<section id="onboard1" class="screen">
+  <img class="shot" src="/assets/onboard1.png">
+  <button class="tap" data-to="onboard2"></button>
 </section>
+<section id="onboard2" class="screen">
+  <img class="shot" src="/assets/onboard2.png">
+  <button class="tap" data-to="onboard3"></button>
+</section>
+<section id="onboard3" class="screen">
+  <img class="shot" src="/assets/onboard3.png">
+  <button class="tap" data-to="onboard4"></button>
+</section>
+<section id="onboard4" class="screen">
+  <img class="shot" src="/assets/onboard4.png">
+  <button class="tap" data-to="calculate"></button>
+</section>
+<section id="calculate" class="screen scroll" onclick="show('loading'); setTimeout(() => show('result'), 1200);" style="cursor:pointer;">
 <section id="loading" class="screen"><img class="shot" src="/assets/loading.png"></section>
 <section id="result" class="screen scroll"><img class="shot" src="/assets/result.png"><button class="tap" data-to="calculate" style="right:7%;top:5%;width:18%;height:6%"></button></section>
 <section id="trips" class="screen scroll"><img class="shot" src="/assets/trips.png"></section>
