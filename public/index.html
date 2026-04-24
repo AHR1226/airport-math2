@@ -1,32 +1,159 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><title>ETA</title><meta name="theme-color" content="#F3FADE"/><style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#fff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:430px;margin:0 auto;min-height:100dvh;background:#f3fade;position:relative;overflow:hidden}.screen{display:none;min-height:100dvh;position:relative;background:#f3fade}.screen.active{display:block}.shot{width:100%;display:block;min-height:100dvh;object-fit:cover;object-position:top center}.scroll{overflow-y:auto}.scroll .shot{min-height:0;object-fit:contain}.tap{position:absolute;z-index:5;background:rgba(0,0,0,0)}button.tap{border:0;padding:0;cursor:pointer}.navTap{position:fixed;bottom:0;height:96px;width:20%;max-width:86px;z-index:20}.n0{left:calc(50% - 215px)}.n1{left:calc(50% - 129px)}.n2{left:calc(50% - 43px)}.n3{left:calc(50% + 43px)}.n4{left:calc(50% + 129px)}@media(max-width:430px){.n0{left:0}.n1{left:20%}.n2{left:40%}.n3{left:60%}.n4{left:80%}.navTap{width:20%;max-width:none}}.hideNav .navTap{display:none}.note{position:fixed;left:50%;transform:translateX(-50%);bottom:110px;background:#064b1a;color:#c8ff39;border-radius:999px;padding:10px 18px;font-weight:800;display:none;z-index:30}.note.show{display:block}
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#DDE3C8;
+}
+
+.app{
+  width:100vw;
+  height:100vh;
+  position:relative;
+  overflow:hidden;
+}
+
+.screen{
+  position:absolute;
+  inset:0;
+  display:none;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+.screen.active{
+  display:block;
+}
+
+.shot{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+button.tap{
+  position:absolute;
+  left:12%;
+  right:12%;
+  bottom:7%;
+  height:8%;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  z-index:100;
+  padding:0;
+}
+
+.hideNav .bottom-nav{
+  display:none;
+}
+<style>
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#DDE3C8;
+}
+
+.app{
+  width:100vw;
+  height:100vh;
+  position:relative;
+  overflow:hidden;
+}
+
+.screen{
+  position:absolute;
+  inset:0;
+  display:none;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+.screen.active{
+  display:block;
+}
+
+.shot{
+  width:100%;
+  height:auto;
+  display:block;
+}
+
+button.tap{
+  position:absolute;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  z-index:100;
+}
+
+.hideNav .bottom-nav{
+  display:none;
+}
+
+.splashTap{
+  left:12%;
+  right:12%;
+  top:79%;
+  height:8%;
+}
+
+.hideNav .navTap{
+  display:none;
+}
+  display:none;
+}
 </style></head><body><div class="app hideNav" id="app">
-<section id="splash" class="screen active"><img class="shot" src="/assets/splash.png"><button 
-  class="tap" 
-  data-to="onboard1"
-  style="
-    position:absolute;
-    left:12%;
-    right:12%;
-    bottom:7%;
-    height:8%;
-    z-index:100;
-    background:transparent;
-    border:none;
-    cursor:pointer;
-  "
-> style="left:12%;right:12%;bottom:7%;height:8%"></button></section>
-<section id="onboard1" class="screen"><img class="shot" src="/assets/onboard1.png"><button class="tap" data-to="onboard2" style="left:11%;right:11%;bottom:7%;height:8%"></button><button class="tap" data-to="calculate" style="right:10%;top:9%;width:20%;height:6%"></button></section>
-<section id="onboard2" class="screen"><img class="shot" src="/assets/onboard2.png"><button class="tap" data-to="onboard3" style="left:11%;right:11%;bottom:7%;height:8%"></button><button class="tap" data-to="calculate" style="right:10%;top:9%;width:20%;height:6%"></button></section>
-<section id="onboard3" class="screen"><img class="shot" src="/assets/onboard3.png"><button class="tap" data-to="onboard4" style="left:11%;right:11%;bottom:7%;height:8%"></button><button class="tap" data-to="calculate" style="right:10%;top:9%;width:20%;height:6%"></button></section>
-<section id="onboard4" class="screen"><img class="shot" src="/assets/onboard4.png"><button class="tap" data-to="calculate" style="left:11%;right:11%;bottom:7%;height:8%"></button></section>
-<section id="calculate" class="screen scroll"><img class="shot" src="/assets/calculate.png"><button class="tap" id="calcBtn" style="left:7%;right:7%;bottom:7%;height:7%"></button></section>
+<section id="splash" class="screen active" onclick="show('onboard1')" style="cursor:pointer;">
+  <img class="shot" src="/assets/splash.png">
+</section>
+<section id="onboard1" class="screen" onclick="show('onboard2')" style="cursor:pointer;"><img class="shot" src="/assets/onboard1.png"></section>
+<section id="onboard2" class="screen" onclick="show('onboard3')" style="cursor:pointer;"><img class="shot" src="/assets/onboard2.png"></section>
+<section id="onboard3" class="screen" onclick="show('onboard4')" style="cursor:pointer;"><img class="shot" src="/assets/onboard3.png"></section>
+<section id="onboard4" class="screen" onclick="show('calculate')" style="cursor:pointer;"><img class="shot" src="/assets/onboard4.png"></section>
+<section id="calculate" class="screen scroll" onclick="show('loading')" style="cursor:pointer;">
+  <img class="shot" src="/assets/calculate.png">
+</section>
 <section id="loading" class="screen"><img class="shot" src="/assets/loading.png"></section>
 <section id="result" class="screen scroll"><img class="shot" src="/assets/result.png"><button class="tap" data-to="calculate" style="right:7%;top:5%;width:18%;height:6%"></button></section>
 <section id="trips" class="screen scroll"><img class="shot" src="/assets/trips.png"></section>
 <section id="airports" class="screen"><img class="shot" src="/assets/airports.png"></section>
 <section id="profile" class="screen"><img class="shot" src="/assets/profile.png"></section>
 <section id="settings" class="screen"><img class="shot" src="/assets/settings.png"></section>
-<button class="tap navTap n0" data-to="calculate"></button><button class="tap navTap n1" data-to="trips"></button><button class="tap navTap n2" data-to="airports"></button><button class="tap navTap n3" data-to="profile"></button><button class="tap navTap n4" data-to="settings"></button><div class="note" id="note">Using live route API in backend</div></div><script>
-const app=document.getElementById('app');const screens=[...document.querySelectorAll('.screen')];function show(id){screens.forEach(s=>s.classList.toggle('active',s.id===id));app.classList.toggle('hideNav',['splash','onboard1','onboard2','onboard3','onboard4'].includes(id));window.scrollTo(0,0)}document.querySelectorAll('[data-to]').forEach(b=>b.onclick=()=>show(b.dataset.to));document.getElementById('calcBtn').onclick=async()=>{show('loading');try{await fetch('/api/travel?airport=JFK&mode=rideshare&origin=123%20Garden%20St%20Hoboken%20NJ&destination=JFK%20Airport%20Departures')}catch(e){}setTimeout(()=>show('result'),1200)};
-</script></body></html>
+<button class="tap navTap n0" data-to="calculate"></button><button class="tap navTap n1" data-to="trips"></button><button class="tap navTap n2" data-to="airports"></button><button class="tap navTap n3" data-to="profile"></button><button class="tap navTap n4" data-to="settings"></button><div class="note" id="note">Using live route API in backend</div></div>
+<script>
+const app = document.getElementById('app');
+const screens = [...document.querySelectorAll('.screen')];
+
+function show(id) {
+  screens.forEach(s => {
+    s.classList.toggle('active', s.id === id);
+  });
+}
+document.querySelectorAll('[data-to]').forEach(button => {
+  button.onclick = () => {
+    show(button.dataset.to);
+  };
+});
+
+document.getElementById('calculate').onclick = () => {
+  show('loading');
+
+  setTimeout(() => {
+    show('result');
+  }, 1200);
+};
+</script>
+</body>
+</html>
