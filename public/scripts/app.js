@@ -153,26 +153,84 @@ function renderHtmlResult(result) {
 
   const form = window.appState?.form || {};
   const selections = window.appState?.selections || {};
+  const paceMessage = getPaceMessage(result);
+  const airportLabel = (result.airport || form.airport || 'JFK').trim();
+  const terminalLabel = (form.terminal || 'Terminal B').trim();
+  const flightDetail = `Domestic flight · ${airportLabel} · ${terminalLabel}`;
+  const securityWait = getSecurityWaitEstimate(result, selections);
 
   container.innerHTML = `
-    <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
-    <div class="resultHtmlCard">
-      <div class="resultHtmlEyebrow">Leave by</div>
-      <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
-      <div class="resultHtmlFlight">Flight ${escapeHtml(result.flightTime || '7:30 PM')} from ${escapeHtml(result.airport || form.airport || 'JFK')}</div>
-      <div class="resultHtmlGrid">
-        <div class="resultHtmlItem"><span>Travel</span><strong>${escapeHtml(result.travel || 45)} min</strong></div>
-        <div class="resultHtmlItem"><span>Airport</span><strong>${escapeHtml(result.airportTime || 35)} min</strong></div>
-        <div class="resultHtmlItem"><span>Buffer</span><strong>${escapeHtml(result.buffer || 15)} min</strong></div>
-        <div class="resultHtmlItem"><span>Total</span><strong>${escapeHtml(result.total || 95)} min</strong></div>
+    <div class="resultHtmlHeader">
+      <h2 class="resultHtmlTitle">Your ETA</h2>
+      <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
+    </div>
+    <div class="resultHeroCard">
+      <div class="resultHtmlEyebrow">Leave at</div>
+      <div class="resultHeroClock" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 7v5l3 2"></path>
+        </svg>
       </div>
-      <div class="resultHtmlMeta">
-        <div>Style: ${escapeHtml(result.style || selections.style || 'Balanced')}</div>
-        <div>Transport: ${escapeHtml(selections.transport || 'Rideshare')}</div>
-        <div>Luggage: ${escapeHtml(selections.luggage || 'Carry-on only')}</div>
-        <div>Security: ${escapeHtml(selections.security || 'PreCheck')}</div>
-        <div>Before boarding: ${escapeHtml(selections.boarding || 'Head to gate')}</div>
+      <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
+      <div class="resultHtmlStatus">${escapeHtml(paceMessage)}</div>
+      <div class="resultHtmlFlight">${escapeHtml(flightDetail)}</div>
+    </div>
+    <div class="resultBreakdownCard">
+      <div class="resultBreakdownTitle">Trip breakdown</div>
+      <div class="resultBreakdownRow"><span>Leave home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
+      <div class="resultBreakdownRow"><span>Travel time</span><strong>${escapeHtml(result.travel || 45)} min</strong></div>
+      <div class="resultBreakdownRow"><span>Security</span><strong>${escapeHtml(securityWait)} min</strong></div>
+      <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(result.buffer || 15)} min</strong></div>
+    </div>
+    <div class="resultLiveCard">
+      <div class="resultLiveTitle">Live Conditions</div>
+      <div class="resultLiveRow primary">
+        <div class="resultLiveLabelWrap">
+          <span class="resultLiveLabel">Traffic</span>
+          <span class="resultLiveTag">Live</span>
+        </div>
+        <strong class="resultLiveValue">${escapeHtml(result.travel || 45)} min</strong>
+      </div>
+      <div class="resultLiveRow">
+        <div class="resultLiveLabelWrap">
+          <span class="resultLiveLabel">Security wait</span>
+          <span class="resultLiveTag">Estimated</span>
+        </div>
+        <strong class="resultLiveValue">${escapeHtml(securityWait)} min</strong>
+      </div>
+      <div class="resultLiveRow">
+        <div class="resultLiveLabelWrap">
+          <span class="resultLiveLabel">Airport status</span>
+          <span class="resultLiveTag">FAA</span>
+        </div>
+        <strong class="resultLiveValue text">${escapeHtml('No advisory')}</strong>
+      </div>
+      <div class="resultLiveRow">
+        <div class="resultLiveLabelWrap">
+          <span class="resultLiveLabel">Weather</span>
+          <span class="resultLiveTag">Clear</span>
+        </div>
+        <strong class="resultLiveValue text">${escapeHtml('No delays')}</strong>
       </div>
     </div>
   `;
+}
+
+function getPaceMessage(result) {
+  const total = Number(result?.total) || 95;
+  const style = (result?.style || '').toLowerCase();
+  if (style.includes('cut')) return 'You should leave soon';
+  if (style.includes('no rush')) return 'Comfortable pace';
+  if (total >= 125) return 'Comfortable pace';
+  if (total <= 85) return 'You should leave soon';
+  return 'Tight but manageable';
+}
+
+function getSecurityWaitEstimate(result, selections) {
+  const selected = (selections?.security || '').toLowerCase();
+  if (selected.includes('clear')) return 6;
+  if (selected.includes('pre')) return 8;
+  if (selected.includes('standard')) return 15;
+  return Math.max(8, Math.round((Number(result?.airportTime) || 35) * 0.4));
 }
