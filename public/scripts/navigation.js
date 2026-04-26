@@ -1,0 +1,53 @@
+window.navigationApi = (() => {
+  const screens = () => [...document.querySelectorAll('.screen')];
+
+  function show(id) {
+    if (window.stateApi) {
+      window.stateApi.setScreen(id);
+    }
+
+    screens().forEach(s => {
+      s.classList.toggle('active', s.id === id);
+    });
+
+    const hideNav = ['splash', 'onboard1', 'onboard2', 'onboard3', 'onboard4', 'loading'].includes(id);
+
+    document.body.classList.toggle('hideBottomNav', hideNav);
+
+    document.querySelectorAll('.navTap').forEach(b => {
+      b.style.display = hideNav ? 'none' : 'block';
+    });
+
+    document.querySelectorAll('.bottomNav button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.to === id);
+    });
+  }
+
+  function bindBottomNav() {
+    document.querySelectorAll('.bottomNav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        show(btn.getAttribute('data-to'));
+      });
+    });
+  }
+
+  function bindSplashTap() {
+    const splashTap = document.querySelector('.splashTap');
+    if (splashTap) {
+      splashTap.onclick = () => show('onboard1');
+    }
+  }
+
+  function init() {
+    show('splash');
+    bindBottomNav();
+    bindSplashTap();
+  }
+
+  return {
+    init,
+    show
+  };
+})();
+
+window.show = window.navigationApi.show;
