@@ -3,7 +3,7 @@ window.appState = {
   form: {
     flightTime: '19:30',
     airport: 'JFK',
-    terminal: 'Terminal B',
+    terminal: 'Terminal 4',
     startLocation: '68 Berkeley Place, Brooklyn NY 11217'
   },
   selections: {
@@ -38,12 +38,12 @@ window.stateApi = {
   syncFormFromDom() {
     const flightEl = document.getElementById('flightTime');
     const airportEl = document.getElementById('airportInput');
-    const terminalEl = document.querySelector('input[placeholder="Terminal B"]');
+    const terminalEl = document.getElementById('terminalInput');
     const startLocationEl = document.querySelector('.card input.full');
 
     if (flightEl) window.appState.form.flightTime = flightEl.value || '19:30';
     if (airportEl) window.appState.form.airport = airportEl.value || 'JFK';
-    if (terminalEl) window.appState.form.terminal = terminalEl.value || 'Terminal B';
+    if (terminalEl) window.appState.form.terminal = terminalEl.value || 'Terminal 4';
     if (startLocationEl) {
       window.appState.form.startLocation = startLocationEl.value || '68 Berkeley Place, Brooklyn NY 11217';
     }

@@ -60,21 +60,33 @@
       <h2>Flight Details</h2>
       <div class="fieldRow">
         <input id="flightTime" type="time" value="19:30">
-        <input placeholder="Flight Type">
+        <select id="flightType" class="flightTypeSelect" aria-label="Flight Type">
+          <option value="Domestic" selected>Domestic</option>
+          <option value="International">International</option>
+        </select>
       </div>
     </div>
 
     <div class="card dark">
       <h2>Airport & Terminal</h2>
       <div class="fieldRow">
-        <input id="airportInput" value="JFK">
-        <input placeholder="Terminal B">
+        <select id="airportInput" class="flightTypeSelect flightTypeSelectDark" aria-label="Airport">
+          <option value="JFK" selected>JFK</option>
+          <option value="LGA">LGA</option>
+          <option value="EWR">EWR</option>
+        </select>
+        <select id="terminalInput" class="flightTypeSelect flightTypeSelectDark" aria-label="Terminal">
+          <option value="Terminal 4" selected>Terminal 4</option>
+        </select>
       </div>
     </div>
 
     <div class="card">
       <h2>Starting Location</h2>
-      <input class="full" value="68 Berkeley Place, Brooklyn NY 11217">
+      <div class="locationAutocomplete">
+        <input id="startingLocationInput" class="full" value="68 Berkeley Place, Brooklyn NY 11217" autocomplete="off">
+        <div id="locationSuggestions" class="locationSuggestions" role="listbox" aria-label="Location suggestions"></div>
+      </div>
     </div>
 
 <div class="card">

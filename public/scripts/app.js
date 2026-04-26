@@ -1,10 +1,115 @@
 const app = document.getElementById('app');
 const USE_HTML_RESULT = true;
+
+const TERMINAL_OPTIONS = {
+  JFK: ['Terminal 1', 'Terminal 4', 'Terminal 5', 'Terminal 7', 'Terminal 8'],
+  LGA: ['Terminal A', 'Terminal B', 'Terminal C'],
+  EWR: ['Terminal A', 'Terminal B', 'Terminal C']
+};
+
+const DEFAULT_TERMINAL_BY_AIRPORT = {
+  JFK: 'Terminal 4',
+  LGA: 'Terminal B',
+  EWR: 'Terminal A'
+};
+
+const LOCAL_ADDRESS_SUGGESTIONS = [
+  '68 Berkeley Place, Brooklyn, NY 11217',
+  '142 W 57th St, New York, NY 10019',
+  '1 World Trade Center, New York, NY 10007',
+  '15 Hudson Yards, New York, NY 10001'
+];
+
 if (window.navigationApi) {
   window.navigationApi.init();
 }
 if (window.selectionsApi) {
   window.selectionsApi.init();
+}
+initializeAirportTerminalSelects();
+initializeStartingLocationAutocomplete();
+
+function initializeAirportTerminalSelects() {
+  const airportSelect = document.getElementById('airportInput');
+  const terminalSelect = document.getElementById('terminalInput');
+  if (!airportSelect || !terminalSelect) return;
+
+  const syncTerminalOptions = () => {
+    const airport = airportSelect.value || 'JFK';
+    const options = TERMINAL_OPTIONS[airport] || TERMINAL_OPTIONS.JFK;
+    const previousValue = terminalSelect.value;
+
+    terminalSelect.innerHTML = options
+      .map(option => `<option value="${option}">${option}</option>`)
+      .join('');
+
+    const nextTerminal = options.includes(previousValue)
+      ? previousValue
+      : (DEFAULT_TERMINAL_BY_AIRPORT[airport] || options[0]);
+
+    terminalSelect.value = nextTerminal;
+
+    if (window.appState) {
+      window.appState.form.airport = airport;
+      window.appState.form.terminal = nextTerminal;
+    }
+  };
+
+  airportSelect.addEventListener('change', syncTerminalOptions);
+  terminalSelect.addEventListener('change', () => {
+    if (window.appState) {
+      window.appState.form.terminal = terminalSelect.value;
+    }
+  });
+
+  syncTerminalOptions();
+}
+
+function initializeStartingLocationAutocomplete() {
+  const input = document.getElementById('startingLocationInput');
+  const suggestionsEl = document.getElementById('locationSuggestions');
+  if (!input || !suggestionsEl) return;
+
+  const closeSuggestions = () => {
+    suggestionsEl.classList.remove('active');
+    suggestionsEl.innerHTML = '';
+  };
+
+  const openSuggestions = (items) => {
+    if (!items.length) {
+      closeSuggestions();
+      return;
+    }
+
+    suggestionsEl.innerHTML = items
+      .map(item => `<button type="button" class="locationSuggestionItem">${item}</button>`)
+      .join('');
+    suggestionsEl.classList.add('active');
+
+    suggestionsEl.querySelectorAll('.locationSuggestionItem').forEach(button => {
+      button.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        const value = button.textContent || '';
+        input.value = value;
+        if (window.appState) window.appState.form.startLocation = value;
+        closeSuggestions();
+      });
+    });
+  };
+
+  const updateSuggestions = () => {
+    const query = input.value.trim().toLowerCase();
+    if (query.length < 3) {
+      closeSuggestions();
+      return;
+    }
+    const matches = LOCAL_ADDRESS_SUGGESTIONS.filter(item => item.toLowerCase().includes(query));
+    openSuggestions(matches);
+  };
+
+  input.addEventListener('input', updateSuggestions);
+  input.addEventListener('focus', updateSuggestions);
+  input.addEventListener('blur', () => setTimeout(closeSuggestions, 120));
 }
 function getActiveSelection(groupName) {
   if (window.selectionsApi) {
@@ -155,7 +260,7 @@ function renderHtmlResult(result) {
   const selections = window.appState?.selections || {};
   const paceMessage = getPaceMessage(result);
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
-  const terminalLabel = (form.terminal || 'Terminal B').trim();
+  const terminalLabel = (form.terminal || 'Terminal 4').trim();
   const flightDetail = `Domestic flight · ${airportLabel} · ${terminalLabel}`;
   const securityWait = getSecurityWaitEstimate(result, selections);
 
