@@ -350,7 +350,7 @@ button.tap{
 #calculate [data-group="style"]{
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:7px;
   margin-left:0;
   margin-right:0;
 }
@@ -361,9 +361,16 @@ button.tap{
   display:flex;
   flex-direction:column;
   align-items:flex-start;
-  gap:4px;
-  padding:10px 12px;
+  justify-content:center;
+  gap:2px;
+  box-sizing:border-box;
+  min-height:4.5rem;
+  padding:11px 12px;
   text-align:left;
+}
+
+#calculate [data-group="style"] .chip--travelStyle.active{
+  transform:none;
 }
 
 #calculate [data-group="style"] .styleChipLabel{
@@ -2224,5 +2231,6 @@ textarea{
 
 #calculate.calcScreen [data-group="style"] .chip--travelStyle{
   margin:0;
-  padding:10px 12px;
+  padding:11px 12px;
+  min-height:4.5rem;
 }

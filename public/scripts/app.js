@@ -23,15 +23,15 @@ const LOCAL_ADDRESS_SUGGESTIONS = [
 const TRAVEL_STYLE_META = {
   Relaxed: {
     label: 'Relaxed',
-    desc: 'Extra buffer for a lower-stress airport experience'
+    desc: 'Extra buffer for a low stress airport experience'
   },
   Balanced: {
     label: 'Balanced',
-    desc: 'A comfortable arrival window with moderate buffer time'
+    desc: 'A comfortable arrival window with some buffer time'
   },
   Tight: {
     label: 'Tight',
-    desc: 'Less waiting, tighter timing, faster departures'
+    desc: 'Less time at the airport overall'
   }
 };
 
