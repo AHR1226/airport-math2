@@ -254,7 +254,7 @@ button.tap{
 }
 
 .calcContent{
-  padding:34px 22px 108px;
+  padding:32px 20px calc(138px + env(safe-area-inset-bottom));
   width:100%;
   max-width:none;
   margin:0;
@@ -262,30 +262,30 @@ button.tap{
 }
 
 .calcContent h1{
-  font-size:38px;
+  font-size:36px;
   line-height:0.9;
   letter-spacing:-0.04em;
   font-weight:900;
 
-  margin-bottom:10px;
+  margin-bottom:9px;
 }
 
 .subtitle{
-  font-size:15px;
+  font-size:14px;
   line-height:1.4;
   color:#66725F;
 
-  margin-bottom:26px;
+  margin-bottom:22px;
 }
 
 .card{
   background:#F6F6F4;
   border:1px solid rgba(6,72,25,0.08);
 
-  border-radius:28px;
+  border-radius:24px;
 
-  padding:21px;
-  margin-bottom:16px;
+  padding:19px;
+  margin-bottom:14px;
 
   box-shadow:
     0 1px 2px rgba(0,0,0,0.02),
@@ -309,7 +309,12 @@ button.tap{
   font-weight:800;
   letter-spacing:-0.01em;
 
-  margin:0 0 12px;
+  margin:0 0 10px;
+}
+
+.chipGroup{
+  margin-left:-2px;
+  margin-right:-2px;
 }
 
 .fieldRow{
@@ -351,7 +356,7 @@ input{
   padding:8px 12px;
 
   font-size:13px;
-  font-weight:600;
+  font-weight:500;
   font-family: 'IBM Plex Sans', sans-serif;
 
   margin:0 6px 7px 0;
@@ -377,7 +382,7 @@ input{
   height:56px;
   margin:10px 0 120px;
   margin-top:22px;
-  margin-bottom:20px;
+  margin-bottom:24px;
 
   border:0;
   border-radius:999px;
@@ -562,15 +567,15 @@ input{
 .resultHtmlCard{
   background:rgba(246, 250, 236, 0.92);
   border:1px solid rgba(6,72,25,0.12);
-  border-radius:30px;
+  border-radius:27px;
   box-shadow:
     0 20px 44px rgba(6,72,25,0.14),
     inset 0 1px 0 rgba(255,255,255,0.5);
-  padding:23px 19px 21px;
-  max-width:356px;
+  padding:21px 18px 19px;
+  max-width:338px;
   width:100%;
   margin:0 auto;
-  min-height:404px;
+  min-height:382px;
 }
 
 .resultHtmlEyebrow{
@@ -584,7 +589,7 @@ input{
 
 .resultHtmlTime{
   margin-top:4px;
-  font-size:60px;
+  font-size:56px;
   line-height:0.82;
   font-weight:900;
   letter-spacing:-0.075em;
@@ -604,7 +609,7 @@ input{
   margin-top:12px;
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:8px;
+  gap:7px;
 }
 
 .resultHtmlItem{
@@ -634,7 +639,7 @@ input{
 .resultHtmlMeta{
   margin-top:16px;
   display:grid;
-  gap:6px;
+  gap:5px;
   font-size:10.5px;
   line-height:1.35;
   letter-spacing:-0.005em;
@@ -651,11 +656,18 @@ input{
 
 .resultHtmlMeta div:not(:last-child){
   border-bottom:1px solid rgba(6,72,25,0.04);
-  padding-bottom:6px;
+  padding-bottom:5px;
 }
 
 .chip.active{
   background:#CFFF4E !important;
   color:#064819 !important;
   border:0 !important;
+  font-weight:500;
+  transform:none;
+  box-shadow:none;
+}
+
+.calcContent .card.lime:last-of-type{
+  background:#F6F6F4;
 }
