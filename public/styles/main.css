@@ -132,11 +132,6 @@ button.tap{
   padding-top:8px;
 }
 
-.bottomNav button.active{
-  color:#064819;
-  transform:translateY(-1px);
-}
-
 .bottomNav svg{
   width:22px;
   height:22px;
@@ -158,11 +153,57 @@ button.tap{
 }
 
 .bottomNav button.active{
-  color:#053B15;
+  color:#032A10;
+  transform:translateY(-1px);
+}
+
+.bottomNav button.active span{
+  font-weight:600;
+  color:#032A10;
 }
 
 .bottomNav button.active .icon{
+  position:relative;
   transform:translateY(-1px);
+}
+
+.bottomNav button.active .icon svg{
+  opacity:1;
+  filter:contrast(1.08) brightness(0.92);
+}
+
+.bottomNav button.active .icon::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-5px;
+  transform:translateX(-50%);
+  width:20px;
+  height:2px;
+  border-radius:999px;
+  background:linear-gradient(90deg,transparent,rgba(199,255,78,0.9),transparent);
+  opacity:0.85;
+}
+
+.bottomNav button:not(.active) .icon svg{
+  opacity:0.88;
+}
+
+/* Keyboard focus: no default blue ring; visible focus for :focus-visible only */
+.bottomNav button:focus{
+  outline:none;
+}
+
+.bottomNav button::-moz-focus-inner{
+  border:0;
+}
+
+.bottomNav button:focus-visible{
+  outline:none;
+  box-shadow:
+    0 0 0 2px rgba(199,255,78,0.55),
+    0 0 0 4px rgba(6,72,25,0.12);
+  border-radius:14px;
 }
 
 body.hideBottomNav .bottomNav{
@@ -253,7 +294,7 @@ button.tap{
   font-size:36px;
   line-height:0.9;
   letter-spacing:-0.04em;
-  font-weight:900;
+  font-weight:400;
 
   margin-bottom:9px;
 }
@@ -689,10 +730,10 @@ input{
 .resultHtmlTitle{
   margin:0;
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:35px;
-  line-height:1;
-  letter-spacing:-0.045em;
-  font-weight:900;
+  font-size:29px;
+  line-height:0.92;
+  letter-spacing:-0.03em;
+  font-weight:400;
   color:#053F17;
 }
 
@@ -1113,7 +1154,7 @@ input{
   font-size:36px;
   line-height:0.9;
   letter-spacing:-0.04em;
-  font-weight:900;
+  font-weight:400;
   color:#064819;
   font-family:"IBM Plex Sans", sans-serif;
 }
@@ -1485,9 +1526,9 @@ html,body{
 }
 
 #result.useHtmlResult .resultHtmlTitle{
-  font-size:32px;
+  font-size:var(--text-title);
   line-height:1;
-  font-weight:800;
+  font-weight:400;
 }
 
 #result.useHtmlResult .resultHeroCard,
@@ -1643,7 +1684,7 @@ textarea{
 .calcContent h1,
 .pageTitle,
 #result.useHtmlResult .resultHtmlTitle{
-  font-weight:700;
+  font-weight:400;
 }
 
 /* Splash art-direction update (editorial, one-screen flow) */
@@ -1796,10 +1837,10 @@ textarea{
 .pageTitle,
 #result.useHtmlResult .resultHtmlTitle{
   font-family:"IBM Plex Sans", sans-serif !important;
-  font-size:36px !important;
-  line-height:0.9 !important;
-  letter-spacing:-0.04em !important;
-  font-weight:700 !important;
+  font-size:29px !important;
+  line-height:0.92 !important;
+  letter-spacing:-0.03em !important;
+  font-weight:400 !important;
 }
 
 .subtitle,
@@ -1831,19 +1872,11 @@ textarea{
   --space-7:27px;
 
   --text-hero:48px;
-  --text-title:31px;
+  --text-title:29px;
   --text-section:12px;
   --text-body:12px;
   --text-meta:11px;
   --text-label:10px;
-}
-
-#calculate.calcScreen .calcContent h1,
-#trips .pageTitle,
-#airports .pageTitle,
-#settings .pageTitle,
-#result.useHtmlResult .resultHtmlTitle{
-  font-size:31px !important;
 }
 
 .subtitle,
