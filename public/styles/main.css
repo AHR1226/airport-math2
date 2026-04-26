@@ -759,10 +759,10 @@ input{
 
 .resultHtmlTitle{
   margin:0;
-  font-family:"IBM Plex Sans", sans-serif;
-  font-size:29px;
-  line-height:0.92;
-  letter-spacing:-0.03em;
+  font-family:"Instrument Serif", serif;
+  font-size:28px;
+  line-height:0.94;
+  letter-spacing:-0.02em;
   font-weight:400;
   color:#053F17;
 }
@@ -2087,4 +2087,86 @@ textarea{
 #settings .pageHeader,
 #result.useHtmlResult .resultHtmlHeader{
   margin-bottom:36px !important;
+}
+
+/* ETA result: Trip Breakdown + Live Conditions shared rhythm (HTML result only) */
+#result.useHtmlResult .resultBreakdownCard,
+#result.useHtmlResult .resultLiveCard{
+  padding:18px 18px 16px;
+  box-sizing:border-box;
+}
+
+#result.useHtmlResult .resultBreakdownTitle,
+#result.useHtmlResult .resultLiveTitle{
+  margin:0 0 10px;
+  padding:0;
+  font-size:var(--text-label);
+  font-weight:700;
+  letter-spacing:0.1em;
+  line-height:1.25;
+  text-transform:uppercase;
+}
+
+#result.useHtmlResult .resultBreakdownRow,
+#result.useHtmlResult .resultLiveRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:12px;
+  padding:7px 0;
+  line-height:1.35;
+}
+
+#result.useHtmlResult .resultLiveRow.primary{
+  padding-top:7px;
+}
+
+#result.useHtmlResult .resultBreakdownRow span{
+  flex:1;
+  min-width:0;
+  text-align:left;
+}
+
+#result.useHtmlResult .resultLiveLabelWrap{
+  flex:1;
+  min-width:0;
+  gap:8px;
+}
+
+#result.useHtmlResult .resultBreakdownRow strong,
+#result.useHtmlResult .resultLiveValue{
+  flex:0 0 auto;
+  text-align:right;
+  min-width:4rem;
+}
+
+#result.useHtmlResult .resultLiveValue.text{
+  min-width:0;
+  max-width:56%;
+}
+
+/* Main page titles: Instrument Serif (Calculate, Trips, Airports, Settings, ETA result only) */
+#calculate.calcScreen .calcContent h1,
+#trips .pageTitle,
+#airports .pageTitle,
+#settings .pageTitle,
+#result.useHtmlResult .resultHtmlTitle{
+  font-family:"Instrument Serif", serif !important;
+  font-size:28px !important;
+  line-height:0.94 !important;
+  letter-spacing:-0.02em !important;
+  font-weight:400 !important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+#calculate.calcScreen .calcContent h1,
+#trips .pageTitle,
+#airports .pageTitle,
+#settings .pageTitle{
+  color:#064819 !important;
+}
+
+#result.useHtmlResult .resultHtmlTitle{
+  color:#053F17 !important;
 }

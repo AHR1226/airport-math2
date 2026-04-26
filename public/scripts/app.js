@@ -127,10 +127,11 @@ function initializeStartingLocationAutocomplete() {
     const seen = new Set();
     const out = [];
     [...remote, ...local].forEach((label) => {
-      const key = String(label).toLowerCase();
+      const display = formatAddressForDisplay(String(label));
+      const key = display.toLowerCase();
       if (!key || seen.has(key)) return;
       seen.add(key);
-      out.push(String(label));
+      out.push(display);
     });
     return out.slice(0, 8);
   };
@@ -166,7 +167,14 @@ function initializeStartingLocationAutocomplete() {
     if (input.value.trim().length >= 3) scheduleSuggestions();
   });
 
-  input.addEventListener('blur', () => setTimeout(closeSuggestions, 120));
+  input.addEventListener('blur', () => {
+    const normalized = formatAddressForDisplay(input.value);
+    if (normalized !== input.value) {
+      input.value = normalized;
+      if (window.appState) window.appState.form.startLocation = normalized;
+    }
+    setTimeout(closeSuggestions, 120);
+  });
 }
 
 function clearStartingLocationValidation() {
@@ -314,6 +322,17 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+/** Strip country suffix for UI only (geocoding still tolerates the trimmed string). */
+function formatAddressForDisplay(value) {
+  let s = String(value ?? '').trim();
+  if (!s) return '';
+  s = s.replace(/,\s*United States\s*$/i, '');
+  s = s.replace(/,\s*USA\s*$/i, '');
+  s = s.replace(/\s+United States\s*$/i, '');
+  s = s.replace(/\s+USA\s*$/i, '');
+  return s.trim();
+}
+
 function ensureHtmlResultContainer() {
   const resultSection = document.getElementById('result');
   if (!resultSection) return null;
@@ -343,7 +362,10 @@ function renderHtmlResult(result) {
   const paceMessage = getPaceMessage(result);
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (form.terminal || 'Terminal 4').trim();
-  const flightDetail = `Domestic flight · ${airportLabel} · ${terminalLabel}`;
+  const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
+  const flightDetail = startForDisplay
+    ? `Domestic flight · ${airportLabel} · ${terminalLabel} · From ${startForDisplay}`
+    : `Domestic flight · ${airportLabel} · ${terminalLabel}`;
   const securityWait = getSecurityWaitEstimate(result, selections);
 
   container.innerHTML = `

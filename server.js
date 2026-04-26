@@ -170,6 +170,16 @@ function currentWeather(airport) {
   return map[airport] || map.OTHER;
 }
 
+function stripCountryFromPlaceName(name) {
+  if (!name || typeof name !== 'string') return name;
+  return name
+    .replace(/,\s*United States\s*$/i, '')
+    .replace(/,\s*USA\s*$/i, '')
+    .replace(/\s+United States\s*$/i, '')
+    .replace(/\s+USA\s*$/i, '')
+    .trim();
+}
+
 app.get('/api/places-suggest', async (req, res) => {
   const q = String(req.query.q || '').trim();
   if (q.length < 3) return res.json({ suggestions: [], source: 'skip' });
@@ -181,7 +191,7 @@ app.get('/api/places-suggest', async (req, res) => {
     if (!mapRes.ok) return res.json({ suggestions: [], source: 'mapbox-error' });
     const data = await mapRes.json();
     const suggestions = (data.features || [])
-      .map((f) => f.place_name)
+      .map((f) => stripCountryFromPlaceName(f.place_name))
       .filter((name) => typeof name === 'string' && name.trim());
     return res.json({ suggestions, source: 'mapbox' });
   } catch {
