@@ -137,9 +137,18 @@
     <h2>Your Travel Style</h2>
 
  <div class="chipGroup" data-group="style">
-    <button class="chip">Cut it close</button>
-    <button class="chip active">Balanced</button>
-    <button class="chip">No rush</button>
+    <button type="button" class="chip chip--travelStyle" data-selection="Relaxed">
+      <span class="styleChipLabel">Relaxed</span>
+      <span class="styleChipDesc">Extra buffer for a lower-stress airport experience</span>
+    </button>
+    <button type="button" class="chip chip--travelStyle active" data-selection="Balanced">
+      <span class="styleChipLabel">Balanced</span>
+      <span class="styleChipDesc">A comfortable arrival window with moderate buffer time</span>
+    </button>
+    <button type="button" class="chip chip--travelStyle" data-selection="Tight">
+      <span class="styleChipLabel">Tight</span>
+      <span class="styleChipDesc">Less waiting, tighter timing, faster departures</span>
+    </button>
  </div>
 
 </div>
@@ -314,9 +323,10 @@
       <div class="rowSub">Rideshare</div>
     </div>
 
-    <div class="appCard">
+    <div class="appCard settingsTravelStyleCard">
       <div class="rowTitle">Travel Style</div>
-      <div class="rowSub">Balanced</div>
+      <div class="rowSub settingsTravelStyleValue" id="settingsTravelStyleValue">Balanced</div>
+      <p class="settingsTravelStyleDesc" id="settingsTravelStyleDesc">A comfortable arrival window with moderate buffer time</p>
     </div>
 
     <div class="sectionLabel">Preferences</div>

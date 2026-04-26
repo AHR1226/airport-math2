@@ -21,6 +21,10 @@ window.navigationApi = (() => {
     document.querySelectorAll('.bottomNav button').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.to === id);
     });
+
+    if (id === 'settings' && window.syncSettingsTravelStyleUI) {
+      window.syncSettingsTravelStyleUI();
+    }
   }
 
   function bindBottomNav() {

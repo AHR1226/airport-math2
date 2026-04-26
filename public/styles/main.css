@@ -346,6 +346,57 @@ button.tap{
   margin-right:-2px;
 }
 
+/* Travel Style: label + subtle description (Calculate + Settings) */
+#calculate [data-group="style"]{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-left:0;
+  margin-right:0;
+}
+
+#calculate [data-group="style"] .chip--travelStyle{
+  width:100%;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  padding:10px 12px;
+  text-align:left;
+}
+
+#calculate [data-group="style"] .styleChipLabel{
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:-0.01em;
+}
+
+#calculate [data-group="style"] .styleChipDesc{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.35;
+  font-weight:400;
+  color:rgba(6,72,25,0.58);
+  letter-spacing:0.005em;
+}
+
+#calculate [data-group="style"] .chip--travelStyle.active .styleChipDesc{
+  color:rgba(6,72,25,0.74);
+}
+
+#settings .settingsTravelStyleDesc{
+  margin:6px 0 0;
+  padding:0;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.38;
+  font-weight:400;
+  color:rgba(18,61,34,0.62);
+  letter-spacing:0.01em;
+  max-width:36rem;
+}
+
 .fieldRow{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -760,7 +811,7 @@ input{
 .resultHtmlTitle{
   margin:0;
   font-family:"Instrument Serif", serif;
-  font-size:28px;
+  font-size:34px;
   line-height:0.94;
   letter-spacing:-0.02em;
   font-weight:400;
@@ -1867,7 +1918,7 @@ textarea{
 .pageTitle,
 #result.useHtmlResult .resultHtmlTitle{
   font-family:"IBM Plex Sans", sans-serif !important;
-  font-size:29px !important;
+  font-size:34px !important;
   line-height:0.92 !important;
   letter-spacing:-0.03em !important;
   font-weight:400 !important;
@@ -1902,7 +1953,7 @@ textarea{
   --space-7:27px;
 
   --text-hero:48px;
-  --text-title:29px;
+  --text-title:34px;
   --text-section:12px;
   --text-body:12px;
   --text-meta:11px;
@@ -2152,7 +2203,7 @@ textarea{
 #settings .pageTitle,
 #result.useHtmlResult .resultHtmlTitle{
   font-family:"Instrument Serif", serif !important;
-  font-size:28px !important;
+  font-size:34px !important;
   line-height:0.94 !important;
   letter-spacing:-0.02em !important;
   font-weight:400 !important;
@@ -2169,4 +2220,9 @@ textarea{
 
 #result.useHtmlResult .resultHtmlTitle{
   color:#053F17 !important;
+}
+
+#calculate.calcScreen [data-group="style"] .chip--travelStyle{
+  margin:0;
+  padding:10px 12px;
 }

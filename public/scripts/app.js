@@ -20,6 +20,47 @@ const LOCAL_ADDRESS_SUGGESTIONS = [
   '15 Hudson Yards, New York, NY 10001'
 ];
 
+const TRAVEL_STYLE_META = {
+  Relaxed: {
+    label: 'Relaxed',
+    desc: 'Extra buffer for a lower-stress airport experience'
+  },
+  Balanced: {
+    label: 'Balanced',
+    desc: 'A comfortable arrival window with moderate buffer time'
+  },
+  Tight: {
+    label: 'Tight',
+    desc: 'Less waiting, tighter timing, faster departures'
+  }
+};
+
+function normalizeTravelStyleKey(raw) {
+  const s = String(raw || '').trim();
+  if (s === 'Cut it close') return 'Tight';
+  if (s === 'No rush') return 'Relaxed';
+  if (TRAVEL_STYLE_META[s]) return s;
+  const lower = s.toLowerCase();
+  if (lower.includes('tight') || lower.includes('cut')) return 'Tight';
+  if (lower.includes('relaxed') || lower.includes('no rush')) return 'Relaxed';
+  if (lower.includes('balanced')) return 'Balanced';
+  return 'Balanced';
+}
+
+function syncSettingsTravelStyleUI() {
+  const valueEl = document.getElementById('settingsTravelStyleValue');
+  const descEl = document.getElementById('settingsTravelStyleDesc');
+  if (!valueEl || !descEl) return;
+  const key = normalizeTravelStyleKey(
+    window.appState?.selections?.style ?? getActiveSelection('style')
+  );
+  const meta = TRAVEL_STYLE_META[key] || TRAVEL_STYLE_META.Balanced;
+  valueEl.textContent = meta.label;
+  descEl.textContent = meta.desc;
+}
+
+window.syncSettingsTravelStyleUI = syncSettingsTravelStyleUI;
+
 if (window.navigationApi) {
   window.navigationApi.init();
 }
@@ -28,6 +69,9 @@ if (window.selectionsApi) {
 }
 initializeAirportTerminalSelects();
 initializeStartingLocationAutocomplete();
+if (window.syncSettingsTravelStyleUI) {
+  window.syncSettingsTravelStyleUI();
+}
 
 function initializeAirportTerminalSelects() {
   const airportSelect = document.getElementById('airportInput');
@@ -198,7 +242,13 @@ function getActiveSelection(groupName) {
     return window.stateApi.getSelection(groupName);
   }
   const group = document.querySelector(`[data-group="${groupName}"]`);
-  return group?.querySelector('.chip.active')?.textContent.trim() || '';
+  const chip = group?.querySelector('.chip.active');
+  if (!chip) return '';
+  const explicit = chip.getAttribute('data-selection');
+  if (explicit) return explicit.trim();
+  const label = chip.querySelector('.styleChipLabel');
+  if (label) return label.textContent.trim();
+  return chip.textContent.trim();
 }
 
 function minutesForSelection() {
@@ -206,7 +256,7 @@ function minutesForSelection() {
   const luggage = getActiveSelection('luggage');
   const security = getActiveSelection('security');
   const boarding = getActiveSelection('boarding');
-  const style = getActiveSelection('style');
+  const style = normalizeTravelStyleKey(getActiveSelection('style'));
 
   let travel = 45;
   let airport = 35;
@@ -225,8 +275,8 @@ function minutesForSelection() {
   if (boarding === 'Lounge') airport += 35;
   if (boarding === 'Grab food') airport += 20;
 
-  if (style === 'Cut it close') buffer -= 10;
-  if (style === 'No rush') buffer += 25;
+  if (style === 'Tight') buffer -= 10;
+  if (style === 'Relaxed') buffer += 25;
 
   return { travel, airport, buffer, total: travel + airport + buffer };
 }
@@ -428,9 +478,9 @@ function renderHtmlResult(result) {
 
 function getPaceMessage(result) {
   const total = Number(result?.total) || 95;
-  const style = (result?.style || '').toLowerCase();
-  if (style.includes('cut')) return 'You should leave soon';
-  if (style.includes('no rush')) return 'Comfortable pace';
+  const styleKey = normalizeTravelStyleKey(result?.style || '');
+  if (styleKey === 'Tight') return 'You should leave soon';
+  if (styleKey === 'Relaxed') return 'Comfortable pace';
   if (total >= 125) return 'Comfortable pace';
   if (total <= 85) return 'You should leave soon';
   return 'Tight but manageable';
