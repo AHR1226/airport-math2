@@ -2037,3 +2037,24 @@ textarea{
 #splash.splashScreen .splashFeature{
   gap:16px;
 }
+
+/* Header stack rhythm (~2×): Trips, Airports, Settings, ETA result only */
+#trips.screen .screenContent,
+#airports.screen .screenContent,
+#settings.screen .screenContent,
+#result.useHtmlResult .resultHtmlContainer{
+  padding-top:calc(var(--page-top-padding) * 2) !important;
+}
+
+#trips.screen .pageSubtitle,
+#airports.screen .pageSubtitle,
+#settings.screen .pageSubtitle{
+  margin-top:16px !important;
+}
+
+#trips .pageHeader,
+#airports .pageHeader,
+#settings .pageHeader,
+#result.useHtmlResult .resultHtmlHeader{
+  margin-bottom:36px !important;
+}
