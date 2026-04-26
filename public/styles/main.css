@@ -1191,3 +1191,70 @@ input{
 #result.useHtmlResult .resultHtmlEdit{
   margin-top:2px;
 }
+
+/* Final ETA refinement pass */
+#result.useHtmlResult .resultHtmlEdit{
+  min-width:58px;
+  height:31px;
+  padding:0 12px;
+  border-radius:999px;
+  border:0;
+  background:#F1F2F1;
+  color:#064819;
+  font-size:13px;
+  font-weight:500;
+  line-height:1;
+  letter-spacing:0;
+  box-shadow:none;
+}
+
+#result.useHtmlResult .resultHeroCard{
+  padding:28px 20px 20px;
+}
+
+#result.useHtmlResult .resultHtmlEyebrow{
+  font-size:10px;
+  letter-spacing:.12em;
+}
+
+#result.useHtmlResult .resultHtmlTime{
+  font-size:56px;
+  margin-top:18px;
+  margin-bottom:18px;
+}
+
+#result.useHtmlResult .resultHtmlStatus{
+  font-size:11px;
+  padding:5px 10px;
+  margin-left:-6px;
+}
+
+#result.useHtmlResult .resultHtmlFlight{
+  font-size:15px;
+  font-weight:400;
+}
+
+#result.useHtmlResult .resultBreakdownRow{
+  padding:5px 0;
+  line-height:1.28;
+}
+
+#result.useHtmlResult .resultBreakdownRow span{
+  font-weight:400;
+}
+
+#result.useHtmlResult .resultBreakdownRow strong{
+  font-weight:600;
+}
+
+#result.useHtmlResult .resultLiveLabel{
+  font-weight:500;
+}
+
+#result.useHtmlResult .resultLiveRow.primary .resultLiveLabel{
+  font-weight:500;
+}
+
+#result.useHtmlResult .resultLiveTag{
+  font-weight:600;
+}
