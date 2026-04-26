@@ -4,7 +4,7 @@ window.appState = {
     flightTime: '19:30',
     airport: 'JFK',
     terminal: 'Terminal 4',
-    startLocation: '68 Berkeley Place, Brooklyn NY 11217'
+    startLocation: ''
   },
   selections: {
     transport: 'Rideshare',
@@ -39,13 +39,13 @@ window.stateApi = {
     const flightEl = document.getElementById('flightTime');
     const airportEl = document.getElementById('airportInput');
     const terminalEl = document.getElementById('terminalInput');
-    const startLocationEl = document.querySelector('.card input.full');
+    const startLocationEl = document.getElementById('startingLocationInput');
 
     if (flightEl) window.appState.form.flightTime = flightEl.value || '19:30';
     if (airportEl) window.appState.form.airport = airportEl.value || 'JFK';
     if (terminalEl) window.appState.form.terminal = terminalEl.value || 'Terminal 4';
     if (startLocationEl) {
-      window.appState.form.startLocation = startLocationEl.value || '68 Berkeley Place, Brooklyn NY 11217';
+      window.appState.form.startLocation = startLocationEl.value.trim();
     }
   },
   setEta(eta) {

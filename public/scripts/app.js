@@ -70,6 +70,9 @@ function initializeStartingLocationAutocomplete() {
   const suggestionsEl = document.getElementById('locationSuggestions');
   if (!input || !suggestionsEl) return;
 
+  let suggestTimer = null;
+  let suggestSeq = 0;
+
   const closeSuggestions = () => {
     suggestionsEl.classList.remove('active');
     suggestionsEl.innerHTML = '';
@@ -81,35 +84,96 @@ function initializeStartingLocationAutocomplete() {
       return;
     }
 
-    suggestionsEl.innerHTML = items
-      .map(item => `<button type="button" class="locationSuggestionItem">${item}</button>`)
-      .join('');
-    suggestionsEl.classList.add('active');
-
-    suggestionsEl.querySelectorAll('.locationSuggestionItem').forEach(button => {
+    suggestionsEl.innerHTML = '';
+    items.forEach((item) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'locationSuggestionItem';
+      button.textContent = item;
       button.addEventListener('mousedown', (event) => {
         event.preventDefault();
         const value = button.textContent || '';
         input.value = value;
         if (window.appState) window.appState.form.startLocation = value;
+        clearStartingLocationValidation();
         closeSuggestions();
       });
+      suggestionsEl.appendChild(button);
     });
+    suggestionsEl.classList.add('active');
   };
 
-  const updateSuggestions = () => {
-    const query = input.value.trim().toLowerCase();
+  const fetchMapboxSuggestions = async (rawQuery) => {
+    const q = String(rawQuery || '').trim();
+    if (q.length < 3) return [];
+    try {
+      const res = await fetch(`/api/places-suggest?q=${encodeURIComponent(q)}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data.suggestions) ? data.suggestions.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const mergeSuggestions = (remote, local) => {
+    const seen = new Set();
+    const out = [];
+    [...remote, ...local].forEach((label) => {
+      const key = String(label).toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(String(label));
+    });
+    return out.slice(0, 8);
+  };
+
+  const runSuggestions = async () => {
+    const raw = input.value.trim();
+    const query = raw.toLowerCase();
     if (query.length < 3) {
       closeSuggestions();
       return;
     }
-    const matches = LOCAL_ADDRESS_SUGGESTIONS.filter(item => item.toLowerCase().includes(query));
-    openSuggestions(matches);
+    const seq = ++suggestSeq;
+    const localMatches = LOCAL_ADDRESS_SUGGESTIONS.filter((item) => item.toLowerCase().includes(query));
+    const remote = await fetchMapboxSuggestions(raw);
+    if (seq !== suggestSeq) return;
+    openSuggestions(mergeSuggestions(remote, localMatches));
   };
 
-  input.addEventListener('input', updateSuggestions);
-  input.addEventListener('focus', updateSuggestions);
+  const scheduleSuggestions = () => {
+    if (suggestTimer) clearTimeout(suggestTimer);
+    suggestTimer = setTimeout(() => {
+      suggestTimer = null;
+      void runSuggestions();
+    }, 220);
+  };
+
+  input.addEventListener('input', () => {
+    clearStartingLocationValidation();
+    scheduleSuggestions();
+  });
+
+  input.addEventListener('focus', () => {
+    if (input.value.trim().length >= 3) scheduleSuggestions();
+  });
+
   input.addEventListener('blur', () => setTimeout(closeSuggestions, 120));
+}
+
+function clearStartingLocationValidation() {
+  const el = document.getElementById('startingLocationValidation');
+  if (!el) return;
+  el.textContent = '';
+  el.hidden = true;
+}
+
+function showStartingLocationValidation(message) {
+  const el = document.getElementById('startingLocationValidation');
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = false;
 }
 function getActiveSelection(groupName) {
   if (window.selectionsApi) {
@@ -163,6 +227,17 @@ function calculateETA() {
   if (window.stateApi) {
     window.stateApi.syncFormFromDom();
   }
+
+  const startLocationRaw = (
+    window.appState?.form?.startLocation
+    ?? document.getElementById('startingLocationInput')?.value
+    ?? ''
+  ).trim();
+  if (!startLocationRaw) {
+    showStartingLocationValidation('Add a starting address to calculate your ETA.');
+    return;
+  }
+  clearStartingLocationValidation();
 
   const flightTimeValue = window.appState?.form?.flightTime || document.getElementById('flightTime')?.value || '19:30';
   const [hours, minutes] = flightTimeValue.split(':').map(Number);

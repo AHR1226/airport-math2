@@ -170,6 +170,25 @@ function currentWeather(airport) {
   return map[airport] || map.OTHER;
 }
 
+app.get('/api/places-suggest', async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  if (q.length < 3) return res.json({ suggestions: [], source: 'skip' });
+  const token = process.env.MAPBOX_ACCESS_TOKEN;
+  if (!token) return res.json({ suggestions: [], source: 'local-only' });
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?autocomplete=true&limit=5&proximity=-73.9857,40.7484&country=US&access_token=${token}`;
+    const mapRes = await fetch(url);
+    if (!mapRes.ok) return res.json({ suggestions: [], source: 'mapbox-error' });
+    const data = await mapRes.json();
+    const suggestions = (data.features || [])
+      .map((f) => f.place_name)
+      .filter((name) => typeof name === 'string' && name.trim());
+    return res.json({ suggestions, source: 'mapbox' });
+  } catch {
+    return res.json({ suggestions: [], source: 'mapbox-exception' });
+  }
+});
+
 app.get('/api/security', async (req, res) => {
   try { res.json(await fetchOfficialSecurity(req.query.airport || 'OTHER')); }
   catch { res.status(200).json(securityFallback(req.query.airport || 'OTHER')); }

@@ -440,6 +440,16 @@ input{
   border-top:1px solid rgba(6,72,25,0.08);
 }
 
+#calculate .startingLocationValidation{
+  margin:8px 0 0;
+  padding:0 2px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12px;
+  line-height:1.35;
+  font-weight:500;
+  color:rgba(122,86,26,0.94);
+}
+
 .chip{
   border:0;
   outline:0;
