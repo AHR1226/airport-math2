@@ -420,6 +420,26 @@ input{
   overflow:hidden;
 }
 
+/* Calculate: starting-location dropdown stacks above following cards */
+#calculate.calcScreen .startingLocationCard{
+  position:relative;
+}
+
+#calculate.calcScreen .startingLocationCard.startingLocationCard--suggestionsOpen{
+  z-index:40;
+  overflow:visible;
+  margin-bottom:calc(14px + min(20rem, 42vh));
+}
+
+#calculate.calcScreen .startingLocationCard .locationAutocomplete{
+  position:relative;
+  z-index:1;
+}
+
+#calculate.calcScreen .startingLocationCard .locationSuggestions{
+  z-index:5;
+}
+
 .locationSuggestions.active{
   display:block;
 }

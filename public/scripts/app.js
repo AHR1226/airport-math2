@@ -70,12 +70,18 @@ function initializeStartingLocationAutocomplete() {
   const suggestionsEl = document.getElementById('locationSuggestions');
   if (!input || !suggestionsEl) return;
 
+  const locationCard = input.closest('.startingLocationCard');
   let suggestTimer = null;
   let suggestSeq = 0;
+
+  const setSuggestionsOpen = (open) => {
+    locationCard?.classList.toggle('startingLocationCard--suggestionsOpen', open);
+  };
 
   const closeSuggestions = () => {
     suggestionsEl.classList.remove('active');
     suggestionsEl.innerHTML = '';
+    setSuggestionsOpen(false);
   };
 
   const openSuggestions = (items) => {
@@ -101,6 +107,7 @@ function initializeStartingLocationAutocomplete() {
       suggestionsEl.appendChild(button);
     });
     suggestionsEl.classList.add('active');
+    setSuggestionsOpen(true);
   };
 
   const fetchMapboxSuggestions = async (rawQuery) => {
