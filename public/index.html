@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles/main.css">
   <script src="/scripts/state.js" defer></script>
   <script src="/scripts/navigation.js" defer></script>
@@ -16,24 +17,38 @@
 </head>
 <body>
 <div class="app" id="app">
-<section id="splash" class="screen active splashOnly" onclick="show('onboard1')" style="cursor:pointer;">
-  <img class="shot" src="/assets/splash.png">
-</section>
+<section id="splash" class="screen active splashScreen">
+  <div class="splashContent">
+    <div class="splashTop">
+      <h1 class="splashLogo">
+        <span class="splashLogoAirport">Airport</span><span class="splashLogoMath">Math<span class="splashLogoMark">™</span></span>
+      </h1>
+      <p class="splashTagline">Your intelligent travel companion</p>
 
-<section id="onboard1" class="screen" onclick="show('onboard2')" style="cursor:pointer;">
-  <img class="shot" src="/assets/onboard1.png">
-</section>
+      <div class="splashFeatureList">
+        <div class="splashFeature">
+          <svg viewBox="0 0 26 26" aria-hidden="true">
+            <path d="M3.14966 11.5481L23.0962 2.09967L13.6479 22.0463L11.5482 13.6477L3.14966 11.5481Z"></path>
+          </svg>
+          <span>Live traffic &amp; airport data</span>
+        </div>
+        <div class="splashFeature">
+          <svg viewBox="0 0 19 23" aria-hidden="true">
+            <path d="M17.5845 12.3358C17.5845 17.5849 13.9101 20.2095 9.54285 21.7317C9.31416 21.8092 9.06575 21.8055 8.83947 21.7212C4.46172 20.2095 0.787354 17.5849 0.787354 12.3358V4.98711C0.787354 4.70868 0.897959 4.44165 1.09484 4.24477C1.29172 4.04789 1.55874 3.93729 1.83717 3.93729C3.93681 3.93729 6.56136 2.6775 8.38805 1.08178C8.61046 0.891756 8.89339 0.787354 9.18591 0.787354C9.47844 0.787354 9.76137 0.891756 9.98378 1.08178C11.821 2.688 14.435 3.93729 16.5347 3.93729C16.8131 3.93729 17.0801 4.04789 17.277 4.24477C17.4739 4.44165 17.5845 4.70868 17.5845 4.98711V12.3358Z"></path>
+          </svg>
+          <span>Personalized to your travel style</span>
+        </div>
+        <div class="splashFeature splashFeatureAirplane">
+          <svg viewBox="0 0 26 26" aria-hidden="true">
+            <path d="M18.687 20.1566L16.7973 11.548L20.4717 7.87367C22.0464 6.29894 22.5713 4.1993 22.0464 3.14948C20.9966 2.62457 18.897 3.14948 17.3222 4.72421L13.6479 8.39858L5.03933 6.5089C4.51442 6.40392 4.0945 6.61388 3.88453 7.03381L3.56959 7.55872C3.35962 8.08363 3.4646 8.60854 3.88453 8.92349L9.44858 12.5979L7.34894 15.7473H4.19948L3.14966 16.7971L6.29912 18.8968L8.39876 22.0462L9.44858 20.9964V17.847L12.598 15.7473L16.2724 21.3114C16.5874 21.7313 17.1123 21.8363 17.6372 21.6263L18.1621 21.4163C18.582 21.1014 18.792 20.6815 18.687 20.1566Z"></path>
+          </svg>
+          <span>Built for JFK, LGA &amp; EWR</span>
+        </div>
+      </div>
+    </div>
 
-<section id="onboard2" class="screen" onclick="show('onboard3')" style="cursor:pointer;">
-  <img class="shot" src="/assets/onboard2.png">
-</section>
-
-<section id="onboard3" class="screen" onclick="show('onboard4')" style="cursor:pointer;">
-  <img class="shot" src="/assets/onboard3.png">
-</section>
-
-<section id="onboard4" class="screen" onclick="show('calculate')" style="cursor:pointer;">
-  <img class="shot" src="/assets/onboard4.png">
+    <button class="splashCta" onclick="show('calculate')">Get Started</button>
+  </div>
 </section>
 
 <section id="calculate" class="screen scroll calcScreen">
@@ -137,10 +152,201 @@
     aria-label="Edit">
   </button>
 </section>
-<section id="trips" class="screen scroll"><img class="shot" src="/assets/trips.png"></section>
-<section id="airports" class="screen"><img class="shot" src="/assets/airports.png"></section>
-<section id="profile" class="screen"><img class="shot" src="/assets/profile.png"></section>
-<section id="settings" class="screen"><img class="shot" src="/assets/settings.png"></section>
+<section id="trips" class="screen scroll">
+  <div class="screenContent">
+    <div class="pageHeader">
+      <h1 class="pageTitle">Trips</h1>
+      <p class="pageSubtitle">Your saved and upcoming airport plans</p>
+    </div>
+
+    <div class="sectionLabel">Upcoming Trips</div>
+
+    <div class="appCard tripsCard tripsCardUpcoming">
+      <div class="tripsTopRow">
+        <div>
+          <div class="tripsAirportCode">JFK</div>
+          <div class="tripsAirportName">John F. Kennedy International</div>
+          <div class="tripsMeta">Today · Flight at 7:30 PM</div>
+        </div>
+        <span class="pill pillActive">On Track</span>
+      </div>
+      <div class="tripsDivider"></div>
+      <div class="tripsInfoRows">
+        <div class="tripsInfoRow">
+          <span class="tripsInfoLabel">Leave by</span>
+          <strong class="tripsInfoValue">5:42 PM</strong>
+        </div>
+        <div class="tripsInfoRow">
+          <span class="tripsInfoLabel">Transport</span>
+          <strong class="tripsInfoValue">Rideshare</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="appCard tripsCard tripsCardUpcoming">
+      <div class="tripsTopRow">
+        <div>
+          <div class="tripsAirportCode">LGA</div>
+          <div class="tripsAirportName">LaGuardia Airport</div>
+          <div class="tripsMeta">Tue · Flight at 9:10 AM</div>
+        </div>
+        <span class="pill">Planned</span>
+      </div>
+      <div class="tripsDivider"></div>
+      <div class="tripsInfoRows">
+        <div class="tripsInfoRow">
+          <span class="tripsInfoLabel">Leave by</span>
+          <strong class="tripsInfoValue">7:05 AM</strong>
+        </div>
+        <div class="tripsInfoRow">
+          <span class="tripsInfoLabel">Transport</span>
+          <strong class="tripsInfoValue">Transit</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="sectionLabel">Past Trips</div>
+
+    <div class="appCard tripsCard tripsCardPast">
+      <div class="listRow tripsPastRow">
+        <div>
+          <div class="rowTitle">EWR Departure</div>
+          <div class="rowSub">Last week · Completed</div>
+        </div>
+        <span class="pill">History</span>
+      </div>
+      <div class="tripsDivider tripsDividerSoft"></div>
+      <div class="listRow tripsPastRow">
+        <div>
+          <div class="rowTitle">JFK Departure</div>
+          <div class="rowSub">2 weeks ago · Completed</div>
+        </div>
+        <span class="pill">History</span>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="airports" class="screen scroll">
+  <div class="screenContent">
+    <div class="pageHeader">
+      <h1 class="pageTitle">Airports</h1>
+      <p class="pageSubtitle">Live conditions across your nearby airports</p>
+    </div>
+
+    <div class="sectionLabel">NYC Area</div>
+
+    <div class="appCardDark">
+      <div class="metricRow">
+        <span>JFK</span>
+        <strong>42 min</strong>
+      </div>
+      <div class="metricRow">
+        <span>LGA</span>
+        <strong>28 min</strong>
+      </div>
+      <div class="metricRow">
+        <span>EWR</span>
+        <strong>35 min</strong>
+      </div>
+    </div>
+
+    <div class="appCard">
+      <div class="listRow">
+        <div>
+          <div class="rowTitle">John F. Kennedy International</div>
+          <div class="rowSub">Queens, NY</div>
+        </div>
+        <span class="pill pillActive">Live</span>
+      </div>
+      <div class="listRow">
+        <div>
+          <div class="rowTitle">LaGuardia Airport</div>
+          <div class="rowSub">Queens, NY</div>
+        </div>
+        <span class="pill">Estimated</span>
+      </div>
+      <div class="listRow">
+        <div>
+          <div class="rowTitle">Newark Liberty International</div>
+          <div class="rowSub">Newark, NJ</div>
+        </div>
+        <span class="pill">Estimated</span>
+      </div>
+    </div>
+
+    <button class="primaryButton">Refresh Conditions</button>
+  </div>
+</section>
+<section id="settings" class="screen scroll">
+  <div class="screenContent">
+    <div class="pageHeader">
+      <h1 class="pageTitle">Settings</h1>
+      <p class="pageSubtitle">Manage your travel preferences</p>
+    </div>
+
+    <div class="sectionLabel">Profile</div>
+
+    <div class="appCard">
+      <div class="rowTitle">Home Address</div>
+      <div class="rowSub">142 W 57th St, New York</div>
+    </div>
+
+    <div class="appCard">
+      <div class="rowTitle">Default Airport</div>
+      <div class="rowSub">JFK</div>
+    </div>
+
+    <div class="appCard">
+      <div class="rowTitle">Transportation</div>
+      <div class="rowSub">Rideshare</div>
+    </div>
+
+    <div class="appCard">
+      <div class="rowTitle">Travel Style</div>
+      <div class="rowSub">Balanced</div>
+    </div>
+
+    <div class="sectionLabel">Preferences</div>
+
+    <div class="appCard">
+      <div class="listRow">
+        <div>
+          <div class="rowTitle">Default Buffer Time</div>
+          <div class="rowSub">18 minutes</div>
+        </div>
+        <span class="rowChevron">›</span>
+      </div>
+      <div class="listRow">
+        <div>
+          <div class="rowTitle">Security Wait Time</div>
+          <div class="rowSub">Auto-detect</div>
+        </div>
+        <span class="rowChevron">›</span>
+      </div>
+    </div>
+
+    <div class="sectionLabel">Notifications</div>
+
+    <div class="appCard">
+      <div class="listRow">
+        <div>
+          <div class="rowTitle">Departure Reminders</div>
+          <div class="rowSub">Enabled</div>
+        </div>
+        <span class="rowChevron">›</span>
+      </div>
+      <div class="listRow">
+        <div>
+          <div class="rowTitle">Traffic Alerts</div>
+          <div class="rowSub">Enabled</div>
+        </div>
+        <span class="rowChevron">›</span>
+      </div>
+    </div>
+
+    <button class="primaryButton">Save Settings</button>
+  </div>
+</section>
 <div class="bottomNav">
 <button class="active" data-to="calculate">
   <div class="icon">
@@ -174,16 +380,6 @@
     </svg>
   </div>
   <span>Airports</span>
-</button>
-
-<button data-to="profile">
-  <div class="icon">
-    <svg viewBox="0 0 24 24">
-      <circle cx="12" cy="8" r="4"></circle>
-      <path d="M4 20 C4 16 8 14 12 14 C16 14 20 16 20 20"></path>
-    </svg>
-  </div>
-  <span>Profile</span>
 </button>
 
   <button data-to="settings">

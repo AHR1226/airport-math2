@@ -10,7 +10,7 @@ window.navigationApi = (() => {
       s.classList.toggle('active', s.id === id);
     });
 
-    const hideNav = ['splash', 'onboard1', 'onboard2', 'onboard3', 'onboard4', 'loading'].includes(id);
+    const hideNav = ['splash', 'loading'].includes(id);
 
     document.body.classList.toggle('hideBottomNav', hideNav);
 
@@ -31,17 +31,9 @@ window.navigationApi = (() => {
     });
   }
 
-  function bindSplashTap() {
-    const splashTap = document.querySelector('.splashTap');
-    if (splashTap) {
-      splashTap.onclick = () => show('onboard1');
-    }
-  }
-
   function init() {
     show('splash');
     bindBottomNav();
-    bindSplashTap();
   }
 
   return {

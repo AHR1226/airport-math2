@@ -232,18 +232,6 @@ button.tap{
   display:none;
 }
 
-.splashTap{
-  position:absolute;
-
-  left:9%;
-  right:9%;
-
-  bottom:11%;
-
-  height:72px;
-
-  z-index:99999;
-}
 
 .hideNav .navTap{
   display:none;
@@ -349,7 +337,7 @@ input{
   appearance:none;
   -webkit-appearance:none;
 
-  background:#F1F2F1;
+  background:#EBEEEA;
   color:#064819;
 
   border-radius:999px;
@@ -366,6 +354,89 @@ input{
     background 180ms ease,
     transform 120ms ease,
     box-shadow 180ms ease;
+}
+
+.splashScreen{
+  background:#A8AE97;
+  color:#F6F6F4;
+}
+
+.splashContent{
+  min-height:100%;
+  padding:56px 24px calc(72px + env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-between;
+  text-align:center;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.splashTop{
+  width:100%;
+}
+
+.splashLogo{
+  margin:68px 0 0;
+  font-size:84px;
+  line-height:0.86;
+  font-weight:900;
+  letter-spacing:-0.04em;
+  color:#CFFF4E;
+}
+
+.splashTagline{
+  margin-top:14px;
+  font-size:36px;
+  line-height:0.95;
+  font-weight:800;
+  letter-spacing:0.01em;
+  color:#F1F2ED;
+}
+
+.splashFeatureList{
+  margin-top:72px;
+  display:grid;
+  gap:30px;
+}
+
+.splashFeature{
+  display:grid;
+  justify-items:center;
+  gap:10px;
+}
+
+.splashFeature svg{
+  width:28px;
+  height:28px;
+  stroke:#CFFF4E;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.splashFeature span{
+  font-size:34px;
+  line-height:0.98;
+  letter-spacing:0.005em;
+  color:#F1F2ED;
+}
+
+.splashCta{
+  width:100%;
+  height:72px;
+  border:0;
+  border-radius:999px;
+  background:#B8F336;
+  color:#0D431E;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:37px;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  box-shadow:
+    0 10px 22px rgba(6,72,25,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
 .chip.active{
@@ -436,13 +507,6 @@ input{
   display:none !important;
 }
 
-.splashTap{
-  left:12%;
-  right:12%;
-  top:79%;
-  height:10%;
-  z-index:9999;
-}
 
 .chip.active{
   background:#D7FF43;
@@ -706,176 +770,6 @@ input{
   background:#F6F6F4;
 }
 
-/* Result-mode winning overrides to avoid cascade ambiguity */
-#result.useHtmlResult{
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  background:#F5FFE4;
-}
-
-#result.useHtmlResult .resultHtmlContainer{
-  position:relative;
-  left:auto;
-  right:auto;
-  top:auto;
-  bottom:auto;
-  width:100%;
-  min-height:100%;
-  box-sizing:border-box;
-  gap:14px;
-  padding:20px 20px calc(132px + env(safe-area-inset-bottom));
-}
-
-#result.useHtmlResult .resultHtmlTitle{
-  font-size:30px;
-  line-height:0.95;
-  letter-spacing:-0.035em;
-  font-weight:800;
-}
-
-#result.useHtmlResult .resultHeroCard{
-  background:#CFFF4E;
-  border:1px solid rgba(6,72,25,0.08);
-  box-shadow:
-    0 1px 2px rgba(0,0,0,0.02),
-    0 8px 24px rgba(0,0,0,0.03);
-  backdrop-filter:blur(12px);
-  padding:19px;
-  border-radius:24px;
-  min-height:188px;
-}
-
-#result.useHtmlResult .resultHtmlTime{
-  margin-top:12px;
-  font-size:58px;
-  line-height:0.84;
-}
-
-#result.useHtmlResult .resultHtmlFlight{
-  margin-top:10px;
-  font-size:20px;
-  line-height:1.08;
-}
-
-#result.useHtmlResult .resultBreakdownCard{
-  background:#2B2F24;
-  padding:19px;
-  border-radius:24px;
-}
-
-#result.useHtmlResult .resultBreakdownTitle{
-  color:#CFFF4E;
-  font-weight:700;
-}
-
-#result.useHtmlResult .resultBreakdownRow{
-  font-size:16px;
-  line-height:1.15;
-  font-weight:500;
-  padding:1px 0;
-}
-
-#result.useHtmlResult .resultBreakdownRow strong{
-  font-weight:700;
-}
-
-
-/* Final result-only override targets */
-#result.useHtmlResult .resultHtmlContainer{
-  padding:42px 24px calc(128px + env(safe-area-inset-bottom));
-  gap:18px;
-}
-
-#result.useHtmlResult .resultHtmlHeader{
-  gap:18px;
-}
-
-#result.useHtmlResult .resultHtmlTitle{
-  font-size:32px;
-  line-height:1;
-  font-weight:800;
-}
-
-#result.useHtmlResult .resultHtmlEdit{
-  width:72px;
-  height:48px;
-  padding:0;
-  border-radius:18px;
-  font-size:16px;
-}
-
-#result.useHtmlResult .resultHeroCard{
-  padding:24px;
-  border-radius:24px;
-  margin-bottom:18px;
-}
-
-#result.useHtmlResult .resultHtmlEyebrow{
-  font-size:13px;
-  letter-spacing:.14em;
-}
-
-#result.useHtmlResult .resultHtmlTime{
-  font-size:64px;
-  line-height:.9;
-}
-
-#result.useHtmlResult .resultHtmlStatus{
-  font-size:14px;
-}
-
-#result.useHtmlResult .resultHtmlFlight{
-  font-size:22px;
-  line-height:1.08;
-}
-
-#result.useHtmlResult .resultBreakdownCard{
-  padding:22px 24px;
-  border-radius:24px;
-}
-
-#result.useHtmlResult .resultBreakdownTitle{
-  font-size:14px;
-  letter-spacing:.14em;
-}
-
-#result.useHtmlResult .resultBreakdownRow{
-  font-size:20px;
-  line-height:1.35;
-}
-
-#result.useHtmlResult .resultBreakdownRow strong{
-  font-weight:700;
-}
-
-
-/* Result structural density pass */
-#result.useHtmlResult .resultHeroCard{
-  padding:20px;
-  min-height:0;
-}
-
-#result.useHtmlResult .resultHtmlTime{
-  font-size:58px;
-  margin-top:10px;
-}
-
-#result.useHtmlResult .resultHtmlStatus{
-  margin-top:6px;
-  padding:6px 12px;
-}
-
-#result.useHtmlResult .resultHtmlFlight{
-  font-size:19px;
-  margin-top:10px;
-}
-
-#result.useHtmlResult .resultBreakdownRow{
-  font-size:18px;
-  line-height:1.28;
-}
-
-
 /* Live Conditions compact replacement for support grid */
 #result.useHtmlResult .resultLiveCard{
   background:#F6F6F4;
@@ -965,133 +859,6 @@ input{
   line-height:1.2;
   font-weight:600;
   color:rgba(18,61,34,0.76);
-}
-
-/* Result refinement pass: hero + breakdown + live conditions */
-#result.useHtmlResult .resultHtmlContainer{
-  gap:16px;
-}
-
-#result.useHtmlResult .resultHeroCard{
-  padding:24px;
-  min-height:210px;
-  margin-bottom:16px;
-}
-
-#result.useHtmlResult .resultHtmlTime{
-  font-size:76px;
-  line-height:.9;
-  margin-top:16px;
-}
-
-#result.useHtmlResult .resultHtmlStatus{
-  margin-top:12px;
-}
-
-#result.useHtmlResult .resultHtmlStatus::after{
-  content:" 😊";
-}
-
-#result.useHtmlResult .resultHtmlFlight{
-  font-size:19px;
-  margin-top:16px;
-}
-
-#result.useHtmlResult .resultBreakdownCard{
-  background:#2B2F24;
-}
-
-#result.useHtmlResult .resultBreakdownTitle{
-  color:#CFFF4E;
-  font-size:11px;
-  letter-spacing:.14em;
-}
-
-#result.useHtmlResult .resultBreakdownRow{
-  font-size:15px;
-  line-height:1.35;
-  font-weight:500;
-  padding:5px 0;
-}
-
-#result.useHtmlResult .resultBreakdownRow strong{
-  font-weight:700;
-}
-
-#result.useHtmlResult .resultLiveRow{
-  padding:9px 0;
-}
-
-#result.useHtmlResult .resultLiveRow.primary{
-  padding-top:9px;
-}
-
-#result.useHtmlResult .resultLiveRow.primary .resultLiveLabel{
-  font-size:14px;
-  font-weight:600;
-}
-
-#result.useHtmlResult .resultLiveValue{
-  font-size:18px;
-  line-height:.95;
-}
-
-#result.useHtmlResult .resultLiveValue.text{
-  font-size:10px;
-  font-weight:600;
-}
-
-/* Result refinement: hero spacing + section consistency */
-#result.useHtmlResult .resultHeroCard{
-  padding-top:28px;
-  padding-bottom:28px;
-}
-
-#result.useHtmlResult .resultHtmlTime{
-  margin-top:22px;
-  margin-bottom:16px;
-  letter-spacing:-0.045em;
-}
-
-#result.useHtmlResult .resultBreakdownCard,
-#result.useHtmlResult .resultLiveCard{
-  padding:20px 24px 18px;
-}
-
-#result.useHtmlResult .resultBreakdownTitle,
-#result.useHtmlResult .resultLiveTitle{
-  margin-bottom:10px;
-}
-
-#result.useHtmlResult .resultBreakdownRow,
-#result.useHtmlResult .resultLiveRow{
-  line-height:1.38;
-  padding:6px 0;
-}
-
-#result.useHtmlResult .resultBreakdownCard{
-  background:#2B2F24;
-}
-
-#result.useHtmlResult .resultBreakdownTitle{
-  color:#CFFF4E;
-  text-transform:uppercase;
-}
-
-#result.useHtmlResult .resultBreakdownRow{
-  font-weight:500;
-}
-
-#result.useHtmlResult .resultBreakdownRow strong{
-  font-weight:700;
-}
-
-#result.useHtmlResult .resultLiveRow:not(:last-child){
-  border-bottom:none;
-}
-
-#result.useHtmlResult .resultLiveValue.text{
-  font-size:12px;
 }
 
 /* Final ETA result refinements */
@@ -1257,4 +1024,725 @@ input{
 
 #result.useHtmlResult .resultLiveTag{
   font-weight:600;
+}
+
+/* Shared screen primitives (Phase 1) */
+.screenContent{
+  padding:32px 20px calc(128px + env(safe-area-inset-bottom));
+  width:100%;
+  min-height:100%;
+  background:#F5FFE4;
+  color:#064819;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.pageHeader{
+  margin-bottom:20px;
+}
+
+.pageTitle{
+  margin:0;
+  font-size:36px;
+  line-height:0.9;
+  letter-spacing:-0.04em;
+  font-weight:900;
+  color:#064819;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.pageSubtitle{
+  margin:9px 0 0;
+  font-size:14px;
+  line-height:1.4;
+  color:#66725F;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.sectionLabel{
+  margin:20px 0 10px;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:rgba(6,72,25,0.62);
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.appCard{
+  background:#F6F6F4;
+  border:1px solid rgba(6,72,25,0.08);
+  border-radius:24px;
+  padding:19px;
+  margin-bottom:14px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.02),
+    0 8px 24px rgba(0,0,0,0.03);
+  backdrop-filter: blur(12px);
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.appCardDark{
+  background:#2B2F24;
+  color:#F3FADE;
+  border:1px solid rgba(6,72,25,0.08);
+  border-radius:24px;
+  padding:19px;
+  margin-bottom:14px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.02),
+    0 8px 24px rgba(0,0,0,0.03);
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.listRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:8px 0;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.metricRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:12px;
+  padding:6px 0;
+  font-size:16px;
+  line-height:1.2;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.metricRow strong{
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:-0.02em;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:0;
+  border-radius:999px;
+  background:#E8EBE3;
+  color:#4A5D41;
+  padding:5px 10px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.pillActive{
+  background:#D7F4D7;
+  color:#23573A;
+}
+
+.primaryButton{
+  width:100%;
+  height:56px;
+  margin-top:20px;
+  border:0;
+  border-radius:999px;
+  background:#064819;
+  color:#CFFF4E;
+  font-size:15px;
+  font-weight:700;
+  font-family:"IBM Plex Sans", sans-serif;
+  box-shadow:
+    0 12px 30px rgba(6,72,25,.18),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+#airports .rowTitle,
+#settings .rowTitle,
+#trips .rowTitle{
+  font-size:16px;
+  line-height:1.2;
+  font-weight:600;
+  color:#123D22;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+#airports .rowSub,
+#settings .rowSub,
+#trips .rowSub{
+  margin-top:3px;
+  font-size:12px;
+  line-height:1.3;
+  color:rgba(18,61,34,0.68);
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+#settings .rowChevron{
+  font-size:20px;
+  line-height:1;
+  color:rgba(18,61,34,0.44);
+}
+
+#airports.screen,
+#settings.screen,
+#trips.screen{
+  background:#F5FFE4;
+}
+
+/* Trips screen polish */
+#trips .tripsCard{
+  margin-bottom:var(--space-3);
+}
+
+#trips .tripsTopRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:var(--space-3);
+}
+
+#trips .tripsAirportCode{
+  font-size:22px;
+  line-height:1;
+  letter-spacing:-0.02em;
+  font-weight:700;
+  color:#0E3F1E;
+}
+
+#trips .tripsAirportName{
+  margin-top:var(--space-1);
+  font-size:13px;
+  line-height:1.2;
+  font-weight:600;
+  color:#264F35;
+}
+
+#trips .tripsMeta{
+  margin-top:var(--space-1);
+  font-size:12px;
+  line-height:1.25;
+  color:rgba(18,61,34,0.7);
+}
+
+#trips .tripsDivider{
+  height:1px;
+  background:rgba(6,72,25,0.08);
+  margin:var(--space-3) 0 var(--space-2);
+}
+
+#trips .tripsDividerSoft{
+  opacity:.55;
+}
+
+#trips .tripsInfoRows{
+  display:grid;
+  gap:var(--space-2);
+}
+
+#trips .tripsInfoRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:var(--space-3);
+}
+
+#trips .tripsInfoLabel{
+  font-size:12px;
+  line-height:1.25;
+  color:rgba(18,61,34,0.7);
+}
+
+#trips .tripsInfoValue{
+  font-size:16px;
+  line-height:1.1;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  color:#123D22;
+}
+
+#trips .tripsCardPast{
+  background:rgba(246,246,244,0.88);
+}
+
+#trips .tripsCardPast .rowTitle{
+  color:rgba(18,61,34,0.84);
+}
+
+#trips .tripsCardPast .rowSub{
+  color:rgba(18,61,34,0.58);
+}
+
+#trips .tripsCardPast .pill{
+  opacity:.75;
+}
+
+/* Airports-only lime treatment for NYC AREA stats card */
+#airports .appCardDark{
+  background:#CFFF4E;
+  color:#064819;
+  border:1px solid rgba(6,72,25,0.08);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.02),
+    0 8px 24px rgba(0,0,0,0.03);
+}
+
+#airports .appCardDark .metricRow{
+  color:#1A3A1F;
+}
+
+#airports .appCardDark .metricRow strong{
+  color:#053B15;
+}
+
+/* Phase 2: global spacing + typography normalization */
+:root{
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+
+  --radius-card: 24px;
+  --radius-pill: 999px;
+
+  --text-hero: 56px;
+  --text-title: 36px;
+  --text-section: 13px;
+  --text-body: 14px;
+  --text-meta: 12px;
+  --text-label: 11px;
+}
+
+html,body{
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+/* Shared page gutters/top spacing across Calculate/Trips/Airports/Settings */
+.calcContent,
+.screenContent{
+  padding-left:var(--space-5);
+  padding-right:var(--space-5);
+  padding-top:var(--space-7);
+}
+
+.screenContent{
+  padding-bottom:calc(128px + env(safe-area-inset-bottom));
+}
+
+.calcContent{
+  padding-bottom:calc(138px + env(safe-area-inset-bottom));
+}
+
+/* Title/body/section rhythm */
+.calcContent h1,
+.pageTitle{
+  font-size:var(--text-title);
+}
+
+.subtitle,
+.pageSubtitle{
+  font-size:var(--text-body);
+}
+
+.sectionLabel{
+  font-size:var(--text-section);
+  margin:var(--space-5) 0 var(--space-3);
+}
+
+.pageHeader{
+  margin-bottom:22px;
+}
+
+/* Card system normalization */
+.card,
+.appCard,
+.appCardDark{
+  border-radius:var(--radius-card);
+  padding:var(--space-5);
+  margin-bottom:var(--space-3);
+}
+
+.card h2{
+  margin-bottom:var(--space-2);
+}
+
+.listRow{
+  padding:var(--space-2) 0;
+  gap:var(--space-3);
+}
+
+.metricRow{
+  padding:var(--space-2) 0;
+  gap:var(--space-3);
+}
+
+/* Buttons + pills */
+.ctaButton,
+.primaryButton{
+  height:56px;
+}
+
+.pill{
+  border-radius:var(--radius-pill);
+  height:20px;
+  padding:0 var(--space-2);
+  font-size:var(--text-label);
+}
+
+/* Result page normalization within active HTML mode only */
+#result.useHtmlResult{
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  background:#F5FFE4;
+}
+
+#result.useHtmlResult .resultHtmlContainer{
+  position:relative;
+  left:auto;
+  right:auto;
+  top:auto;
+  bottom:auto;
+  width:100%;
+  min-height:100%;
+  box-sizing:border-box;
+  padding:var(--space-7) var(--space-5) calc(128px + env(safe-area-inset-bottom));
+  gap:var(--space-4);
+}
+
+#result.useHtmlResult .resultHtmlHeader{
+  gap:var(--space-4);
+  margin-bottom:22px;
+}
+
+#result.useHtmlResult .resultHtmlTitle{
+  font-size:32px;
+  line-height:1;
+  font-weight:800;
+}
+
+#result.useHtmlResult .resultHeroCard,
+#result.useHtmlResult .resultBreakdownCard,
+#result.useHtmlResult .resultLiveCard{
+  border-radius:var(--radius-card);
+  margin-bottom:0;
+}
+
+#result.useHtmlResult .resultHeroCard{
+  background:#CFFF4E;
+  border:1px solid rgba(6,72,25,0.08);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.02),
+    0 8px 24px rgba(0,0,0,0.03);
+  backdrop-filter:blur(12px);
+  padding:var(--space-6);
+}
+
+#result.useHtmlResult .resultHtmlEyebrow{
+  font-size:var(--text-section);
+}
+
+#result.useHtmlResult .resultHtmlTime{
+  font-size:var(--text-hero);
+}
+
+#result.useHtmlResult .resultHtmlStatus{
+  font-size:var(--text-body);
+}
+
+#result.useHtmlResult .resultHtmlFlight{
+  font-size:var(--text-body);
+}
+
+#result.useHtmlResult .resultBreakdownTitle,
+#result.useHtmlResult .resultLiveTitle{
+  font-size:var(--text-label);
+  margin-bottom:var(--space-2);
+}
+
+#result.useHtmlResult .resultBreakdownRow,
+#result.useHtmlResult .resultLiveRow{
+  font-size:var(--text-body);
+  padding:var(--space-2) 0;
+}
+
+#result.useHtmlResult .resultLiveCard{
+  padding:var(--space-3);
+}
+
+#result.useHtmlResult .resultHeroClock{
+  display:none;
+}
+
+#result.useHtmlResult .resultHtmlStatus::after{
+  content:" 😊";
+}
+
+#result.useHtmlResult .resultBreakdownCard{
+  background:#1A3A1F;
+}
+
+#result.useHtmlResult .resultLiveRow:not(:last-child){
+  border-bottom:none;
+}
+
+#airports .rowSub,
+#settings .rowSub,
+#trips .rowSub{
+  font-size:var(--text-meta);
+}
+
+/* Regression fixes after global consolidation */
+body,
+button,
+input,
+select,
+textarea{
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+/* 1) Splash refinements */
+.splashContent{
+  padding:72px 24px calc(86px + env(safe-area-inset-bottom));
+}
+
+.splashLogo{
+  margin-top:44px;
+  font-size:72px;
+}
+
+.splashTagline{
+  margin-top:20px;
+  font-size:28px;
+}
+
+.splashFeatureList{
+  margin-top:92px;
+  gap:40px;
+}
+
+.splashFeature{
+  gap:12px;
+}
+
+.splashFeature svg{
+  width:24px;
+  height:24px;
+}
+
+.splashFeature span{
+  font-size:20px;
+  line-height:1.15;
+  font-weight:500;
+  color:rgba(241,242,237,0.92);
+}
+
+.splashCta{
+  height:62px;
+  font-size:30px;
+  font-weight:600;
+}
+
+/* 2) Result page breathing + typography recovery */
+#result.useHtmlResult .resultHtmlContainer{
+  gap:18px;
+}
+
+#result.useHtmlResult .resultHeroCard{
+  padding:30px 24px 24px;
+}
+
+#result.useHtmlResult .resultBreakdownCard,
+#result.useHtmlResult .resultLiveCard{
+  padding:22px 24px 20px;
+}
+
+#result.useHtmlResult .resultHtmlTime{
+  font-size:64px;
+  margin-top:22px;
+  margin-bottom:22px;
+  letter-spacing:-0.04em;
+}
+
+#result.useHtmlResult .resultBreakdownRow,
+#result.useHtmlResult .resultLiveRow{
+  padding:8px 0;
+  line-height:1.35;
+}
+
+/* 3) Global header weight normalization */
+.calcContent h1,
+.pageTitle,
+#result.useHtmlResult .resultHtmlTitle{
+  font-weight:700;
+}
+
+/* Splash art-direction update (editorial, one-screen flow) */
+.splashScreen{
+  background:#A8AE97;
+}
+
+.splashContent{
+  min-height:100%;
+  padding:52px 24px calc(56px + env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  font-family:"IBM Plex Sans", sans-serif;
+  gap:28px;
+}
+
+.splashTop{
+  width:100%;
+  margin-top:18px;
+}
+
+.splashLogo{
+  margin:0;
+  font-size:0;
+  line-height:1;
+  letter-spacing:0;
+  transform:translateX(-2px);
+}
+
+.splashLogoAirport,
+.splashLogoMath{
+  font-family:"Instrument Serif", serif;
+  font-size:68px;
+  line-height:0.9;
+  letter-spacing:-0.015em;
+  font-weight:400;
+}
+
+.splashLogoAirport{
+  color:#CFFF4E;
+}
+
+.splashLogoMath{
+  color:#F1F2ED;
+}
+
+.splashLogoMark{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12px;
+  font-weight:500;
+  position:relative;
+  top:-27px;
+  margin-left:1px;
+  opacity:0.8;
+}
+
+.splashTagline{
+  margin:12px 0 0;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:15px;
+  line-height:1.25;
+  font-weight:400;
+  letter-spacing:0.01em;
+  color:rgba(241,242,237,0.94);
+}
+
+.splashFeatureList{
+  margin-top:56px;
+  display:grid;
+  gap:32px;
+}
+
+.splashFeature{
+  display:grid;
+  justify-items:center;
+  gap:4px;
+}
+
+.splashFeature svg{
+  width:24px;
+  height:24px;
+  stroke:#CFFF4E;
+  fill:none;
+  stroke-width:1.57473;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  display:block;
+  margin:0 auto;
+}
+
+.splashFeature span{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.18;
+  font-weight:400;
+  letter-spacing:0.01em;
+  color:rgba(241,242,237,0.94);
+}
+
+.splashFeatureAirplane svg{
+  stroke-width:1.57473;
+}
+
+.splashCta{
+  width:70%;
+  height:46px;
+  margin-top:56px;
+  border:0;
+  border-radius:999px;
+  background:#B8F336;
+  color:#0D431E;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:-0.01em;
+  box-shadow:
+    0 8px 18px rgba(6,72,25,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* Numeric hierarchy consistency: Trip Breakdown vs Live Conditions */
+#result.useHtmlResult .resultBreakdownRow strong,
+#result.useHtmlResult .resultLiveValue:not(.text){
+  font-size:15px;
+  font-weight:600;
+  line-height:1.35;
+}
+
+#result.useHtmlResult .resultLiveValue:not(.text){
+  color:rgba(13,67,30,0.88);
+  text-align:right;
+  min-width:56px;
+}
+
+/* Canonical global header system (Calculate as source of truth) */
+:root{
+  --page-top-padding: 32px;
+}
+
+.calcContent,
+.screenContent,
+#result.useHtmlResult .resultHtmlContainer{
+  padding-top:var(--page-top-padding) !important;
+}
+
+.calcContent h1,
+.pageTitle,
+#result.useHtmlResult .resultHtmlTitle{
+  font-family:"IBM Plex Sans", sans-serif !important;
+  font-size:36px !important;
+  line-height:0.9 !important;
+  letter-spacing:-0.04em !important;
+  font-weight:700 !important;
+}
+
+.subtitle,
+.pageSubtitle{
+  margin-top:9px !important;
+  font-family:"IBM Plex Sans", sans-serif !important;
+  font-size:14px !important;
+  line-height:1.4 !important;
+}
+
+.pageHeader,
+#result.useHtmlResult .resultHtmlHeader{
+  margin-bottom:22px !important;
 }
