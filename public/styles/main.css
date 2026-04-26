@@ -262,12 +262,12 @@ button.tap{
 }
 
 .calcContent h1{
-  font-size:44px;
+  font-size:38px;
   line-height:0.9;
   letter-spacing:-0.04em;
   font-weight:900;
 
-  margin-bottom:12px;
+  margin-bottom:10px;
 }
 
 .subtitle{
@@ -284,8 +284,8 @@ button.tap{
 
   border-radius:28px;
 
-  padding:24px;
-  margin-bottom:18px;
+  padding:21px;
+  margin-bottom:16px;
 
   box-shadow:
     0 1px 2px rgba(0,0,0,0.02),
@@ -309,7 +309,7 @@ button.tap{
   font-weight:800;
   letter-spacing:-0.01em;
 
-  margin:0 0 14px;
+  margin:0 0 12px;
 }
 
 .fieldRow{
@@ -320,12 +320,12 @@ button.tap{
 
 input{
   width:100%;
-  height:44px;
+  height:42px;
   border:0;
   border-radius:11px;
   background:#F4F5F4;
-  padding:0 12px;
-  font-size:14px;
+  padding:0 11px;
+  font-size:13px;
   color:#064819;
 }
 
@@ -348,13 +348,13 @@ input{
   color:#064819;
 
   border-radius:999px;
-  padding:9px 14px;
+  padding:8px 12px;
 
-  font-size:14px;
-  font-weight:700;
+  font-size:13px;
+  font-weight:600;
   font-family: 'IBM Plex Sans', sans-serif;
 
-  margin:0 7px 8px 0;
+  margin:0 6px 7px 0;
   cursor:pointer;
 
   transition:
@@ -374,10 +374,10 @@ input{
 
 .ctaButton{
   width:100%;
-  height:60px;
+  height:56px;
   margin:10px 0 120px;
-  margin-top:24px;
-  margin-bottom:22px;
+  margin-top:22px;
+  margin-bottom:20px;
 
   border:0;
   border-radius:999px;
@@ -385,8 +385,8 @@ input{
   background:#064819;
   color:#CFFF4E;
 
-  font-size:16px;
-  font-weight:800;
+  font-size:15px;
+  font-weight:700;
   font-family: 'IBM Plex Sans', sans-serif;
 
   cursor:pointer;
@@ -566,11 +566,11 @@ input{
   box-shadow:
     0 20px 44px rgba(6,72,25,0.14),
     inset 0 1px 0 rgba(255,255,255,0.5);
-  padding:26px 21px 24px;
-  max-width:372px;
+  padding:23px 19px 21px;
+  max-width:356px;
   width:100%;
   margin:0 auto;
-  min-height:430px;
+  min-height:404px;
 }
 
 .resultHtmlEyebrow{
@@ -584,7 +584,7 @@ input{
 
 .resultHtmlTime{
   margin-top:4px;
-  font-size:68px;
+  font-size:60px;
   line-height:0.82;
   font-weight:900;
   letter-spacing:-0.075em;
@@ -604,19 +604,19 @@ input{
   margin-top:12px;
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:9px;
+  gap:8px;
 }
 
 .resultHtmlItem{
   background:rgba(232,241,220,0.64);
   border:1px solid rgba(6,72,25,0.06);
   border-radius:12px;
-  padding:11px 12px;
+  padding:10px 11px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  gap:10px;
-  font-size:11px;
+  gap:9px;
+  font-size:10.5px;
   line-height:1.2;
   color:#4D6241;
   box-shadow:
@@ -625,17 +625,17 @@ input{
 }
 
 .resultHtmlItem strong{
-  font-size:15px;
-  font-weight:800;
+  font-size:14px;
+  font-weight:700;
   letter-spacing:-0.02em;
   color:#064819;
 }
 
 .resultHtmlMeta{
-  margin-top:18px;
+  margin-top:16px;
   display:grid;
-  gap:7px;
-  font-size:11px;
+  gap:6px;
+  font-size:10.5px;
   line-height:1.35;
   letter-spacing:-0.005em;
   color:rgba(20,56,30,0.84);
