@@ -367,10 +367,16 @@ button.tap{
   min-height:4.5rem;
   padding:11px 12px;
   text-align:left;
+  border-radius:11px;
 }
 
 #calculate [data-group="style"] .chip--travelStyle.active{
   transform:none;
+  border-radius:11px;
+}
+
+#calculate [data-group="style"] .chip--travelStyle:active{
+  border-radius:11px;
 }
 
 #calculate [data-group="style"] .styleChipLabel{
@@ -2233,4 +2239,5 @@ textarea{
   margin:0;
   padding:11px 12px;
   min-height:4.5rem;
+  border-radius:11px;
 }
