@@ -1814,3 +1814,193 @@ textarea{
 #result.useHtmlResult .resultHtmlHeader{
   margin-bottom:22px !important;
 }
+
+/* --------------------------------------------------------------------------
+   Editorial density (~15%): Calculate, Result, Trips, Airports, Settings.
+   Splash excluded except #splash icon→label spacing (see block end).
+   -------------------------------------------------------------------------- */
+:root{
+  --page-top-padding:27px;
+
+  --space-1:3px;
+  --space-2:7px;
+  --space-3:10px;
+  --space-4:14px;
+  --space-5:17px;
+  --space-6:21px;
+  --space-7:27px;
+
+  --text-hero:48px;
+  --text-title:31px;
+  --text-section:12px;
+  --text-body:12px;
+  --text-meta:11px;
+  --text-label:10px;
+}
+
+#calculate.calcScreen .calcContent h1,
+#trips .pageTitle,
+#airports .pageTitle,
+#settings .pageTitle,
+#result.useHtmlResult .resultHtmlTitle{
+  font-size:31px !important;
+}
+
+.subtitle,
+.pageSubtitle,
+#trips .pageSubtitle,
+#airports .pageSubtitle,
+#settings .pageSubtitle{
+  margin-top:8px !important;
+  font-size:12px !important;
+  line-height:1.38 !important;
+}
+
+#calculate.calcScreen .subtitle{
+  margin-bottom:18px !important;
+}
+
+.pageHeader,
+#result.useHtmlResult .resultHtmlHeader{
+  margin-bottom:18px !important;
+}
+
+#calculate.calcScreen .calcContent h1{
+  margin-bottom:7px !important;
+}
+
+#calculate.calcScreen .card h2{
+  font-size:15px;
+  margin:0 0 8px;
+}
+
+#calculate.calcScreen .fieldRow{
+  gap:9px;
+}
+
+#calculate.calcScreen input,
+#calculate.calcScreen .flightTypeSelect{
+  height:40px;
+  font-size:12px;
+}
+
+#calculate.calcScreen .flightTypeSelect{
+  padding:0 30px 0 10px;
+  background-position:
+    calc(100% - 16px) 16px,
+    calc(100% - 11px) 16px;
+}
+
+#calculate.calcScreen .chip{
+  padding:7px 11px;
+  font-size:12px;
+  margin:0 5px 6px 0;
+}
+
+#calculate.calcScreen .ctaButton{
+  height:50px;
+  margin-top:18px;
+  margin-bottom:20px;
+  font-size:14px;
+}
+
+#calculate.calcScreen .locationSuggestionItem{
+  padding:10px 14px;
+  font-size:15px;
+}
+
+#trips .primaryButton,
+#airports .primaryButton,
+#settings .primaryButton{
+  height:50px;
+  margin-top:17px;
+  font-size:14px;
+}
+
+#trips .rowTitle,
+#airports .rowTitle,
+#settings .rowTitle{
+  font-size:15px;
+}
+
+#trips .tripsAirportCode{
+  font-size:19px;
+}
+
+#trips .tripsInfoValue{
+  font-size:15px;
+}
+
+#airports .metricRow,
+#settings .metricRow,
+#trips .appCard .metricRow{
+  font-size:15px;
+  padding:5px 0;
+}
+
+#airports .metricRow strong,
+#settings .metricRow strong,
+#trips .appCard .metricRow strong{
+  font-size:17px;
+}
+
+#trips .listRow,
+#airports .listRow,
+#settings .listRow{
+  padding:7px 0;
+  gap:10px;
+}
+
+#result.useHtmlResult .resultHtmlContainer{
+  gap:15px;
+  padding-bottom:calc(118px + env(safe-area-inset-bottom));
+}
+
+#result.useHtmlResult .resultHeroCard{
+  padding:25px 18px 17px;
+}
+
+#result.useHtmlResult .resultBreakdownCard,
+#result.useHtmlResult .resultLiveCard{
+  padding:17px 18px 16px;
+}
+
+#result.useHtmlResult .resultHtmlTime{
+  font-size:54px;
+  margin-top:16px;
+  margin-bottom:16px;
+}
+
+#result.useHtmlResult .resultLiveValue{
+  font-size:19px;
+}
+
+#result.useHtmlResult .resultBreakdownRow,
+#result.useHtmlResult .resultLiveRow{
+  padding:6px 0;
+}
+
+#result.useHtmlResult .resultHtmlEdit{
+  height:30px;
+  padding:0 11px;
+  font-size:12px;
+}
+
+#result.useHtmlResult .resultLiveValue.text{
+  font-size:13px;
+}
+
+#trips.screen .screenContent,
+#airports.screen .screenContent,
+#settings.screen .screenContent{
+  padding-bottom:calc(118px + env(safe-area-inset-bottom));
+}
+
+.calcContent{
+  padding-bottom:calc(124px + env(safe-area-inset-bottom));
+}
+
+/* Splash only: more space below each feature icon before its label */
+#splash.splashScreen .splashFeature{
+  gap:16px;
+}
