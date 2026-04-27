@@ -27,6 +27,26 @@ function airportPreset(airport) {
   return presets[airport] || presets.OTHER;
 }
 
+function terminalDestination(airport, terminal) {
+  const code = String(airport || 'OTHER').toUpperCase();
+  const term = String(terminal || '').trim();
+  const map = {
+    JFK: {
+      'Terminal 4': 'JFK Terminal 4 Departures, Queens, NY',
+      'Terminal 5': 'JFK Terminal 5 Departures, Queens, NY'
+    },
+    LGA: {
+      'Terminal B': 'LaGuardia Terminal B Departures, Queens, NY'
+    },
+    EWR: {
+      'Terminal A': 'Newark Liberty Terminal A Departures, Newark, NJ',
+      'Terminal B': 'Newark Liberty Terminal B Departures, Newark, NJ',
+      'Terminal C': 'Newark Liberty Terminal C Departures, Newark, NJ'
+    }
+  };
+  return map[code]?.[term] || airportPreset(code);
+}
+
 function mockTravel({ airport, mode, baseMinutes = 40, rushHour = false, provider = 'mock' }) {
   const base = Number(baseMinutes) || 40;
   const rush = rushHour === 'true' || rushHour === true;
@@ -101,13 +121,37 @@ async function routeWithGoogle({ origin, destination }) {
   const data = await res.json();
   const route = data.routes?.[0];
   if (!route) throw new Error('No route returned from Google');
-  return { status:'live', source:'Google Routes API', provider:'google', travelMinutes:Math.round(parseDuration(route.duration)/60), typicalMinutes:route.staticDuration ? Math.round(parseDuration(route.staticDuration)/60) : null, extraMinutes:0, modeLabel:'Driving / rideshare' };
+  const travelMinutes = Math.round(parseDuration(route.duration) / 60);
+  const staticMinutes = route.staticDuration ? Math.round(parseDuration(route.staticDuration) / 60) : null;
+  console.log('[travel-debug] provider=google', {
+    origin,
+    destination,
+    travelMinutes,
+    staticDuration: staticMinutes
+  });
+  return { status:'live', source:'Google Routes API', provider:'google', travelMinutes, typicalMinutes:staticMinutes, extraMinutes:0, modeLabel:'Driving / rideshare' };
 }
 
 async function routeAuto(params) {
   try { return await routeWithGoogle(params); } catch {}
-  try { return await routeWithMapbox(params); } catch {}
-  return mockTravel(params);
+  try {
+    const mapbox = await routeWithMapbox(params);
+    console.log('[travel-debug] provider=mapbox', {
+      origin: params.origin,
+      destination: params.destination,
+      travelMinutes: mapbox.travelMinutes,
+      staticDuration: null
+    });
+    return mapbox;
+  } catch {}
+  const fallback = mockTravel(params);
+  console.log('[travel-debug] provider=mock', {
+    origin: params.origin,
+    destination: params.destination,
+    travelMinutes: fallback.travelMinutes,
+    staticDuration: null
+  });
+  return fallback;
 }
 
 function securityFallback(airport) {
@@ -252,8 +296,25 @@ app.get('/api/security', async (req, res) => {
 app.get('/api/faa', (req, res) => res.json(currentFaa(req.query.airport || 'OTHER')));
 app.get('/api/weather', (req, res) => res.json(currentWeather(req.query.airport || 'OTHER')));
 app.get('/api/travel', async (req, res) => {
-  const { airport='OTHER', mode='rideshare', origin='Hoboken, NJ', destination, departAt, baseMinutes=40, rushHour=false } = req.query;
-  const params = { airport, mode, origin, destination: destination || airportPreset(airport), departAt, baseMinutes, rushHour };
+  const {
+    airport='OTHER',
+    terminal='',
+    mode='rideshare',
+    origin='Hoboken, NJ',
+    destination,
+    departAt,
+    baseMinutes=40,
+    rushHour=false
+  } = req.query;
+  const resolvedDestination = destination || terminalDestination(airport, terminal);
+  const params = { airport, terminal, mode, origin, destination: resolvedDestination, departAt, baseMinutes, rushHour };
+  console.log('[travel-debug] request', {
+    origin,
+    destination: resolvedDestination,
+    airport,
+    terminal,
+    mode
+  });
   try { res.json(await routeAuto(params)); } catch { res.status(200).json(mockTravel(params)); }
 });
 app.get('/api/health', (_req, res) => res.json({ ok:true, service:'airport-math-v6-mobile-deploy' }));

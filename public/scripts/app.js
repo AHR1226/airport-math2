@@ -13,6 +13,21 @@ const DEFAULT_TERMINAL_BY_AIRPORT = {
   EWR: 'Terminal A'
 };
 
+const TERMINAL_DESTINATION_MAP = {
+  JFK: {
+    'Terminal 4': 'JFK Terminal 4 Departures, Queens, NY',
+    'Terminal 5': 'JFK Terminal 5 Departures, Queens, NY'
+  },
+  LGA: {
+    'Terminal B': 'LaGuardia Terminal B Departures, Queens, NY'
+  },
+  EWR: {
+    'Terminal A': 'Newark Liberty Terminal A Departures, Newark, NJ',
+    'Terminal B': 'Newark Liberty Terminal B Departures, Newark, NJ',
+    'Terminal C': 'Newark Liberty Terminal C Departures, Newark, NJ'
+  }
+};
+
 const LOCAL_ADDRESS_SUGGESTIONS = [
   '68 Berkeley Place, Brooklyn, NY 11217',
   '142 W 57th St, New York, NY 10019',
@@ -337,6 +352,37 @@ function minutesForSelection() {
   return { travel, airport, buffer, total: travel + airport + buffer };
 }
 
+function destinationForSelection(airport, terminal) {
+  const airportCode = String(airport || 'JFK').trim().toUpperCase();
+  const terminalLabel = String(terminal || '').trim();
+  const mapped = TERMINAL_DESTINATION_MAP[airportCode]?.[terminalLabel];
+  if (mapped) return mapped;
+  if (airportCode === 'JFK') return 'JFK Airport Departures, Queens, NY';
+  if (airportCode === 'LGA') return 'LaGuardia Airport Departures, Queens, NY';
+  if (airportCode === 'EWR') return 'Newark Liberty International Airport Departures, Newark, NJ';
+  return `${airportCode} Airport Departures`;
+}
+
+async function fetchTravelEstimate({ airport, terminal, origin, departAt }) {
+  const params = new URLSearchParams({
+    airport: String(airport || 'JFK'),
+    terminal: String(terminal || ''),
+    mode: 'rideshare',
+    origin: String(origin || ''),
+    destination: destinationForSelection(airport, terminal),
+    departAt: departAt || ''
+  });
+  try {
+    const res = await fetch(`/api/travel?${params.toString()}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Number.isFinite(Number(data?.travelMinutes))) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 function formatTime(date) {
   return date.toLocaleTimeString([], {
     hour: 'numeric',
@@ -344,7 +390,7 @@ function formatTime(date) {
   });
 }
 
-function calculateETA() {
+async function calculateETA() {
   if (window.stateApi) {
     window.stateApi.syncFormFromDom();
   }
@@ -360,24 +406,45 @@ function calculateETA() {
   }
   clearStartingLocationValidation();
 
-  const flightTimeValue = window.appState?.form?.flightTime || document.getElementById('flightTime')?.value || '19:30';
+  const form = window.appState?.form || {};
+  const selectedAirport = form.airport || document.getElementById('airportInput')?.value || 'JFK';
+  const selectedTerminal = form.terminal || document.getElementById('terminalInput')?.value || DEFAULT_TERMINAL_BY_AIRPORT[selectedAirport] || 'Terminal 4';
+  const flightTimeValue = form.flightTime || document.getElementById('flightTime')?.value || '19:30';
   const [hours, minutes] = flightTimeValue.split(':').map(Number);
 
   const flight = new Date();
   flight.setHours(hours, minutes, 0, 0);
 
   const timing = minutesForSelection();
+  const travelApi = await fetchTravelEstimate({
+    airport: selectedAirport,
+    terminal: selectedTerminal,
+    origin: startLocationRaw,
+    departAt: flight.toISOString()
+  });
+  const liveTravel = Number(travelApi?.travelMinutes);
+  if (Number.isFinite(liveTravel) && liveTravel > 0) {
+    timing.travel = Math.round(liveTravel);
+    timing.total = timing.travel + timing.airport + timing.buffer;
+  }
   const leave = new Date(flight.getTime() - timing.total * 60000);
 
   const etaResult = {
     leaveBy: formatTime(leave),
     flightTime: formatTime(flight),
-    airport: window.appState?.form?.airport || document.getElementById('airportInput')?.value || 'JFK',
+    airport: selectedAirport,
+    terminal: selectedTerminal,
+    origin: startLocationRaw,
+    destination: destinationForSelection(selectedAirport, selectedTerminal),
     travel: timing.travel,
     airportTime: timing.airport,
     buffer: timing.buffer,
     total: timing.total,
-    style: getActiveSelection('style')
+    style: getActiveSelection('style'),
+    travelProvider: travelApi?.provider || 'mock',
+    travelStatus: travelApi?.status || 'fallback',
+    travelSource: travelApi?.source || 'Backup estimate',
+    travelTypical: Number.isFinite(Number(travelApi?.typicalMinutes)) ? Number(travelApi.typicalMinutes) : null
   };
 
   if (window.stateApi) {
@@ -407,9 +474,10 @@ function renderResult() {
   if (leaveEl) leaveEl.textContent = result.leaveBy || '5:42 PM';
 
   if (summaryEl) {
+    const travelSummary = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
     summaryEl.innerHTML = `
       <div>Flight: ${result.flightTime || '7:30 PM'} from ${result.airport || 'JFK'}</div>
-      <div>Travel time: ${result.travel || 45} min</div>
+      <div>Travel time: ${travelSummary}</div>
       <div>Airport time: ${result.airportTime || 35} min</div>
       <div>Buffer: ${result.buffer || 15} min</div>
       <div>Total planning window: ${result.total || 95} min</div>
@@ -492,6 +560,14 @@ function renderHtmlResult(result) {
     ? `Domestic flight · ${airportLabel} · ${terminalLabel} · From ${startForDisplay}`
     : `Domestic flight · ${airportLabel} · ${terminalLabel}`;
   const securityWait = getSecurityWaitEstimate(result, selections);
+  const travelDuration = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
+  const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
+    ? 'Live'
+    : 'Estimated';
+  const provider = String(result.travelProvider || '').toLowerCase();
+  const trafficSource = provider === 'google'
+    ? 'Google Routes'
+    : (provider === 'mapbox' ? 'Mapbox routing' : 'Backup estimate');
 
   container.innerHTML = `
     <div class="resultHtmlHeader">
@@ -513,18 +589,21 @@ function renderHtmlResult(result) {
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
       <div class="resultBreakdownRow"><span>Leave home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
-      <div class="resultBreakdownRow"><span>Travel time</span><strong>${escapeHtml(result.travel || 45)} min</strong></div>
+      <div class="resultBreakdownRow"><span>Travel time</span><strong>${escapeHtml(travelDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>Security</span><strong>${escapeHtml(securityWait)} min</strong></div>
       <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(result.buffer || 15)} min</strong></div>
     </div>
     <div class="resultLiveCard">
       <div class="resultLiveTitle">Live Conditions</div>
       <div class="resultLiveRow primary">
-        <div class="resultLiveLabelWrap">
-          <span class="resultLiveLabel">Traffic</span>
-          <span class="resultLiveTag">Live</span>
+        <div class="resultLiveLabelWrap resultLiveLabelWrapTraffic">
+          <div class="resultLiveLabelTopRow">
+            <span class="resultLiveLabel">Traffic</span>
+            <span class="resultLiveTag">${escapeHtml(trafficTag)}</span>
+          </div>
+          <span class="resultLiveSource">${escapeHtml(trafficSource)}</span>
         </div>
-        <strong class="resultLiveValue">${escapeHtml(result.travel || 45)} min</strong>
+        <strong class="resultLiveValue">${escapeHtml(travelDuration)}</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">

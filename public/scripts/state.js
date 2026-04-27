@@ -17,7 +17,7 @@ window.appState = {
     leaveBy: '5:42 PM',
     flightTime: '7:30 PM',
     airport: 'JFK',
-    travel: 45,
+    travel: null,
     airportTime: 35,
     buffer: 15,
     total: 95,

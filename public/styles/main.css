@@ -2217,6 +2217,29 @@ textarea{
   gap:8px;
 }
 
+#result.useHtmlResult .resultLiveLabelWrapTraffic{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+}
+
+#result.useHtmlResult .resultLiveLabelTopRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+#result.useHtmlResult .resultLiveSource{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:10px;
+  line-height:1.25;
+  font-weight:500;
+  letter-spacing:0.01em;
+  color:rgba(18,61,34,0.58);
+}
+
 #result.useHtmlResult .resultBreakdownRow strong,
 #result.useHtmlResult .resultLiveValue{
   flex:0 0 auto;
