@@ -2423,7 +2423,8 @@ textarea{
 }
 
 #result.useHtmlResult .resultHtmlTime{
-  margin-bottom:17px;
+  font-size:65px;
+  margin-bottom:24px;
 }
 
 #result.useHtmlResult .resultHtmlStatus{
@@ -2432,15 +2433,23 @@ textarea{
 
 #result.useHtmlResult .resultHtmlScheduled{
   margin-top:11px;
-  font-size:13px;
-  line-height:1.32;
-  font-weight:500;
-  color:rgba(13,67,30,0.86);
+  font-size:var(--text-body);
+  line-height:1.24;
+  font-weight:400;
+  color:#063D18;
+  opacity:0.92;
 }
 
 #result.useHtmlResult .resultHtmlFlight{
   margin-top:12px;
   line-height:1.24;
+}
+
+#result.useHtmlResult .resultBreakdownRow span{
+  font-size:14px;
+  line-height:1.2;
+  font-weight:500;
+  color:#123D22;
 }
 
 #result.useHtmlResult .resultHtmlFlightFrom{
