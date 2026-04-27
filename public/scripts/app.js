@@ -477,10 +477,7 @@ async function refreshAirportConditions() {
         const preferPre = mode.includes('pre') || mode.includes('clear');
         securityMinutes = Number(preferPre ? lga?.securityPrecheckMinutes : lga?.securityGeneralMinutes);
         walkMinutes = Number(lga?.walkToGateMinutes);
-        const hasSecurity = Number.isFinite(securityMinutes) && securityMinutes > 0;
-        const hasWalk = Number.isFinite(walkMinutes) && walkMinutes > 0;
-        securityEstimated = lga?.status !== 'live' || !hasSecurity || !hasWalk;
-        rowLive = lga?.status === 'live';
+        securityEstimated = true;
       } else {
         const security = await fetchAirportSecurityEstimate(code);
         securityMinutes = Number(security?.minutes);
@@ -736,8 +733,8 @@ function renderHtmlResult(result) {
   const walkToGateValue = isLga && hasLgaWalk
     ? `${Math.round(Number(result.lgaWalkToGate))} min`
     : '--';
-  const securityTag = (isLga && result.lgaConditionsStatus === 'live' && hasLgaSecurity) ? 'Live' : 'Estimated';
-  const walkTag = (isLga && result.lgaConditionsStatus === 'live' && hasLgaWalk) ? 'Live' : 'Estimated';
+  const securityTag = isLga ? 'Estimated' : 'Estimated';
+  const walkTag = isLga ? 'Estimated' : 'Estimated';
   const travelDuration = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
     ? 'Live'

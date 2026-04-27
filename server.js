@@ -284,28 +284,78 @@ function parseLgaConditionsHtml(html) {
   };
 }
 
+function parseLgaTerminalBFromSecurityPage(html) {
+  const $ = cheerio.load(html);
+  const text = $('body').text().replace(/\s+/g, ' ').trim();
+
+  const terminalBSliceMatch = text.match(/Terminal\s*B[\s\S]{0,1200}/i);
+  const terminalBText = terminalBSliceMatch ? terminalBSliceMatch[0] : text;
+
+  const generalPatterns = [
+    /General(?:\s+Line|\s+TSA|\s+Security|\s+Screening)?[^0-9]{0,60}(\d{1,3})\s*min/i,
+    /Terminal\s*B[^0-9]{0,120}General[^0-9]{0,60}(\d{1,3})\s*min/i
+  ];
+  const precheckPatterns = [
+    /(?:TSA\s*Pre.?|PreCheck|Pre✓|PreCheck®)[^0-9]{0,60}(\d{1,3})\s*min/i,
+    /Terminal\s*B[^0-9]{0,120}(?:TSA\s*Pre.?|PreCheck)[^0-9]{0,60}(\d{1,3})\s*min/i
+  ];
+
+  const matchAny = (patterns, haystack) => {
+    for (const p of patterns) {
+      const m = haystack.match(p);
+      if (m) return m;
+    }
+    return null;
+  };
+
+  const generalMatch = matchAny(generalPatterns, terminalBText);
+  const precheckMatch = matchAny(precheckPatterns, terminalBText);
+
+  const securityGeneralMinutes = generalMatch ? Number(generalMatch[1]) : null;
+  const securityPrecheckMinutes = precheckMatch ? Number(precheckMatch[1]) : null;
+
+  return {
+    securityGeneralMinutes,
+    securityPrecheckMinutes
+  };
+}
+
 async function fetchLgaConditionsLive() {
-  const url = 'https://www.laguardiaairport.com/';
+  const url = 'https://laguardiab.com/security-wait-time';
+  console.log('[lga-debug] source URL attempted', { url });
   const res = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 AirportMath/1.0',
       'Accept': 'text/html,application/xhtml+xml'
     }
   });
-  if (!res.ok) throw new Error(`LGA conditions fetch failed: ${res.status}`);
+  if (!res.ok) throw new Error(`LGA Terminal B fetch failed: ${res.status}`);
   const html = await res.text();
-  const parsed = parseLgaConditionsHtml(html);
-  console.log('[lga-debug] raw page response', {
+  const parsed = parseLgaTerminalBFromSecurityPage(html);
+  console.log('[lga-debug] raw page/status response', {
     httpStatus: res.status,
     htmlLength: html.length
   });
   console.log('[lga-debug] parsed values', {
-    securityGeneralMinutes: parsed?.securityGeneralMinutes ?? null,
-    securityPrecheckMinutes: parsed?.securityPrecheckMinutes ?? null,
-    walkToGateMinutes: parsed?.walkToGateMinutes ?? null
+    terminalBGeneralMinutes: parsed?.securityGeneralMinutes ?? null,
+    terminalBPrecheckMinutes: parsed?.securityPrecheckMinutes ?? null
   });
-  if (!parsed) throw new Error('Unable to parse LGA conditions');
-  return parsed;
+
+  const hasGeneral = Number.isFinite(parsed?.securityGeneralMinutes) && parsed.securityGeneralMinutes > 0;
+  const hasPrecheck = Number.isFinite(parsed?.securityPrecheckMinutes) && parsed.securityPrecheckMinutes > 0;
+  if (!hasGeneral || !hasPrecheck) {
+    throw new Error('Unable to parse Terminal B security wait values');
+  }
+
+  return {
+    airport: 'LGA',
+    status: 'live',
+    securityGeneralMinutes: parsed.securityGeneralMinutes,
+    securityPrecheckMinutes: parsed.securityPrecheckMinutes,
+    walkToGateMinutes: 8,
+    source: 'LaGuardia Terminal B',
+    updatedAt: new Date().toISOString()
+  };
 }
 
 function stripCountryFromPlaceName(name) {
@@ -398,11 +448,14 @@ app.get('/api/lga-conditions', async (_req, res) => {
   try {
     const live = await fetchLgaConditionsLive();
     console.log('[lga-debug] fetch success', {
-      securityGeneralMinutes: live.securityGeneralMinutes,
-      securityPrecheckMinutes: live.securityPrecheckMinutes,
-      walkToGateMinutes: live.walkToGateMinutes,
-      fallbackUsed: false,
-      finalStatus: live.status
+      parsedSecurityGeneralMinutes: live.securityGeneralMinutes,
+      parsedSecurityPrecheckMinutes: live.securityPrecheckMinutes,
+      parsedWalkToGateMinutes: live.walkToGateMinutes,
+      fallbackUsed: false
+    });
+    console.log('[lga-debug] final status returned', {
+      status: live.status,
+      source: live.source
     });
     lgaConditionsCache = {
       expiresAt: now + LGA_CACHE_TTL_MS,
