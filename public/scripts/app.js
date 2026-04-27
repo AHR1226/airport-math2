@@ -411,11 +411,13 @@ function setAirportRowState(code, { travelText, isLive }) {
   statusEl.classList.toggle('pillActive', isLive);
 }
 
-function setAirportSecurityState(code, { minutes, estimated }) {
+function setAirportSecurityState(code, { minutes, estimated, walkMinutes = null }) {
   const securityEl = document.querySelector(`[data-airport-security="${code}"]`);
   if (!securityEl) return;
   const minutesText = Number.isFinite(minutes) && minutes > 0 ? `${Math.round(minutes)} min` : '--';
-  securityEl.textContent = `Security wait: ${minutesText}${estimated ? ' (estimated)' : ''}`;
+  const walkText = Number.isFinite(walkMinutes) && walkMinutes > 0 ? `${Math.round(walkMinutes)} min` : '--';
+  const walkSuffix = walkMinutes === null ? '' : ` · Walk to gate: ${walkText}`;
+  securityEl.textContent = `Security wait: ${minutesText}${walkSuffix}${estimated ? ' (estimated)' : ''}`;
   securityEl.classList.toggle('estimated', Boolean(estimated));
 }
 
@@ -431,6 +433,16 @@ async function fetchAirportSecurityEstimate(airportCode) {
     const estimated = data?.status !== 'live';
     if (!Number.isFinite(minutes)) return { minutes: NaN, estimated: true };
     return { minutes, estimated };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchLgaConditions() {
+  try {
+    const res = await fetch('/api/lga-conditions');
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
     return null;
   }
@@ -454,11 +466,30 @@ async function refreshAirportConditions() {
       const travelText = (isLive && Number.isFinite(minutes) && minutes > 0)
         ? `${Math.round(minutes)} min`
         : '--';
-      setAirportRowState(code, { travelText, isLive });
-      const security = await fetchAirportSecurityEstimate(code);
+      let rowLive = isLive;
+      let securityMinutes = NaN;
+      let securityEstimated = true;
+      let walkMinutes = null;
+
+      if (code === 'LGA') {
+        const lga = await fetchLgaConditions();
+        const mode = String(window.appState?.selections?.security || '').toLowerCase();
+        const preferPre = mode.includes('pre') || mode.includes('clear');
+        securityMinutes = Number(preferPre ? lga?.securityPrecheckMinutes : lga?.securityGeneralMinutes);
+        walkMinutes = Number(lga?.walkToGateMinutes);
+        securityEstimated = lga?.status !== 'live';
+        rowLive = lga?.status === 'live';
+      } else {
+        const security = await fetchAirportSecurityEstimate(code);
+        securityMinutes = Number(security?.minutes);
+        securityEstimated = security?.estimated !== false;
+      }
+
+      setAirportRowState(code, { travelText, isLive: rowLive });
       setAirportSecurityState(code, {
-        minutes: Number(security?.minutes),
-        estimated: security?.estimated !== false
+        minutes: securityMinutes,
+        estimated: securityEstimated,
+        walkMinutes: Number.isFinite(walkMinutes) ? walkMinutes : null
       });
     })
   );
@@ -538,6 +569,16 @@ async function calculateETA() {
     timing.travel = Math.round(liveTravel);
     timing.total = timing.travel + timing.airport + timing.buffer;
   }
+  let lgaConditions = null;
+  if (selectedAirport === 'LGA') {
+    lgaConditions = await fetchLgaConditions();
+  }
+  const securityMode = String(window.appState?.selections?.security || '').toLowerCase();
+  const preferPrecheck = securityMode.includes('pre') || securityMode.includes('clear');
+  const lgaSecurityMinutes = selectedAirport === 'LGA'
+    ? Number(preferPrecheck ? lgaConditions?.securityPrecheckMinutes : lgaConditions?.securityGeneralMinutes)
+    : null;
+  const lgaWalkMinutes = selectedAirport === 'LGA' ? Number(lgaConditions?.walkToGateMinutes) : null;
   const leave = new Date(flight.getTime() - timing.total * 60000);
 
   const etaResult = {
@@ -555,7 +596,10 @@ async function calculateETA() {
     travelProvider: travelApi?.provider || 'mock',
     travelStatus: travelApi?.status || 'fallback',
     travelSource: travelApi?.source || 'Backup estimate',
-    travelTypical: Number.isFinite(Number(travelApi?.typicalMinutes)) ? Number(travelApi.typicalMinutes) : null
+    travelTypical: Number.isFinite(Number(travelApi?.typicalMinutes)) ? Number(travelApi.typicalMinutes) : null,
+    lgaSecurityWait: Number.isFinite(lgaSecurityMinutes) ? lgaSecurityMinutes : null,
+    lgaWalkToGate: Number.isFinite(lgaWalkMinutes) ? lgaWalkMinutes : null,
+    lgaConditionsStatus: selectedAirport === 'LGA' ? String(lgaConditions?.status || 'estimated') : null
   };
 
   if (window.stateApi) {
@@ -681,7 +725,14 @@ function renderHtmlResult(result) {
   const flightMetaMarkup = flightMetaLines
     .map((line) => `<div class="resultHtmlMetaLine">${escapeHtml(line)}</div>`)
     .join('');
-  const securityWait = getSecurityWaitEstimate(result, selections);
+  const isLga = String(result.airport || '').toUpperCase() === 'LGA';
+  const securityWait = isLga && Number.isFinite(Number(result.lgaSecurityWait))
+    ? Math.round(Number(result.lgaSecurityWait))
+    : getSecurityWaitEstimate(result, selections);
+  const walkToGateValue = isLga && Number.isFinite(Number(result.lgaWalkToGate))
+    ? `${Math.round(Number(result.lgaWalkToGate))} min`
+    : '--';
+  const securityTag = (isLga && result.lgaConditionsStatus === 'live') ? 'Live' : 'Estimated';
   const travelDuration = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
     ? 'Live'
@@ -730,16 +781,16 @@ function renderHtmlResult(result) {
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">Security wait</span>
-          <span class="resultLiveTag">Estimated</span>
+          <span class="resultLiveTag">${escapeHtml(securityTag)}</span>
         </div>
         <strong class="resultLiveValue">${escapeHtml(securityWait)} min</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
-          <span class="resultLiveLabel">Airport status</span>
-          <span class="resultLiveTag">FAA</span>
+          <span class="resultLiveLabel">${isLga ? 'Walk to gate' : 'Airport status'}</span>
+          <span class="resultLiveTag">${isLga ? escapeHtml(securityTag) : 'FAA'}</span>
         </div>
-        <strong class="resultLiveValue text">${escapeHtml('No advisory')}</strong>
+        <strong class="resultLiveValue text">${escapeHtml(isLga ? walkToGateValue : 'No advisory')}</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">

@@ -214,6 +214,71 @@ function currentWeather(airport) {
   return map[airport] || map.OTHER;
 }
 
+const LGA_CACHE_TTL_MS = 3 * 60 * 1000;
+let lgaConditionsCache = {
+  expiresAt: 0,
+  payload: null
+};
+
+function lgaFallbackConditions() {
+  return {
+    airport: 'LGA',
+    status: 'estimated',
+    securityGeneralMinutes: 12,
+    securityPrecheckMinutes: 3,
+    walkToGateMinutes: 8,
+    source: 'Estimated airport conditions',
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function parseLgaConditionsHtml(html) {
+  const $ = cheerio.load(html);
+  const text = $('body').text().replace(/\s+/g, ' ').trim();
+  const generalMatch = text.match(/General(?:\s+Line|\s+TSA|\s+Security)?[^0-9]{0,40}(\d{1,3})\s*min/i);
+  const precheckMatch = text.match(/(?:TSA\s*Pre.?|PreCheck|Pre✓|PreCheck®)[^0-9]{0,40}(\d{1,3})\s*min/i);
+  const walkPrimaryMatch = text.match(/Walk(?:\s+Times?)?\s+to\s+Gates?[^0-9]{0,40}(\d{1,3})\s*min/i);
+  const walkAlternateMatch = text.match(/Gates?[^0-9]{0,25}Walk[^0-9]{0,25}(\d{1,3})\s*min/i);
+
+  const securityGeneralMinutes = generalMatch ? Number(generalMatch[1]) : null;
+  const securityPrecheckMinutes = precheckMatch ? Number(precheckMatch[1]) : null;
+  const walkToGateMinutes = walkPrimaryMatch
+    ? Number(walkPrimaryMatch[1])
+    : (walkAlternateMatch ? Number(walkAlternateMatch[1]) : null);
+
+  if (
+    securityGeneralMinutes === null &&
+    securityPrecheckMinutes === null &&
+    walkToGateMinutes === null
+  ) {
+    return null;
+  }
+
+  return {
+    airport: 'LGA',
+    status: 'live',
+    securityGeneralMinutes,
+    securityPrecheckMinutes,
+    walkToGateMinutes,
+    source: 'LaGuardia Airport',
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function fetchLgaConditionsLive() {
+  const url = 'https://www.laguardiaairport.com/';
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 AirportMath/1.0',
+      'Accept': 'text/html,application/xhtml+xml'
+    }
+  });
+  if (!res.ok) throw new Error(`LGA conditions fetch failed: ${res.status}`);
+  const parsed = parseLgaConditionsHtml(await res.text());
+  if (!parsed) throw new Error('Unable to parse LGA conditions');
+  return parsed;
+}
+
 function stripCountryFromPlaceName(name) {
   if (!name || typeof name !== 'string') return name;
   const stateAbbrev = {
@@ -288,6 +353,40 @@ app.get('/api/reverse-geocode', async (req, res) => {
     return res.json({ address, source: 'mapbox' });
   } catch {
     return res.json({ address: '', source: 'unavailable' });
+  }
+});
+
+app.get('/api/lga-conditions', async (_req, res) => {
+  const now = Date.now();
+  if (lgaConditionsCache.payload && now < lgaConditionsCache.expiresAt) {
+    return res.json(lgaConditionsCache.payload);
+  }
+  try {
+    const live = await fetchLgaConditionsLive();
+    console.log('[lga-debug] fetch success', {
+      securityGeneralMinutes: live.securityGeneralMinutes,
+      securityPrecheckMinutes: live.securityPrecheckMinutes,
+      walkToGateMinutes: live.walkToGateMinutes,
+      fallbackUsed: false
+    });
+    lgaConditionsCache = {
+      expiresAt: now + LGA_CACHE_TTL_MS,
+      payload: live
+    };
+    return res.json(live);
+  } catch {
+    const fallback = lgaFallbackConditions();
+    console.log('[lga-debug] fetch fallback', {
+      securityGeneralMinutes: fallback.securityGeneralMinutes,
+      securityPrecheckMinutes: fallback.securityPrecheckMinutes,
+      walkToGateMinutes: fallback.walkToGateMinutes,
+      fallbackUsed: true
+    });
+    lgaConditionsCache = {
+      expiresAt: now + LGA_CACHE_TTL_MS,
+      payload: fallback
+    };
+    return res.json(fallback);
   }
 });
 
