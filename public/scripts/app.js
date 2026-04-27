@@ -244,7 +244,9 @@ function initializeUseCurrentLocationAction() {
 
   const setActionBusy = (busy) => {
     actionButton.disabled = busy;
-    actionButton.textContent = busy ? 'Locating...' : 'Use Current Location';
+    actionButton.classList.toggle('locationIconButton--busy', busy);
+    actionButton.setAttribute('aria-label', busy ? 'Locating current position' : 'Use current location');
+    actionButton.setAttribute('title', busy ? 'Locating current position' : 'Use current location');
   };
 
   const fetchReverseGeocode = async (lat, lng) => {
@@ -518,8 +520,10 @@ function formatAddressForDisplay(value) {
   s = s.replace(/\s+United States\s*$/i, '');
   s = s.replace(/\s+USA\s*$/i, '');
   Object.entries(stateAbbrev).forEach(([full, abbr]) => {
-    const re = new RegExp(`,\\s*${full}(?=,|$)`, 'gi');
+    const re = new RegExp(`,\\s*${full}(?=,|$|\\s+\\d{5}(?:-\\d{4})?)`, 'gi');
     s = s.replace(re, `, ${abbr}`);
+    const reNoComma = new RegExp(`\\b${full}(?=\\s+\\d{5}(?:-\\d{4})?$)`, 'gi');
+    s = s.replace(reNoComma, abbr);
   });
   s = s.replace(/\s{2,}/g, ' ');
   s = s.replace(/\s+,/g, ',');

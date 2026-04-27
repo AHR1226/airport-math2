@@ -236,8 +236,10 @@ function stripCountryFromPlaceName(name) {
     .replace(/\s+USA\s*$/i, '')
     .trim();
   Object.entries(stateAbbrev).forEach(([full, abbr]) => {
-    const re = new RegExp(`,\\s*${full}(?=,|$)`, 'gi');
+    const re = new RegExp(`,\\s*${full}(?=,|$|\\s+\\d{5}(?:-\\d{4})?)`, 'gi');
     normalized = normalized.replace(re, `, ${abbr}`);
+    const reNoComma = new RegExp(`\\b${full}(?=\\s+\\d{5}(?:-\\d{4})?$)`, 'gi');
+    normalized = normalized.replace(reNoComma, abbr);
   });
   normalized = normalized.replace(/\s{2,}/g, ' ').replace(/\s+,/g, ',');
   return normalized;
