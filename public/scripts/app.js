@@ -88,6 +88,7 @@ initializeUseCurrentLocationAction();
 if (window.syncSettingsTravelStyleUI) {
   window.syncSettingsTravelStyleUI();
 }
+initializeAirportsConditions();
 
 function initializeAirportTerminalSelects() {
   const airportSelect = document.getElementById('airportInput');
@@ -384,6 +385,67 @@ async function fetchTravelEstimate({ airport, terminal, origin, departAt }) {
     return null;
   }
 }
+
+function airportsConfig() {
+  return [
+    { code: 'JFK', terminal: 'Terminal 4' },
+    { code: 'LGA', terminal: 'Terminal B' },
+    { code: 'EWR', terminal: 'Terminal C' }
+  ];
+}
+
+function preferredAirportsOrigin() {
+  const fromCalc = formatAddressForDisplay(window.appState?.form?.startLocation || '').trim();
+  if (fromCalc && fromCalc.toLowerCase() !== 'current location') return fromCalc;
+  const fromSettings = formatAddressForDisplay(document.querySelector('#settings .appCard .rowSub')?.textContent || '').trim();
+  if (fromSettings) return fromSettings;
+  return 'Midtown Manhattan, NY';
+}
+
+function setAirportRowState(code, { travelText, isLive }) {
+  const timeEl = document.querySelector(`[data-airport-time="${code}"]`);
+  const statusEl = document.querySelector(`[data-airport-status="${code}"]`);
+  if (timeEl) timeEl.textContent = travelText;
+  if (!statusEl) return;
+  statusEl.textContent = isLive ? 'Live' : 'Estimated';
+  statusEl.classList.toggle('pillActive', isLive);
+}
+
+async function refreshAirportConditions() {
+  const origin = preferredAirportsOrigin();
+  const nowIso = new Date().toISOString();
+
+  await Promise.all(
+    airportsConfig().map(async ({ code, terminal }) => {
+      const travelApi = await fetchTravelEstimate({
+        airport: code,
+        terminal,
+        origin,
+        departAt: nowIso
+      });
+      const provider = String(travelApi?.provider || '').toLowerCase();
+      const isLive = travelApi?.status === 'live' && (provider === 'google' || provider === 'mapbox');
+      const minutes = Number(travelApi?.travelMinutes);
+      const travelText = (isLive && Number.isFinite(minutes) && minutes > 0)
+        ? `${Math.round(minutes)} min`
+        : '--';
+      setAirportRowState(code, { travelText, isLive });
+    })
+  );
+}
+
+function initializeAirportsConditions() {
+  const refreshButton = document.getElementById('refreshAirportsButton');
+  if (!refreshButton) return;
+  refreshButton.addEventListener('click', () => {
+    refreshAirportConditions();
+  });
+  if (window.appState?.currentScreen === 'airports') {
+    refreshAirportConditions();
+  }
+}
+
+window.refreshAirportConditions = refreshAirportConditions;
 
 function formatTime(date) {
   return date.toLocaleTimeString([], {

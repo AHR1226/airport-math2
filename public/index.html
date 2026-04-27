@@ -269,46 +269,49 @@
 
     <div class="sectionLabel">NYC Area</div>
 
-    <div class="appCardDark">
-      <div class="metricRow">
-        <span>JFK</span>
-        <strong>42 min</strong>
-      </div>
-      <div class="metricRow">
-        <span>LGA</span>
-        <strong>28 min</strong>
-      </div>
-      <div class="metricRow">
-        <span>EWR</span>
-        <strong>35 min</strong>
-      </div>
-    </div>
-
-    <div class="appCard">
-      <div class="listRow">
-        <div>
-          <div class="rowTitle">John F. Kennedy International</div>
+    <div class="appCard airportsUnifiedCard" id="airportsConditionsCard">
+      <div class="listRow airportsConditionRow" data-airport="JFK">
+        <div class="airportsInfo">
+          <div class="airportsTopLine">
+            <span class="airportsCode">JFK</span>
+            <span class="rowTitle">John F. Kennedy International</span>
+          </div>
           <div class="rowSub">Queens, NY</div>
         </div>
-        <span class="pill pillActive">Live</span>
+        <div class="airportsRightCol">
+          <strong class="airportsDriveTime" data-airport-time="JFK">--</strong>
+          <span class="pill" data-airport-status="JFK">Estimated</span>
+        </div>
       </div>
-      <div class="listRow">
-        <div>
-          <div class="rowTitle">LaGuardia Airport</div>
+      <div class="listRow airportsConditionRow" data-airport="LGA">
+        <div class="airportsInfo">
+          <div class="airportsTopLine">
+            <span class="airportsCode">LGA</span>
+            <span class="rowTitle">LaGuardia Airport</span>
+          </div>
           <div class="rowSub">Queens, NY</div>
         </div>
-        <span class="pill">Estimated</span>
+        <div class="airportsRightCol">
+          <strong class="airportsDriveTime" data-airport-time="LGA">--</strong>
+          <span class="pill" data-airport-status="LGA">Estimated</span>
+        </div>
       </div>
-      <div class="listRow">
-        <div>
-          <div class="rowTitle">Newark Liberty International</div>
+      <div class="listRow airportsConditionRow" data-airport="EWR">
+        <div class="airportsInfo">
+          <div class="airportsTopLine">
+            <span class="airportsCode">EWR</span>
+            <span class="rowTitle">Newark Liberty International</span>
+          </div>
           <div class="rowSub">Newark, NJ</div>
         </div>
-        <span class="pill">Estimated</span>
+        <div class="airportsRightCol">
+          <strong class="airportsDriveTime" data-airport-time="EWR">--</strong>
+          <span class="pill" data-airport-status="EWR">Estimated</span>
+        </div>
       </div>
     </div>
 
-    <button class="primaryButton">Refresh Conditions</button>
+    <button class="primaryButton" id="refreshAirportsButton">Refresh Conditions</button>
   </div>
 </section>
 <section id="settings" class="screen scroll">

@@ -25,6 +25,9 @@ window.navigationApi = (() => {
     if (id === 'settings' && window.syncSettingsTravelStyleUI) {
       window.syncSettingsTravelStyleUI();
     }
+    if (id === 'airports' && window.refreshAirportConditions) {
+      window.refreshAirportConditions();
+    }
   }
 
   function bindBottomNav() {
