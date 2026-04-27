@@ -2449,7 +2449,25 @@ textarea{
   font-size:14px;
   line-height:1.2;
   font-weight:500;
-  color:#123D22;
+  color:#F3FADE;
+}
+
+#result.useHtmlResult .resultHtmlTime{
+  margin-top:32px;
+}
+
+#result.useHtmlResult .resultHtmlMetaBlock{
+  margin-top:12px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:var(--text-body);
+  line-height:1.24;
+  font-weight:400;
+  color:#063D18;
+  opacity:0.92;
+}
+
+#result.useHtmlResult .resultHtmlMetaLine + .resultHtmlMetaLine{
+  margin-top:3px;
 }
 
 #result.useHtmlResult .resultHtmlFlightFrom{

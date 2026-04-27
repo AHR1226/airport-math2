@@ -640,8 +640,17 @@ function renderHtmlResult(result) {
   const terminalLabel = (form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
   const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
-  const flightDetailPrimary = `Domestic flight · ${airportLabel} · ${terminalLabel}`;
-  const flightDetailFrom = startForDisplay ? `From ${startForDisplay}` : '';
+  const flightMetaLines = [];
+  if (scheduledFlightTime) {
+    flightMetaLines.push(`Your flight departs at ${scheduledFlightTime}`);
+  }
+  flightMetaLines.push(`Domestic flight · ${airportLabel} · ${terminalLabel}`);
+  if (startForDisplay) {
+    flightMetaLines.push(`From ${startForDisplay}`);
+  }
+  const flightMetaMarkup = flightMetaLines
+    .map((line) => `<div class="resultHtmlMetaLine">${escapeHtml(line)}</div>`)
+    .join('');
   const securityWait = getSecurityWaitEstimate(result, selections);
   const travelDuration = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
@@ -667,11 +676,7 @@ function renderHtmlResult(result) {
       </div>
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
       <div class="resultHtmlStatus">${escapeHtml(paceMessage)}</div>
-      ${scheduledFlightTime ? `<div class="resultHtmlScheduled">Your flight departs at ${escapeHtml(scheduledFlightTime)}</div>` : ''}
-      <div class="resultHtmlFlight">
-        ${escapeHtml(flightDetailPrimary)}
-        ${flightDetailFrom ? `<br><span class="resultHtmlFlightFrom">${escapeHtml(flightDetailFrom)}</span>` : ''}
-      </div>
+      <div class="resultHtmlMetaBlock">${flightMetaMarkup}</div>
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
