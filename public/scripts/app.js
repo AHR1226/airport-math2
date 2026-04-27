@@ -436,10 +436,11 @@ async function refreshAirportConditions() {
 
 function initializeAirportsConditions() {
   const refreshButton = document.getElementById('refreshAirportsButton');
-  if (!refreshButton) return;
-  refreshButton.addEventListener('click', () => {
-    refreshAirportConditions();
-  });
+  if (refreshButton) {
+    refreshButton.addEventListener('click', () => {
+      refreshAirportConditions();
+    });
+  }
   if (window.appState?.currentScreen === 'airports') {
     refreshAirportConditions();
   }

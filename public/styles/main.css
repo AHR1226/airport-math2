@@ -1452,11 +1452,12 @@ input{
 }
 
 #airports .airportsUnifiedCard{
-  padding:8px 16px;
+  padding:12px 20px;
+  margin-bottom:0;
 }
 
 #airports .airportsConditionRow{
-  padding:11px 0;
+  padding:14px 0;
   align-items:center;
 }
 
@@ -1471,16 +1472,20 @@ input{
 #airports .airportsTopLine{
   display:flex;
   align-items:baseline;
-  gap:8px;
+  gap:0;
   min-width:0;
 }
 
 #airports .airportsCode{
-  font-size:13px;
+  font-size:14px;
   line-height:1.1;
   font-weight:700;
   letter-spacing:0.05em;
   color:#123D22;
+}
+
+#airports .airportsConditionRow .rowSub{
+  margin-top:6px;
 }
 
 #airports .airportsRightCol{
@@ -1497,6 +1502,14 @@ input{
   font-weight:700;
   letter-spacing:-0.01em;
   color:#123D22;
+}
+
+#airports .sectionLabel{
+  margin-bottom:8px;
+}
+
+#airports.screen .screenContent{
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
 }
 
 #settings .rowChevron{
