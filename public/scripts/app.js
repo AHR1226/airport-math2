@@ -454,6 +454,22 @@ function formatTime(date) {
   });
 }
 
+function formatFlightTimeForDisplay(raw) {
+  const value = String(raw || '').trim();
+  if (!value) return '';
+  if (/(am|pm)/i.test(value)) {
+    return value.replace(/\s+/g, ' ').trim().toUpperCase();
+  }
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return '';
+  const hours24 = Number(match[1]);
+  const minutes = match[2];
+  if (!Number.isFinite(hours24) || hours24 < 0 || hours24 > 23) return '';
+  const suffix = hours24 >= 12 ? 'PM' : 'AM';
+  const hours12 = (hours24 % 12) || 12;
+  return `${hours12}:${minutes} ${suffix}`;
+}
+
 async function calculateETA() {
   if (window.stateApi) {
     window.stateApi.syncFormFromDom();
@@ -621,6 +637,7 @@ function renderHtmlResult(result) {
   const paceMessage = getPaceMessage(result);
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (form.terminal || 'Terminal 4').trim();
+  const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
   const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
   const flightDetail = startForDisplay
     ? `Domestic flight · ${airportLabel} · ${terminalLabel} · From ${startForDisplay}`
@@ -650,6 +667,7 @@ function renderHtmlResult(result) {
       </div>
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
       <div class="resultHtmlStatus">${escapeHtml(paceMessage)}</div>
+      ${scheduledFlightTime ? `<div class="resultHtmlScheduled">Flight departs at ${escapeHtml(scheduledFlightTime)}</div>` : ''}
       <div class="resultHtmlFlight">${escapeHtml(flightDetail)}</div>
     </div>
     <div class="resultBreakdownCard">

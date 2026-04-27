@@ -989,6 +989,16 @@ input{
   color:#063D18;
 }
 
+.resultHtmlScheduled{
+  margin-top:8px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:13px;
+  line-height:1.25;
+  font-weight:500;
+  letter-spacing:0.005em;
+  color:rgba(13,67,30,0.84);
+}
+
 .resultBreakdownCard{
   background:#0F4A1F;
   border-radius:16px;
@@ -1761,6 +1771,10 @@ html,body{
 
 #result.useHtmlResult .resultHtmlStatus{
   font-size:var(--text-body);
+}
+
+#result.useHtmlResult .resultHtmlScheduled{
+  margin-top:8px;
 }
 
 #result.useHtmlResult .resultHtmlFlight{
