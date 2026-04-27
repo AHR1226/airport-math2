@@ -1456,9 +1456,18 @@ input{
   margin-bottom:0;
 }
 
+#airports .airportsCardLabel{
+  margin:2px 0 10px;
+  font-size:11px;
+  line-height:1.25;
+  font-weight:500;
+  letter-spacing:0.01em;
+  color:rgba(18,61,34,0.62);
+}
+
 #airports .airportsConditionRow{
   padding:14px 0;
-  align-items:center;
+  align-items:flex-start;
 }
 
 #airports .airportsConditionRow:not(:last-child){
@@ -1471,8 +1480,8 @@ input{
 
 #airports .airportsTopLine{
   display:flex;
-  align-items:baseline;
-  gap:0;
+  align-items:center;
+  gap:8px;
   min-width:0;
 }
 
@@ -1488,11 +1497,24 @@ input{
   margin-top:6px;
 }
 
+#airports .airportsSecurityWait{
+  margin-top:5px;
+  font-size:11px;
+  line-height:1.25;
+  font-weight:500;
+  letter-spacing:0.01em;
+  color:rgba(18,61,34,0.62);
+}
+
+#airports .airportsSecurityWait.estimated{
+  color:rgba(18,61,34,0.58);
+}
+
 #airports .airportsRightCol{
   display:flex;
   flex-direction:column;
   align-items:flex-end;
-  gap:6px;
+  gap:2px;
   margin-left:10px;
 }
 
@@ -1502,6 +1524,15 @@ input{
   font-weight:700;
   letter-spacing:-0.01em;
   color:#123D22;
+}
+
+#airports .airportsDriveLabel{
+  font-size:11px;
+  line-height:1.15;
+  font-weight:500;
+  letter-spacing:0.01em;
+  color:rgba(18,61,34,0.62);
+  text-transform:lowercase;
 }
 
 #airports .sectionLabel{

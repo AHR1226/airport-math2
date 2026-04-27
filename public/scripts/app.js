@@ -411,6 +411,31 @@ function setAirportRowState(code, { travelText, isLive }) {
   statusEl.classList.toggle('pillActive', isLive);
 }
 
+function setAirportSecurityState(code, { minutes, estimated }) {
+  const securityEl = document.querySelector(`[data-airport-security="${code}"]`);
+  if (!securityEl) return;
+  const minutesText = Number.isFinite(minutes) && minutes > 0 ? `${Math.round(minutes)} min` : '--';
+  securityEl.textContent = `Security wait: ${minutesText}${estimated ? ' (estimated)' : ''}`;
+  securityEl.classList.toggle('estimated', Boolean(estimated));
+}
+
+async function fetchAirportSecurityEstimate(airportCode) {
+  try {
+    const res = await fetch(`/api/security?airport=${encodeURIComponent(String(airportCode || ''))}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const mode = String(window.appState?.selections?.security || '').toLowerCase();
+    const preferPre = mode.includes('pre') || mode.includes('clear');
+    const minutesRaw = preferPre ? data?.precheck : data?.regular;
+    const minutes = Number(minutesRaw);
+    const estimated = data?.status !== 'live';
+    if (!Number.isFinite(minutes)) return { minutes: NaN, estimated: true };
+    return { minutes, estimated };
+  } catch {
+    return null;
+  }
+}
+
 async function refreshAirportConditions() {
   const origin = preferredAirportsOrigin();
   const nowIso = new Date().toISOString();
@@ -430,6 +455,11 @@ async function refreshAirportConditions() {
         ? `${Math.round(minutes)} min`
         : '--';
       setAirportRowState(code, { travelText, isLive });
+      const security = await fetchAirportSecurityEstimate(code);
+      setAirportSecurityState(code, {
+        minutes: Number(security?.minutes),
+        estimated: security?.estimated !== false
+      });
     })
   );
 }
