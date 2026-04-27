@@ -154,6 +154,36 @@ async function routeAuto(params) {
   return fallback;
 }
 
+// JFK security minutes are terminal-aware fallbacks only. Live JFK HTML parsing is not enabled yet;
+// when an official feed exists, plug it in here and keep jfkSecurityEstimate() as the fallback path.
+const JFK_DEFAULT_SECURITY_TERMINAL = 'Terminal 4';
+const JFK_TERMINAL_SECURITY = {
+  'Terminal 1': 18,
+  'Terminal 4': 8,
+  'Terminal 5': 10,
+  'Terminal 7': 14,
+  'Terminal 8': 11
+};
+
+function jfkSecurityEstimate(terminalQuery) {
+  const raw = String(terminalQuery || '').trim();
+  const label =
+    raw && Object.prototype.hasOwnProperty.call(JFK_TERMINAL_SECURITY, raw)
+      ? raw
+      : JFK_DEFAULT_SECURITY_TERMINAL;
+  const regular = JFK_TERMINAL_SECURITY[label];
+  const precheck = Math.max(3, Math.round(regular * 0.45));
+  return {
+    status: 'estimate',
+    source: 'JFK terminal security fallback (live parsing not enabled)',
+    regular,
+    precheck,
+    updatedAt: new Date().toISOString(),
+    terminal: label,
+    jfkMode: 'terminal_fallback'
+  };
+}
+
 function securityFallback(airport) {
   const map = {
     JFK:{ status:'estimate', source:'Built-in fallback', regular:31, precheck:12, updatedAt:'—' },
@@ -483,8 +513,15 @@ app.get('/api/lga-conditions', async (_req, res) => {
 });
 
 app.get('/api/security', async (req, res) => {
-  try { res.json(await fetchOfficialSecurity(req.query.airport || 'OTHER')); }
-  catch { res.status(200).json(securityFallback(req.query.airport || 'OTHER')); }
+  try {
+    const airport = String(req.query.airport || 'OTHER').toUpperCase();
+    if (airport === 'JFK') {
+      return res.json(jfkSecurityEstimate(req.query.terminal));
+    }
+    res.json(await fetchOfficialSecurity(airport));
+  } catch {
+    res.status(200).json(securityFallback(String(req.query.airport || 'OTHER').toUpperCase()));
+  }
 });
 app.get('/api/faa', (req, res) => res.json(currentFaa(req.query.airport || 'OTHER')));
 app.get('/api/weather', (req, res) => res.json(currentWeather(req.query.airport || 'OTHER')));

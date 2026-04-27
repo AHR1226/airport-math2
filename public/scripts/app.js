@@ -13,6 +13,8 @@ const DEFAULT_TERMINAL_BY_AIRPORT = {
   EWR: 'Terminal A'
 };
 
+// JFK security minutes: terminal-aware fallbacks are served from GET /api/security (see server.js).
+// Live JFK wait-time parsing is not enabled yet; the client only passes terminal and displays ESTIMATED.
 const TERMINAL_DESTINATION_MAP = {
   JFK: {
     'Terminal 4': 'JFK Terminal 4 Departures, Queens, NY',
@@ -424,9 +426,14 @@ function setAirportSecurityState(code, { minutes, estimated, walkMinutes = null 
   securityEl.classList.toggle('estimated', Boolean(estimated));
 }
 
-async function fetchAirportSecurityEstimate(airportCode) {
+async function fetchAirportSecurityEstimate(airportCode, jfkTerminal) {
   try {
-    const res = await fetch(`/api/security?airport=${encodeURIComponent(String(airportCode || ''))}`);
+    const code = String(airportCode || '').toUpperCase();
+    const params = new URLSearchParams({ airport: code || 'OTHER' });
+    if (code === 'JFK' && String(jfkTerminal || '').trim()) {
+      params.set('terminal', String(jfkTerminal).trim());
+    }
+    const res = await fetch(`/api/security?${params.toString()}`);
     if (!res.ok) return null;
     const data = await res.json();
     const mode = String(window.appState?.selections?.security || '').toLowerCase();
@@ -481,6 +488,11 @@ async function refreshAirportConditions() {
         securityMinutes = Number(preferPre ? lga?.securityPrecheckMinutes : lga?.securityGeneralMinutes);
         walkMinutes = Number(lga?.walkToGateMinutes);
         securityEstimated = true;
+      } else if (code === 'JFK') {
+        // Airports list: show Terminal 4 default until a live multi-terminal JFK feed exists.
+        const security = await fetchAirportSecurityEstimate('JFK', 'Terminal 4');
+        securityMinutes = Number(security?.minutes);
+        securityEstimated = security?.estimated !== false;
       } else {
         const security = await fetchAirportSecurityEstimate(code);
         securityMinutes = Number(security?.minutes);
@@ -575,6 +587,13 @@ async function calculateETA() {
   if (selectedAirport === 'LGA') {
     lgaConditions = await fetchLgaConditions();
   }
+  let jfkSecurityWait = null;
+  if (selectedAirport === 'JFK') {
+    const jfkSec = await fetchAirportSecurityEstimate('JFK', selectedTerminal);
+    if (Number.isFinite(Number(jfkSec?.minutes))) {
+      jfkSecurityWait = Math.round(Number(jfkSec.minutes));
+    }
+  }
   const securityMode = String(window.appState?.selections?.security || '').toLowerCase();
   const preferPrecheck = securityMode.includes('pre') || securityMode.includes('clear');
   const lgaSecurityMinutes = selectedAirport === 'LGA'
@@ -601,7 +620,11 @@ async function calculateETA() {
     travelTypical: Number.isFinite(Number(travelApi?.typicalMinutes)) ? Number(travelApi.typicalMinutes) : null,
     lgaSecurityWait: Number.isFinite(lgaSecurityMinutes) ? lgaSecurityMinutes : null,
     lgaWalkToGate: Number.isFinite(lgaWalkMinutes) ? lgaWalkMinutes : null,
-    lgaConditionsStatus: selectedAirport === 'LGA' ? String(lgaConditions?.status || 'estimated') : null
+    lgaConditionsStatus: selectedAirport === 'LGA' ? String(lgaConditions?.status || 'estimated') : null,
+    jfkSecurityWait:
+      selectedAirport === 'JFK' && jfkSecurityWait != null && Number.isFinite(jfkSecurityWait)
+        ? jfkSecurityWait
+        : null
   };
 
   if (window.stateApi) {
@@ -713,7 +736,7 @@ function renderHtmlResult(result) {
   const selections = window.appState?.selections || {};
   const paceMessage = getPaceMessage(result);
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
-  const terminalLabel = (form.terminal || 'Terminal 4').trim();
+  const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
   const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
   const flightMetaLines = [];
@@ -728,11 +751,15 @@ function renderHtmlResult(result) {
     .map((line) => `<div class="resultHtmlMetaLine">${escapeHtml(line)}</div>`)
     .join('');
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
+  const isJfk = String(result.airport || '').toUpperCase() === 'JFK';
   const hasLgaSecurity = Number.isFinite(Number(result.lgaSecurityWait)) && Number(result.lgaSecurityWait) > 0;
+  const hasJfkSecurity = Number.isFinite(Number(result.jfkSecurityWait)) && Number(result.jfkSecurityWait) > 0;
   const hasLgaWalk = Number.isFinite(Number(result.lgaWalkToGate)) && Number(result.lgaWalkToGate) > 0;
   const securityWait = isLga && hasLgaSecurity
     ? Math.round(Number(result.lgaSecurityWait))
-    : getSecurityWaitEstimate(result, selections);
+    : isJfk && hasJfkSecurity
+      ? Math.round(Number(result.jfkSecurityWait))
+      : getSecurityWaitEstimate(result, selections);
   const walkToGateValue = isLga && hasLgaWalk
     ? `${Math.round(Number(result.lgaWalkToGate))} min`
     : '--';
