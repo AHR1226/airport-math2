@@ -477,7 +477,9 @@ async function refreshAirportConditions() {
         const preferPre = mode.includes('pre') || mode.includes('clear');
         securityMinutes = Number(preferPre ? lga?.securityPrecheckMinutes : lga?.securityGeneralMinutes);
         walkMinutes = Number(lga?.walkToGateMinutes);
-        securityEstimated = lga?.status !== 'live';
+        const hasSecurity = Number.isFinite(securityMinutes) && securityMinutes > 0;
+        const hasWalk = Number.isFinite(walkMinutes) && walkMinutes > 0;
+        securityEstimated = lga?.status !== 'live' || !hasSecurity || !hasWalk;
         rowLive = lga?.status === 'live';
       } else {
         const security = await fetchAirportSecurityEstimate(code);
@@ -726,13 +728,16 @@ function renderHtmlResult(result) {
     .map((line) => `<div class="resultHtmlMetaLine">${escapeHtml(line)}</div>`)
     .join('');
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
-  const securityWait = isLga && Number.isFinite(Number(result.lgaSecurityWait))
+  const hasLgaSecurity = Number.isFinite(Number(result.lgaSecurityWait)) && Number(result.lgaSecurityWait) > 0;
+  const hasLgaWalk = Number.isFinite(Number(result.lgaWalkToGate)) && Number(result.lgaWalkToGate) > 0;
+  const securityWait = isLga && hasLgaSecurity
     ? Math.round(Number(result.lgaSecurityWait))
     : getSecurityWaitEstimate(result, selections);
-  const walkToGateValue = isLga && Number.isFinite(Number(result.lgaWalkToGate))
+  const walkToGateValue = isLga && hasLgaWalk
     ? `${Math.round(Number(result.lgaWalkToGate))} min`
     : '--';
-  const securityTag = (isLga && result.lgaConditionsStatus === 'live') ? 'Live' : 'Estimated';
+  const securityTag = (isLga && result.lgaConditionsStatus === 'live' && hasLgaSecurity) ? 'Live' : 'Estimated';
+  const walkTag = (isLga && result.lgaConditionsStatus === 'live' && hasLgaWalk) ? 'Live' : 'Estimated';
   const travelDuration = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
     ? 'Live'
@@ -788,7 +793,7 @@ function renderHtmlResult(result) {
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">${isLga ? 'Walk to gate' : 'Airport status'}</span>
-          <span class="resultLiveTag">${isLga ? escapeHtml(securityTag) : 'FAA'}</span>
+          <span class="resultLiveTag">${isLga ? escapeHtml(walkTag) : 'FAA'}</span>
         </div>
         <strong class="resultLiveValue text">${escapeHtml(isLga ? walkToGateValue : 'No advisory')}</strong>
       </div>

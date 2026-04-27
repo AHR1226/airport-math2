@@ -235,16 +235,35 @@ function lgaFallbackConditions() {
 function parseLgaConditionsHtml(html) {
   const $ = cheerio.load(html);
   const text = $('body').text().replace(/\s+/g, ' ').trim();
-  const generalMatch = text.match(/General(?:\s+Line|\s+TSA|\s+Security)?[^0-9]{0,40}(\d{1,3})\s*min/i);
-  const precheckMatch = text.match(/(?:TSA\s*Pre.?|PreCheck|Pre✓|PreCheck®)[^0-9]{0,40}(\d{1,3})\s*min/i);
-  const walkPrimaryMatch = text.match(/Walk(?:\s+Times?)?\s+to\s+Gates?[^0-9]{0,40}(\d{1,3})\s*min/i);
-  const walkAlternateMatch = text.match(/Gates?[^0-9]{0,25}Walk[^0-9]{0,25}(\d{1,3})\s*min/i);
+  const generalPatterns = [
+    /General(?:\s+Line|\s+TSA|\s+Security|\s+Screening)?[^0-9]{0,60}(\d{1,3})\s*min/i,
+    /Security(?:\s+Wait(?:\s+Time)?)?[^0-9]{0,40}General[^0-9]{0,40}(\d{1,3})\s*min/i
+  ];
+  const precheckPatterns = [
+    /(?:TSA\s*Pre.?|PreCheck|Pre✓|PreCheck®)[^0-9]{0,60}(\d{1,3})\s*min/i,
+    /Security(?:\s+Wait(?:\s+Time)?)?[^0-9]{0,40}(?:TSA\s*Pre.?|PreCheck)[^0-9]{0,40}(\d{1,3})\s*min/i
+  ];
+  const walkPatterns = [
+    /Walk(?:\s+Times?)?\s+to\s+Gates?[^0-9]{0,60}(\d{1,3})\s*min/i,
+    /Gates?[^0-9]{0,40}Walk(?:\s+Times?)?[^0-9]{0,40}(\d{1,3})\s*min/i,
+    /Walk(?:\s+to)?[^0-9]{0,40}Gate[^0-9]{0,40}(\d{1,3})\s*min/i
+  ];
+
+  const matchAny = (patterns) => {
+    for (const p of patterns) {
+      const m = text.match(p);
+      if (m) return m;
+    }
+    return null;
+  };
+
+  const generalMatch = matchAny(generalPatterns);
+  const precheckMatch = matchAny(precheckPatterns);
+  const walkMatch = matchAny(walkPatterns);
 
   const securityGeneralMinutes = generalMatch ? Number(generalMatch[1]) : null;
   const securityPrecheckMinutes = precheckMatch ? Number(precheckMatch[1]) : null;
-  const walkToGateMinutes = walkPrimaryMatch
-    ? Number(walkPrimaryMatch[1])
-    : (walkAlternateMatch ? Number(walkAlternateMatch[1]) : null);
+  const walkToGateMinutes = walkMatch ? Number(walkMatch[1]) : null;
 
   if (
     securityGeneralMinutes === null &&
@@ -274,7 +293,17 @@ async function fetchLgaConditionsLive() {
     }
   });
   if (!res.ok) throw new Error(`LGA conditions fetch failed: ${res.status}`);
-  const parsed = parseLgaConditionsHtml(await res.text());
+  const html = await res.text();
+  const parsed = parseLgaConditionsHtml(html);
+  console.log('[lga-debug] raw page response', {
+    httpStatus: res.status,
+    htmlLength: html.length
+  });
+  console.log('[lga-debug] parsed values', {
+    securityGeneralMinutes: parsed?.securityGeneralMinutes ?? null,
+    securityPrecheckMinutes: parsed?.securityPrecheckMinutes ?? null,
+    walkToGateMinutes: parsed?.walkToGateMinutes ?? null
+  });
   if (!parsed) throw new Error('Unable to parse LGA conditions');
   return parsed;
 }
@@ -357,8 +386,13 @@ app.get('/api/reverse-geocode', async (req, res) => {
 });
 
 app.get('/api/lga-conditions', async (_req, res) => {
+  console.log('[lga-debug] LGA CONDITIONS REQUESTED');
   const now = Date.now();
   if (lgaConditionsCache.payload && now < lgaConditionsCache.expiresAt) {
+    console.log('[lga-debug] cache hit', {
+      status: lgaConditionsCache.payload.status,
+      updatedAt: lgaConditionsCache.payload.updatedAt
+    });
     return res.json(lgaConditionsCache.payload);
   }
   try {
@@ -367,20 +401,25 @@ app.get('/api/lga-conditions', async (_req, res) => {
       securityGeneralMinutes: live.securityGeneralMinutes,
       securityPrecheckMinutes: live.securityPrecheckMinutes,
       walkToGateMinutes: live.walkToGateMinutes,
-      fallbackUsed: false
+      fallbackUsed: false,
+      finalStatus: live.status
     });
     lgaConditionsCache = {
       expiresAt: now + LGA_CACHE_TTL_MS,
       payload: live
     };
     return res.json(live);
-  } catch {
+  } catch (error) {
+    console.log('[lga-debug] fetch failure', {
+      reason: error?.message || 'unknown'
+    });
     const fallback = lgaFallbackConditions();
     console.log('[lga-debug] fetch fallback', {
       securityGeneralMinutes: fallback.securityGeneralMinutes,
       securityPrecheckMinutes: fallback.securityPrecheckMinutes,
       walkToGateMinutes: fallback.walkToGateMinutes,
-      fallbackUsed: true
+      fallbackUsed: true,
+      finalStatus: fallback.status
     });
     lgaConditionsCache = {
       expiresAt: now + LGA_CACHE_TTL_MS,
