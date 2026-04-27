@@ -640,9 +640,8 @@ function renderHtmlResult(result) {
   const terminalLabel = (form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
   const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
-  const flightDetail = startForDisplay
-    ? `Domestic flight · ${airportLabel} · ${terminalLabel} · From ${startForDisplay}`
-    : `Domestic flight · ${airportLabel} · ${terminalLabel}`;
+  const flightDetailPrimary = `Domestic flight · ${airportLabel} · ${terminalLabel}`;
+  const flightDetailFrom = startForDisplay ? `From ${startForDisplay}` : '';
   const securityWait = getSecurityWaitEstimate(result, selections);
   const travelDuration = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
@@ -668,8 +667,11 @@ function renderHtmlResult(result) {
       </div>
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
       <div class="resultHtmlStatus">${escapeHtml(paceMessage)}</div>
-      ${scheduledFlightTime ? `<div class="resultHtmlScheduled">Flight departs at ${escapeHtml(scheduledFlightTime)}</div>` : ''}
-      <div class="resultHtmlFlight">${escapeHtml(flightDetail)}</div>
+      ${scheduledFlightTime ? `<div class="resultHtmlScheduled">Your flight departs at ${escapeHtml(scheduledFlightTime)}</div>` : ''}
+      <div class="resultHtmlFlight">
+        ${escapeHtml(flightDetailPrimary)}
+        ${flightDetailFrom ? `<br><span class="resultHtmlFlightFrom">${escapeHtml(flightDetailFrom)}</span>` : ''}
+      </div>
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
@@ -719,8 +721,8 @@ function getPaceMessage(result) {
   const total = Number(result?.total) || 95;
   const styleKey = normalizeTravelStyleKey(result?.style || '');
   if (styleKey === 'Tight') return 'You should leave soon';
-  if (styleKey === 'Relaxed') return 'Comfortable pace';
-  if (total >= 125) return 'Comfortable pace';
+  if (styleKey === 'Relaxed') return 'Moving at a comfortable pace 😊';
+  if (total >= 125) return 'Moving at a comfortable pace 😊';
   if (total <= 85) return 'You should leave soon';
   return 'Tight but manageable';
 }

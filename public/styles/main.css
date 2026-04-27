@@ -1815,7 +1815,7 @@ html,body{
 }
 
 #result.useHtmlResult .resultHtmlStatus::after{
-  content:" 😊";
+  content:"";
 }
 
 #result.useHtmlResult .resultBreakdownCard{
@@ -2399,4 +2399,52 @@ textarea{
   padding:11px 12px;
   min-height:4.5rem;
   border-radius:11px;
+}
+
+/* ETA results rhythm refinement: hero + Breakdown/Live parity */
+#result.useHtmlResult .resultBreakdownCard,
+#result.useHtmlResult .resultLiveCard{
+  padding:18px 18px 18px;
+}
+
+#result.useHtmlResult .resultBreakdownTitle,
+#result.useHtmlResult .resultLiveTitle{
+  margin:0 0 11px;
+}
+
+#result.useHtmlResult .resultBreakdownRow,
+#result.useHtmlResult .resultLiveRow{
+  padding:8px 0;
+  line-height:1.35;
+}
+
+#result.useHtmlResult .resultHeroCard{
+  padding:26px 20px 19px;
+}
+
+#result.useHtmlResult .resultHtmlTime{
+  margin-bottom:17px;
+}
+
+#result.useHtmlResult .resultHtmlStatus{
+  margin-top:0;
+}
+
+#result.useHtmlResult .resultHtmlScheduled{
+  margin-top:11px;
+  font-size:13px;
+  line-height:1.32;
+  font-weight:500;
+  color:rgba(13,67,30,0.86);
+}
+
+#result.useHtmlResult .resultHtmlFlight{
+  margin-top:12px;
+  line-height:1.24;
+}
+
+#result.useHtmlResult .resultHtmlFlightFrom{
+  display:inline-block;
+  margin-top:3px;
+  opacity:0.96;
 }
