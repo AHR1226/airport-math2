@@ -184,6 +184,34 @@ function jfkSecurityEstimate(terminalQuery) {
   };
 }
 
+// EWR security minutes are also terminal-aware fallbacks.
+// Live EWR parsing is not enabled yet; a stable official Newark source can replace this later.
+const EWR_TERMINAL_SECURITY = {
+  'Terminal A': 10,
+  'Terminal B': 14,
+  'Terminal C': 12
+};
+const EWR_DEFAULT_SECURITY_TERMINAL = 'Terminal A';
+
+function ewrSecurityEstimate(terminalQuery) {
+  const raw = String(terminalQuery || '').trim();
+  const label =
+    raw && Object.prototype.hasOwnProperty.call(EWR_TERMINAL_SECURITY, raw)
+      ? raw
+      : EWR_DEFAULT_SECURITY_TERMINAL;
+  const regular = EWR_TERMINAL_SECURITY[label];
+  const precheck = Math.max(3, Math.round(regular * 0.45));
+  return {
+    status: 'estimate',
+    source: 'EWR terminal security fallback (live parsing not enabled)',
+    regular,
+    precheck,
+    updatedAt: new Date().toISOString(),
+    terminal: label,
+    ewrMode: 'terminal_fallback'
+  };
+}
+
 function securityFallback(airport) {
   const map = {
     JFK:{ status:'estimate', source:'Built-in fallback', regular:31, precheck:12, updatedAt:'—' },
@@ -517,6 +545,9 @@ app.get('/api/security', async (req, res) => {
     const airport = String(req.query.airport || 'OTHER').toUpperCase();
     if (airport === 'JFK') {
       return res.json(jfkSecurityEstimate(req.query.terminal));
+    }
+    if (airport === 'EWR') {
+      return res.json(ewrSecurityEstimate(req.query.terminal));
     }
     res.json(await fetchOfficialSecurity(airport));
   } catch {
