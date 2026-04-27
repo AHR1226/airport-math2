@@ -416,8 +416,11 @@ function setAirportSecurityState(code, { minutes, estimated, walkMinutes = null 
   if (!securityEl) return;
   const minutesText = Number.isFinite(minutes) && minutes > 0 ? `${Math.round(minutes)} min` : '--';
   const walkText = Number.isFinite(walkMinutes) && walkMinutes > 0 ? `${Math.round(walkMinutes)} min` : '--';
-  const walkSuffix = walkMinutes === null ? '' : ` · Walk to gate: ${walkText}`;
-  securityEl.textContent = `Security wait: ${minutesText}${walkSuffix}${estimated ? ' (estimated)' : ''}`;
+  const walkSuffix =
+  walkMinutes == null
+    ? ''
+    : ` · ${walkText} to gate`;
+  securityEl.textContent = `${minutesText} security${walkSuffix}${estimated ? ' (estimated)' : ''}`;
   securityEl.classList.toggle('estimated', Boolean(estimated));
 }
 
@@ -741,7 +744,7 @@ function renderHtmlResult(result) {
     : 'Estimated';
   const provider = String(result.travelProvider || '').toLowerCase();
   const trafficSource = provider === 'google'
-    ? 'Google Routes'
+    ? 'Live traffic data'
     : (provider === 'mapbox' ? 'Mapbox routing' : 'Backup estimate');
 
   container.innerHTML = `
@@ -812,7 +815,7 @@ function getPaceMessage(result) {
   if (styleKey === 'Relaxed') return 'Moving at a comfortable pace 😊';
   if (total >= 125) return 'Moving at a comfortable pace 😊';
   if (total <= 85) return 'You should leave soon';
-  return 'Tight but manageable';
+  return 'Comfortably timed 🙂';
 }
 
 function getSecurityWaitEstimate(result, selections) {
