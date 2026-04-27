@@ -69,6 +69,7 @@ if (window.selectionsApi) {
 }
 initializeAirportTerminalSelects();
 initializeStartingLocationAutocomplete();
+initializeUseCurrentLocationAction();
 if (window.syncSettingsTravelStyleUI) {
   window.syncSettingsTravelStyleUI();
 }
@@ -218,6 +219,61 @@ function initializeStartingLocationAutocomplete() {
       if (window.appState) window.appState.form.startLocation = normalized;
     }
     setTimeout(closeSuggestions, 120);
+  });
+}
+
+function initializeUseCurrentLocationAction() {
+  const input = document.getElementById('startingLocationInput');
+  const actionButton = document.getElementById('useCurrentLocationButton');
+  if (!input || !actionButton) return;
+
+  const setActionBusy = (busy) => {
+    actionButton.disabled = busy;
+    actionButton.textContent = busy ? 'Locating...' : 'Use Current Location';
+  };
+
+  const fetchReverseGeocode = async (lat, lng) => {
+    try {
+      const res = await fetch(`/api/reverse-geocode?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`);
+      if (!res.ok) return '';
+      const data = await res.json();
+      return formatAddressForDisplay(data.address || '');
+    } catch {
+      return '';
+    }
+  };
+
+  actionButton.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      showStartingLocationValidation('Location access unavailable');
+      return;
+    }
+
+    setActionBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = Number(position.coords?.latitude);
+        const lng = Number(position.coords?.longitude);
+        const resolved = await fetchReverseGeocode(lat, lng);
+        const fallback = 'Current Location';
+        const nextValue = resolved || fallback;
+        input.value = nextValue;
+        if (window.appState) {
+          window.appState.form.startLocation = nextValue;
+        }
+        clearStartingLocationValidation();
+        setActionBusy(false);
+      },
+      () => {
+        showStartingLocationValidation('Location access unavailable');
+        setActionBusy(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 120000
+      }
+    );
   });
 }
 

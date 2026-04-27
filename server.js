@@ -180,6 +180,18 @@ function stripCountryFromPlaceName(name) {
     .trim();
 }
 
+async function reverseGeocodeMapbox(lat, lng) {
+  const token = process.env.MAPBOX_ACCESS_TOKEN;
+  if (!token) return '';
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(String(lng))},${encodeURIComponent(String(lat))}.json?types=address,place,locality,neighborhood&limit=1&access_token=${token}`;
+  const res = await fetch(url);
+  if (!res.ok) return '';
+  const data = await res.json();
+  const label = data.features?.[0]?.place_name || '';
+  return stripCountryFromPlaceName(label);
+}
+
 app.get('/api/places-suggest', async (req, res) => {
   const q = String(req.query.q || '').trim();
   if (q.length < 3) return res.json({ suggestions: [], source: 'skip' });
@@ -196,6 +208,21 @@ app.get('/api/places-suggest', async (req, res) => {
     return res.json({ suggestions, source: 'mapbox' });
   } catch {
     return res.json({ suggestions: [], source: 'mapbox-exception' });
+  }
+});
+
+app.get('/api/reverse-geocode', async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.json({ address: '', source: 'invalid-coordinates' });
+  }
+  try {
+    const address = await reverseGeocodeMapbox(lat, lng);
+    if (!address) return res.json({ address: '', source: 'unavailable' });
+    return res.json({ address, source: 'mapbox' });
+  } catch {
+    return res.json({ address: '', source: 'unavailable' });
   }
 });
 
