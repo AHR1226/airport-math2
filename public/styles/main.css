@@ -2662,9 +2662,9 @@ textarea{
 
 #result.useHtmlResult .resultHtmlMetaPrimary,
 #result.useHtmlResult .resultHtmlMetaSecondary{
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
 }
 
 #result.useHtmlResult .resultUberCard{

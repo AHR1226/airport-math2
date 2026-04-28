@@ -438,8 +438,8 @@ function setAirportRowState(code, { travelText, isLive }) {
 function setAirportSecurityState(code, { minutes, estimated, walkMinutes = null }) {
   const securityEl = document.querySelector(`[data-airport-security="${code}"]`);
   if (!securityEl) return;
-  const minutesText = Number.isFinite(minutes) && minutes > 0 ? `${Math.round(minutes)} min` : '--';
-  const walkText = Number.isFinite(walkMinutes) && walkMinutes > 0 ? `${Math.round(walkMinutes)} min` : '--';
+  const minutesText = formatDurationMinutes(minutes);
+  const walkText = formatDurationMinutes(walkMinutes);
   const walkSuffix =
   walkMinutes == null
     ? ''
@@ -496,7 +496,7 @@ async function refreshAirportConditions() {
       const isLive = travelApi?.status === 'live' && (provider === 'google' || provider === 'mapbox');
       const minutes = Number(travelApi?.travelMinutes);
       const travelText = (isLive && Number.isFinite(minutes) && minutes > 0)
-        ? `${Math.round(minutes)} min`
+        ? formatDurationMinutes(minutes)
         : '--';
       let rowLive = isLive;
       let securityMinutes = NaN;
@@ -692,13 +692,13 @@ function renderResult() {
   if (leaveEl) leaveEl.textContent = result.leaveBy || '5:42 PM';
 
   if (summaryEl) {
-    const travelSummary = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
+    const travelSummary = formatDurationMinutes(result.travel);
     summaryEl.innerHTML = `
       <div>Flight: ${result.flightTime || '7:30 PM'} from ${result.airport || 'JFK'}</div>
       <div>Travel time: ${travelSummary}</div>
-      <div>Airport time: ${result.airportTime || 35} min</div>
-      <div>Buffer: ${result.buffer || 15} min</div>
-      <div>Total planning window: ${result.total || 95} min</div>
+      <div>Airport time: ${formatDurationMinutes(result.airportTime || 35)}</div>
+      <div>Buffer: ${formatDurationMinutes(result.buffer || 15)}</div>
+      <div>Total planning window: ${formatDurationMinutes(result.total || 95)}</div>
     `;
   }
 
@@ -808,7 +808,7 @@ function renderHtmlResult(result) {
   const monitorMessage = String(result.monitorMessage || 'Monitoring live traffic...').trim();
   const unifiedStatusText = getUnifiedHeroStatusText(paceMessage, monitorMessage);
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
-  const heroFlightLine = `Your domestic flight · departs ${airportLabel} · ${terminalLabel}${scheduledFlightTime ? ` at ${scheduledFlightTime}` : ''}`;
+  const heroFlightLine = `Your domestic flight · from ${airportLabel} · ${terminalLabel}${scheduledFlightTime ? ` at ${scheduledFlightTime}` : ''}`;
   const heroOriginLine = startForDisplay ? `Take a rideshare from ${startForDisplay}` : '';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
   const isJfk = String(result.airport || '').toUpperCase() === 'JFK';
@@ -829,7 +829,7 @@ function renderHtmlResult(result) {
     : '--';
   const securityTag = isLga ? 'Estimated' : 'Estimated';
   const walkTag = isLga ? 'Estimated' : 'Estimated';
-  const travelDuration = Number.isFinite(Number(result.travel)) ? `${Math.round(Number(result.travel))} min` : '--';
+  const travelDuration = formatDurationMinutes(result.travel);
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
     ? 'Live'
     : 'Estimated';
@@ -864,8 +864,8 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownTitle">Trip breakdown</div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
-      <div class="resultBreakdownRow"><span>Security</span><strong>${escapeHtml(securityWait)} min</strong></div>
-      <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(result.buffer || 15)} min</strong></div>
+      <div class="resultBreakdownRow"><span>Security</span><strong>${escapeHtml(formatDurationMinutes(securityWait))}</strong></div>
+      <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(formatDurationMinutes(result.buffer || 15))}</strong></div>
     </div>
     ${showUberCta ? `
     <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
@@ -881,7 +881,7 @@ function renderHtmlResult(result) {
         <div class="resultUberCardTitle">Ride ready</div>
       </div>
       <div class="resultUberCardAction">Continue in Uber <span aria-hidden="true">→</span></div>
-      <div class="resultUberCardHelp">Rideshare timing reflects live traffic conditions</div>
+      <div class="resultUberCardHelp">Pickup and airport destination prefilled</div>
     </a>
     ` : ''}
     <div class="resultLiveCard">
@@ -900,7 +900,7 @@ function renderHtmlResult(result) {
           <span class="resultLiveLabel">Security wait</span>
           <span class="resultLiveTag">${escapeHtml(securityTag)}</span>
         </div>
-        <strong class="resultLiveValue">${escapeHtml(securityWait)} min</strong>
+        <strong class="resultLiveValue">${escapeHtml(formatDurationMinutes(securityWait))}</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
@@ -947,6 +947,17 @@ function formatMonitorUpdatedLabel(updatedAt) {
   if (mins <= 0) return 'Updated just now';
   if (mins === 1) return 'Updated 1 min ago';
   return `Updated ${mins} min ago`;
+}
+
+function formatDurationMinutes(value) {
+  const minutesRaw = Number(value);
+  if (!Number.isFinite(minutesRaw) || minutesRaw <= 0) return '--';
+  const totalMins = Math.round(minutesRaw);
+  if (totalMins < 60) return `${totalMins} min`;
+  const hours = Math.floor(totalMins / 60);
+  const mins = totalMins % 60;
+  if (mins === 0) return `${hours} hr`;
+  return `${hours} hr ${mins} min`;
 }
 
 function getUnifiedHeroStatusText(paceMessage, monitorMessage) {
