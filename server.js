@@ -158,11 +158,11 @@ async function routeAuto(params) {
 // when an official feed exists, plug it in here and keep jfkSecurityEstimate() as the fallback path.
 const JFK_DEFAULT_SECURITY_TERMINAL = 'Terminal 4';
 const JFK_TERMINAL_SECURITY = {
-  'Terminal 1': 18,
-  'Terminal 4': 8,
-  'Terminal 5': 10,
-  'Terminal 7': 14,
-  'Terminal 8': 11
+  'Terminal 1': { regular: 18, precheck: 6 },
+  'Terminal 4': { regular: 18, precheck: 2 },
+  'Terminal 5': { regular: 10, precheck: 4 },
+  'Terminal 7': { regular: 14, precheck: 5 },
+  'Terminal 8': { regular: 11, precheck: 4 }
 };
 
 function jfkSecurityEstimate(terminalQuery) {
@@ -171,13 +171,12 @@ function jfkSecurityEstimate(terminalQuery) {
     raw && Object.prototype.hasOwnProperty.call(JFK_TERMINAL_SECURITY, raw)
       ? raw
       : JFK_DEFAULT_SECURITY_TERMINAL;
-  const regular = JFK_TERMINAL_SECURITY[label];
-  const precheck = Math.max(3, Math.round(regular * 0.45));
+  const terminalValues = JFK_TERMINAL_SECURITY[label] || JFK_TERMINAL_SECURITY[JFK_DEFAULT_SECURITY_TERMINAL];
   return {
     status: 'estimate',
     source: 'JFK terminal security fallback (live parsing not enabled)',
-    regular,
-    precheck,
+    regular: terminalValues.regular,
+    precheck: terminalValues.precheck,
     updatedAt: new Date().toISOString(),
     terminal: label,
     jfkMode: 'terminal_fallback'

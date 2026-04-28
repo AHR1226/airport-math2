@@ -577,18 +577,28 @@ function setAirportSecurityState(code, { minutes, estimated, walkMinutes = null 
 async function fetchAirportSecurityEstimate(airportCode, terminalLabel) {
   try {
     const code = String(airportCode || '').toUpperCase();
+    const resolvedTerminal = String(terminalLabel || '').trim();
     const params = new URLSearchParams({ airport: code || 'OTHER' });
-    if ((code === 'JFK' || code === 'EWR') && String(terminalLabel || '').trim()) {
-      params.set('terminal', String(terminalLabel).trim());
+    if ((code === 'JFK' || code === 'EWR') && resolvedTerminal) {
+      params.set('terminal', resolvedTerminal);
     }
     const res = await fetch(`/api/security?${params.toString()}`);
     if (!res.ok) return null;
     const data = await res.json();
     const mode = String(window.appState?.selections?.security || '').toLowerCase();
     const preferPre = mode.includes('pre') || mode.includes('clear');
-    const minutesRaw = preferPre ? data?.precheck : data?.regular;
+    const regularMinutes = Number(data?.regular);
+    const precheckMinutes = Number(data?.precheck);
+    const minutesRaw = preferPre ? precheckMinutes : regularMinutes;
     const minutes = Number(minutesRaw);
     const estimated = data?.status !== 'live';
+    console.log('[security-debug]', {
+      selectedSecurityMode: mode,
+      selectedTerminal: resolvedTerminal || data?.terminal || '',
+      regularMinutes: Number.isFinite(regularMinutes) ? regularMinutes : null,
+      precheckMinutes: Number.isFinite(precheckMinutes) ? precheckMinutes : null,
+      resolvedSecurityMinutes: Number.isFinite(minutes) ? minutes : null
+    });
     if (!Number.isFinite(minutes)) return { minutes: NaN, estimated: true };
     return { minutes, estimated };
   } catch {
