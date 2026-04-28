@@ -2679,7 +2679,7 @@ textarea{
   display:inline-flex;
   align-items:center;
   gap:7px;
-  margin-top:12px;
+  margin-top:16px;
 }
 
 #result.useHtmlResult .resultHtmlStatusDot{

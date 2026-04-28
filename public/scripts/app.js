@@ -767,6 +767,7 @@ async function calculateETA() {
     }
   }
   const securityMode = String(window.appState?.selections?.security || '').toLowerCase();
+  const selectedSecurityStatus = getActiveSelection('security') || window.appState?.selections?.security || 'Security';
   const preferPrecheck = securityMode.includes('pre') || securityMode.includes('clear');
   const lgaSecurityMinutes = selectedAirport === 'LGA'
     ? Number(preferPrecheck ? lgaConditions?.securityPrecheckMinutes : lgaConditions?.securityGeneralMinutes)
@@ -787,6 +788,7 @@ async function calculateETA() {
     total: timing.total,
     style: getActiveSelection('style'),
     transportMode: selectedTransport || null,
+    securityStatusLabel: selectedSecurityStatus,
     travelProvider: travelApi?.provider || 'mock',
     travelStatus: travelApi?.status || 'fallback',
     travelSource: travelApi?.source || 'Backup estimate',
@@ -952,6 +954,7 @@ function renderHtmlResult(result) {
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
   const isJfk = String(result.airport || '').toUpperCase() === 'JFK';
   const isEwr = String(result.airport || '').toUpperCase() === 'EWR';
+  const securityBreakdownLabel = String(result.securityStatusLabel || selections.security || 'Security').trim() || 'Security';
   const hasLgaSecurity = Number.isFinite(Number(result.lgaSecurityWait)) && Number(result.lgaSecurityWait) > 0;
   const hasJfkSecurity = Number.isFinite(Number(result.jfkSecurityWait)) && Number(result.jfkSecurityWait) > 0;
   const hasEwrSecurity = Number.isFinite(Number(result.ewrSecurityWait)) && Number(result.ewrSecurityWait) > 0;
@@ -1004,7 +1007,7 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownTitle">Trip breakdown</div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
-      <div class="resultBreakdownRow"><span>Security</span><strong>${escapeHtml(formatDurationMinutes(securityWait))}</strong></div>
+      <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(formatDurationMinutes(securityWait))}</strong></div>
       <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(formatDurationMinutes(result.buffer || 15))}</strong></div>
     </div>
     ${showUberCta ? `
