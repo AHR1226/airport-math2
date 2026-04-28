@@ -808,8 +808,8 @@ function renderHtmlResult(result) {
   const monitorMessage = String(result.monitorMessage || 'Monitoring live traffic...').trim();
   const unifiedStatusText = getUnifiedHeroStatusText(paceMessage, monitorMessage);
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
-  const heroFlightDepartLine = `Your flight departs at ${scheduledFlightTime || '7:30 PM'}`;
-  const heroFlightMetaLine = `Domestic · ${airportLabel} · ${terminalLabel}`;
+  const heroFlightDepartLine = `Your domestic flight departs at ${scheduledFlightTime || '7:30 PM'}`;
+  const heroFlightMetaLine = `${airportLabel} · ${terminalLabel} · Gate`;
   const heroOriginLine = startForDisplay ? `Rideshare from ${startForDisplay}` : '';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
   const isJfk = String(result.airport || '').toUpperCase() === 'JFK';
@@ -851,15 +851,15 @@ function renderHtmlResult(result) {
         </svg>
       </div>
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
-      <div class="resultHtmlStatus" aria-live="polite">
-        <span class="resultHtmlStatusDot" aria-hidden="true"></span>
-        <span>${escapeHtml(unifiedStatusText)}</span>
-      </div>
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
       <div class="resultHtmlMetaBlock">
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightDepartLine)}</div>
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightMetaLine)}</div>
         ${heroOriginLine ? `<div class="resultHtmlMetaLine">${escapeHtml(heroOriginLine)}</div>` : ''}
+      </div>
+      <div class="resultHtmlStatus" aria-live="polite">
+        <span class="resultHtmlStatusDot" aria-hidden="true"></span>
+        <span>${escapeHtml(unifiedStatusText)}</span>
       </div>
     </div>
     <div class="resultBreakdownCard">
