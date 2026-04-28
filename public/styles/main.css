@@ -12,7 +12,8 @@ html,body{
 
 .app{
   width:100vw;
-  height:100vh;
+  height:100dvh;
+  min-height:100dvh;
   position:relative;
   overflow:hidden;
 }
@@ -238,7 +239,8 @@ html,body{
 
 .app{
   width:100vw;
-  height:100vh;
+  height:100dvh;
+  min-height:100dvh;
   position:relative;
   overflow:hidden;
 }
@@ -2812,4 +2814,45 @@ textarea{
 #result.useHtmlResult .resultLiveTag--clear{
   background:#DDEDDD;
   color:#2E6242;
+}
+
+/* iOS mobile safe-area + viewport stability overrides */
+:root{
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-height: 84px;
+  --bottom-nav-clearance: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+}
+
+html,
+body{
+  min-height:100dvh;
+  overscroll-behavior-y:none;
+}
+
+.app{
+  min-height:100dvh;
+  height:100dvh;
+  padding-bottom:var(--safe-area-bottom);
+}
+
+.bottomNav{
+  height:calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+  padding-bottom:calc(12px + var(--safe-area-bottom));
+}
+
+.screen.scroll,
+.scroll{
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:var(--safe-area-bottom);
+}
+
+.calcContent,
+.screenContent,
+#result.useHtmlResult .resultHtmlContainer{
+  padding-bottom:calc(140px + var(--bottom-nav-clearance));
+}
+
+#calculate .ctaButton{
+  margin-bottom:calc(20px + var(--bottom-nav-clearance));
 }
