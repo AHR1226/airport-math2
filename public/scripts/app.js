@@ -808,8 +808,9 @@ function renderHtmlResult(result) {
   const monitorMessage = String(result.monitorMessage || 'Monitoring live traffic...').trim();
   const unifiedStatusText = getUnifiedHeroStatusText(paceMessage, monitorMessage);
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
-  const heroFlightLine = `Your domestic flight · from ${airportLabel} · ${terminalLabel}${scheduledFlightTime ? ` at ${scheduledFlightTime}` : ''}`;
-  const heroOriginLine = startForDisplay ? `Take a rideshare from ${startForDisplay}` : '';
+  const heroFlightDepartLine = `Your flight departs at ${scheduledFlightTime || '7:30 PM'}`;
+  const heroFlightMetaLine = `Domestic · ${airportLabel} · ${terminalLabel}`;
+  const heroOriginLine = startForDisplay ? `Rideshare from ${startForDisplay}` : '';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
   const isJfk = String(result.airport || '').toUpperCase() === 'JFK';
   const isEwr = String(result.airport || '').toUpperCase() === 'EWR';
@@ -856,8 +857,9 @@ function renderHtmlResult(result) {
       </div>
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
       <div class="resultHtmlMetaBlock">
-        <div class="resultHtmlMetaLine resultHtmlMetaPrimary">${escapeHtml(heroFlightLine)}</div>
-        ${heroOriginLine ? `<div class="resultHtmlMetaLine resultHtmlMetaSecondary">${escapeHtml(heroOriginLine)}</div>` : ''}
+        <div class="resultHtmlMetaLine">${escapeHtml(heroFlightDepartLine)}</div>
+        <div class="resultHtmlMetaLine">${escapeHtml(heroFlightMetaLine)}</div>
+        ${heroOriginLine ? `<div class="resultHtmlMetaLine">${escapeHtml(heroOriginLine)}</div>` : ''}
       </div>
     </div>
     <div class="resultBreakdownCard">
@@ -881,7 +883,6 @@ function renderHtmlResult(result) {
         <div class="resultUberCardTitle">Ride ready</div>
       </div>
       <div class="resultUberCardAction">Continue in Uber <span aria-hidden="true">→</span></div>
-      <div class="resultUberCardHelp">Pickup and airport destination prefilled</div>
     </a>
     ` : ''}
     <div class="resultLiveCard">
@@ -890,7 +891,7 @@ function renderHtmlResult(result) {
         <div class="resultLiveLabelWrap resultLiveLabelWrapTraffic">
           <div class="resultLiveLabelTopRow">
             <span class="resultLiveLabel">Traffic</span>
-            <span class="resultLiveTag">${escapeHtml(trafficTagLabel)}</span>
+            <span class="resultLiveTag resultLiveTag--traffic">${escapeHtml(trafficTagLabel)}</span>
           </div>
         </div>
         <strong class="resultLiveValue">${escapeHtml(travelDuration)}</strong>
@@ -898,21 +899,21 @@ function renderHtmlResult(result) {
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">Security wait</span>
-          <span class="resultLiveTag">${escapeHtml(securityTag)}</span>
+          <span class="resultLiveTag resultLiveTag--security">TSA Estimated</span>
         </div>
         <strong class="resultLiveValue">${escapeHtml(formatDurationMinutes(securityWait))}</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">${isLga ? 'Walk to gate' : 'Airport status'}</span>
-          <span class="resultLiveTag">${isLga ? escapeHtml(walkTag) : 'FAA'}</span>
+          <span class="resultLiveTag resultLiveTag--faa">${isLga ? escapeHtml(walkTag) : 'FAA'}</span>
         </div>
         <strong class="resultLiveValue text">${escapeHtml(isLga ? walkToGateValue : 'No advisory')}</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">Weather</span>
-          <span class="resultLiveTag">Clear</span>
+          <span class="resultLiveTag resultLiveTag--clear">Clear</span>
         </div>
         <strong class="resultLiveValue text">${escapeHtml('No delays')}</strong>
       </div>

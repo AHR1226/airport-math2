@@ -2660,8 +2660,7 @@ textarea{
   margin-left:2px;
 }
 
-#result.useHtmlResult .resultHtmlMetaPrimary,
-#result.useHtmlResult .resultHtmlMetaSecondary{
+#result.useHtmlResult .resultHtmlMetaLine{
   white-space:normal;
   overflow:visible;
   text-overflow:clip;
@@ -2723,11 +2722,13 @@ textarea{
   letter-spacing:-0.005em;
 }
 
-#result.useHtmlResult .resultUberCardHelp{
-  margin-top:4px;
-  font-family:"IBM Plex Sans", sans-serif;
-  font-size:11px;
-  line-height:1.28;
-  font-weight:400;
-  opacity:0.68;
+#result.useHtmlResult .resultLiveTag--security{
+  background:#F3ECE2;
+  color:#8A5C2B;
+}
+
+#result.useHtmlResult .resultLiveTag--faa,
+#result.useHtmlResult .resultLiveTag--clear{
+  background:#DDEDDD;
+  color:#2E6242;
 }
