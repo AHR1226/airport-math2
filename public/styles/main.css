@@ -2552,34 +2552,33 @@ textarea{
   opacity:0.96;
 }
 
-#result.useHtmlResult .resultUberCtaWrap{
-  margin-top:2px;
-  padding:0 2px;
+#result.useHtmlResult .resultUberInline{
+  margin-top:12px;
 }
 
-#result.useHtmlResult .resultUberCtaButton{
+#result.useHtmlResult .resultUberInlineAction{
   display:inline-flex;
   align-items:center;
-  justify-content:center;
-  min-height:36px;
-  padding:0 14px;
-  border-radius:999px;
-  border:1px solid rgba(6,72,25,0.14);
-  background:#FFFFFF;
-  color:#153524;
+  gap:4px;
   font-family:"IBM Plex Sans", sans-serif;
   font-size:13px;
-  font-weight:600;
-  letter-spacing:-0.01em;
+  line-height:1.2;
+  font-weight:500;
+  letter-spacing:-0.005em;
+  color:#063D18;
   text-decoration:none;
 }
 
-#result.useHtmlResult .resultUberCtaHelp{
-  margin-top:6px;
+#result.useHtmlResult .resultUberInlineAction span{
+  opacity:0.86;
+}
+
+#result.useHtmlResult .resultUberInlineHelp{
+  margin-top:4px;
   font-family:"IBM Plex Sans", sans-serif;
   font-size:11px;
-  line-height:1.3;
+  line-height:1.28;
   font-weight:400;
   color:#063D18;
-  opacity:0.72;
+  opacity:0.68;
 }

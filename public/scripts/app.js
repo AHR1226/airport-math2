@@ -823,6 +823,12 @@ function renderHtmlResult(result) {
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
       <div class="resultHtmlStatus">${escapeHtml(paceMessage)}</div>
       <div class="resultHtmlMetaBlock">${flightMetaMarkup}</div>
+      ${showUberCta ? `
+      <div class="resultUberInline">
+        <a class="resultUberInlineAction" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer">Continue in Uber <span aria-hidden="true">→</span></a>
+        <div class="resultUberInlineHelp">Pickup and airport destination prefilled</div>
+      </div>
+      ` : ''}
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
@@ -831,12 +837,6 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownRow"><span>Security</span><strong>${escapeHtml(securityWait)} min</strong></div>
       <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(result.buffer || 15)} min</strong></div>
     </div>
-    ${showUberCta ? `
-    <div class="resultUberCtaWrap">
-      <a class="resultUberCtaButton" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer">Open in Uber</a>
-      <div class="resultUberCtaHelp">Pickup and airport destination will be prefilled.</div>
-    </div>
-    ` : ''}
     <div class="resultLiveCard">
       <div class="resultLiveTitle">Live Conditions</div>
       <div class="resultLiveRow primary">
