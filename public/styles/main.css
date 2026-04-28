@@ -2660,6 +2660,13 @@ textarea{
   margin-left:2px;
 }
 
+#result.useHtmlResult .resultHtmlMetaPrimary,
+#result.useHtmlResult .resultHtmlMetaSecondary{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
 #result.useHtmlResult .resultUberCard{
   display:block;
   border-radius:16px;
@@ -2669,6 +2676,32 @@ textarea{
   text-decoration:none;
   color:#063D18;
   min-height:44px;
+}
+
+#result.useHtmlResult .resultUberCardHeader{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+#result.useHtmlResult .resultUberCardLogo{
+  width:16px;
+  height:16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:#063D18;
+  opacity:0.82;
+}
+
+#result.useHtmlResult .resultUberCardLogo svg{
+  width:100%;
+  height:100%;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
 }
 
 #result.useHtmlResult .resultUberCardTitle{

@@ -805,24 +805,11 @@ function renderHtmlResult(result) {
     && Boolean(destinationForUber)
     && hasValidUberLink
   );
-  const flightMetaLines = [];
   const monitorMessage = String(result.monitorMessage || 'Monitoring live traffic...').trim();
   const unifiedStatusText = getUnifiedHeroStatusText(paceMessage, monitorMessage);
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
-  if (scheduledFlightTime) {
-    flightMetaLines.push(`Your flight departs at ${scheduledFlightTime}`);
-  }
-  flightMetaLines.push(`Domestic flight · ${airportLabel} · ${terminalLabel}`);
-  const transportContext = getTransportContextLine(transportMode);
-  if (transportContext) {
-    flightMetaLines.push(transportContext);
-  }
-  if (startForDisplay) {
-    flightMetaLines.push(`From ${startForDisplay}`);
-  }
-  const flightMetaMarkup = flightMetaLines
-    .map((line) => `<div class="resultHtmlMetaLine">${escapeHtml(line)}</div>`)
-    .join('');
+  const heroFlightLine = `Your domestic flight · departs ${airportLabel} · ${terminalLabel}${scheduledFlightTime ? ` at ${scheduledFlightTime}` : ''}`;
+  const heroOriginLine = startForDisplay ? `Take a rideshare from ${startForDisplay}` : '';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
   const isJfk = String(result.airport || '').toUpperCase() === 'JFK';
   const isEwr = String(result.airport || '').toUpperCase() === 'EWR';
@@ -868,7 +855,10 @@ function renderHtmlResult(result) {
         <span>${escapeHtml(unifiedStatusText)}</span>
       </div>
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
-      <div class="resultHtmlMetaBlock">${flightMetaMarkup}</div>
+      <div class="resultHtmlMetaBlock">
+        <div class="resultHtmlMetaLine resultHtmlMetaPrimary">${escapeHtml(heroFlightLine)}</div>
+        ${heroOriginLine ? `<div class="resultHtmlMetaLine resultHtmlMetaSecondary">${escapeHtml(heroOriginLine)}</div>` : ''}
+      </div>
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
@@ -879,9 +869,19 @@ function renderHtmlResult(result) {
     </div>
     ${showUberCta ? `
     <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
-      <div class="resultUberCardTitle">Ride ready</div>
+      <div class="resultUberCardHeader">
+        <span class="resultUberCardLogo" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
+            <path d="M8 9v6"></path>
+            <path d="M16 9v6"></path>
+            <path d="M8 15h8"></path>
+          </svg>
+        </span>
+        <div class="resultUberCardTitle">Ride ready</div>
+      </div>
       <div class="resultUberCardAction">Continue in Uber <span aria-hidden="true">→</span></div>
-      <div class="resultUberCardHelp">Pickup and airport destination prefilled</div>
+      <div class="resultUberCardHelp">Rideshare timing reflects live traffic conditions</div>
     </a>
     ` : ''}
     <div class="resultLiveCard">
