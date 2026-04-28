@@ -937,7 +937,8 @@ function renderHtmlResult(result) {
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
   const heroFlightDepartLine = `Your domestic flight departs at ${scheduledFlightTime || '7:30 PM'}`;
   const heroFlightMetaLine = `${airportLabel} · ${terminalLabel} · Gate`;
-  const heroOriginLine = startForDisplay ? `Rideshare from ${startForDisplay}` : '';
+  const heroOriginPrefix = getTransportOriginPrefix(result.transportMode);
+  const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
   const isJfk = String(result.airport || '').toUpperCase() === 'JFK';
   const isEwr = String(result.airport || '').toUpperCase() === 'EWR';
@@ -1065,6 +1066,15 @@ function getTransportContextLine(mode) {
   if (key.includes('transit')) return 'Transit timing includes extra transfer buffer';
   if (key.includes('drive')) return 'Driving timing may include parking buffer';
   return '';
+}
+
+function getTransportOriginPrefix(mode) {
+  const key = String(mode || '').toLowerCase();
+  if (key.includes('rideshare')) return 'Rideshare from';
+  if (key.includes('drive')) return 'Drive from';
+  if (key.includes('transit')) return 'Take transit from';
+  if (key.includes('drop-off') || key.includes('dropoff')) return 'Get dropped off from';
+  return 'Rideshare from';
 }
 
 function formatMonitorUpdatedLabel(updatedAt) {
