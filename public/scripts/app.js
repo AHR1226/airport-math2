@@ -1,5 +1,10 @@
 const app = document.getElementById('app');
 const USE_HTML_RESULT = true;
+const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
+const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
+let etaMonitorTimerId = null;
+let etaMonitorKey = '';
+let etaMonitorInFlight = false;
 
 const TERMINAL_OPTIONS = {
   JFK: ['Terminal 1', 'Terminal 4', 'Terminal 5', 'Terminal 7', 'Terminal 8'],
@@ -91,6 +96,23 @@ if (window.syncSettingsTravelStyleUI) {
   window.syncSettingsTravelStyleUI();
 }
 initializeAirportsConditions();
+if (typeof window.show === 'function') {
+  const baseShow = window.show;
+  window.show = (id) => {
+    if (id !== 'result') stopEtaMonitoring();
+    return baseShow(id);
+  };
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopEtaMonitoring();
+    return;
+  }
+  const latest = getLatestEtaResult();
+  if (window.appState?.currentScreen === 'result' && latest) {
+    syncEtaMonitoring(latest);
+  }
+});
 
 function initializeAirportTerminalSelects() {
   const airportSelect = document.getElementById('airportInput');
@@ -642,7 +664,9 @@ async function calculateETA() {
     ewrSecurityWait:
       selectedAirport === 'EWR' && ewrSecurityWait != null && Number.isFinite(ewrSecurityWait)
         ? ewrSecurityWait
-        : null
+        : null,
+    monitorMessage: 'Monitoring live traffic...',
+    monitorUpdatedAt: null
   };
 
   if (window.stateApi) {
@@ -654,17 +678,13 @@ async function calculateETA() {
   show('loading');
 
   setTimeout(() => {
-    renderResult();
     show('result');
+    renderResult();
   }, 1200);
 }
 
 function renderResult() {
-  const stored = JSON.parse(localStorage.getItem('etaResult') || '{}');
-  const result = {
-    ...stored,
-    ...(window.appState?.eta || {})
-  };
+  const result = getLatestEtaResult();
 
   const leaveEl = document.getElementById('dynamicLeaveBy');
   const summaryEl = document.getElementById('dynamicSummary');
@@ -683,6 +703,15 @@ function renderResult() {
   }
 
   renderHtmlResult(result);
+  syncEtaMonitoring(result);
+}
+
+function getLatestEtaResult() {
+  const stored = JSON.parse(localStorage.getItem('etaResult') || '{}');
+  return {
+    ...stored,
+    ...(window.appState?.eta || {})
+  };
 }
 
 function escapeHtml(value) {
@@ -777,6 +806,8 @@ function renderHtmlResult(result) {
     && hasValidUberLink
   );
   const flightMetaLines = [];
+  const monitorMessage = String(result.monitorMessage || 'Monitoring live traffic...').trim();
+  const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
   if (scheduledFlightTime) {
     flightMetaLines.push(`Your flight departs at ${scheduledFlightTime}`);
   }
@@ -844,6 +875,10 @@ function renderHtmlResult(result) {
       </div>
       ` : ''}
     </div>
+    <div class="resultMonitorStatus" aria-live="polite">
+      <div class="resultMonitorMessage">${escapeHtml(monitorMessage)}</div>
+      <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
+    </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
@@ -907,6 +942,16 @@ function getTransportContextLine(mode) {
   return '';
 }
 
+function formatMonitorUpdatedLabel(updatedAt) {
+  if (!updatedAt) return '';
+  const stamp = new Date(updatedAt);
+  if (Number.isNaN(stamp.getTime())) return 'Monitoring live traffic...';
+  const mins = Math.max(0, Math.round((Date.now() - stamp.getTime()) / 60000));
+  if (mins <= 0) return 'Updated just now';
+  if (mins === 1) return 'Updated 1 min ago';
+  return `Updated ${mins} min ago`;
+}
+
 function isRideshareTransportMode(mode) {
   return String(mode || '').toLowerCase().includes('rideshare');
 }
@@ -945,6 +990,160 @@ function getUberClientId() {
   const fromWindow = window.UBER_CLIENT_ID;
   const fromState = window.appState?.uberClientId;
   return String(fromConfig || fromWindow || fromState || '').trim();
+}
+
+function buildEtaMonitorKey(result) {
+  const airport = String(result?.airport || '').trim().toUpperCase();
+  const terminal = String(result?.terminal || '').trim();
+  const origin = String(result?.origin || '').trim();
+  const destination = String(result?.destination || '').trim();
+  const flightTime = String(result?.flightTime || '').trim();
+  if (!airport || !origin || !destination) return '';
+  return [airport, terminal, origin, destination, flightTime].join('|');
+}
+
+function syncEtaMonitoring(result) {
+  if (!result) {
+    stopEtaMonitoring();
+    return;
+  }
+  if (window.appState?.currentScreen !== 'result' || document.hidden) {
+    stopEtaMonitoring();
+    return;
+  }
+  const key = buildEtaMonitorKey(result);
+  if (!key) {
+    stopEtaMonitoring();
+    return;
+  }
+  if (etaMonitorTimerId && etaMonitorKey === key) return;
+  stopEtaMonitoring();
+  etaMonitorKey = key;
+  etaMonitorTimerId = window.setInterval(() => {
+    refreshEtaMonitoring();
+  }, ETA_MONITOR_INTERVAL_MS);
+}
+
+function stopEtaMonitoring() {
+  if (etaMonitorTimerId) {
+    window.clearInterval(etaMonitorTimerId);
+  }
+  etaMonitorTimerId = null;
+  etaMonitorKey = '';
+  etaMonitorInFlight = false;
+}
+
+function parseClockTimeToday(raw) {
+  const value = String(raw || '').trim();
+  if (!value) return null;
+  const twelve = value.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (twelve) {
+    let h = Number(twelve[1]);
+    const m = Number(twelve[2]);
+    const mer = twelve[3].toUpperCase();
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+    if (h === 12) h = 0;
+    if (mer === 'PM') h += 12;
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
+  }
+  const twentyFour = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (twentyFour) {
+    const h = Number(twentyFour[1]);
+    const m = Number(twentyFour[2]);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
+  }
+  return null;
+}
+
+function upsertEtaResult(patch) {
+  const current = getLatestEtaResult();
+  const merged = { ...current, ...patch };
+  if (window.stateApi) {
+    window.stateApi.setEta(merged);
+  }
+  localStorage.setItem('etaResult', JSON.stringify(merged));
+}
+
+async function refreshEtaMonitoring() {
+  if (etaMonitorInFlight) return;
+  if (window.appState?.currentScreen !== 'result' || document.hidden) {
+    stopEtaMonitoring();
+    return;
+  }
+  const result = getLatestEtaResult();
+  const origin = String(result.origin || '').trim();
+  const airport = String(result.airport || '').trim().toUpperCase();
+  if (!origin || !airport) {
+    stopEtaMonitoring();
+    return;
+  }
+  etaMonitorInFlight = true;
+  try {
+    const live = await fetchTravelEstimate({
+      airport,
+      terminal: result.terminal || '',
+      origin,
+      departAt: new Date().toISOString()
+    });
+    const latestTravel = Number(live?.travelMinutes);
+    const currentTravel = Number(result.travel);
+    if (!Number.isFinite(latestTravel) || latestTravel <= 0 || !Number.isFinite(currentTravel) || currentTravel <= 0) {
+      upsertEtaResult({
+        monitorMessage: 'Monitoring live traffic...',
+        monitorUpdatedAt: new Date().toISOString()
+      });
+      renderResult();
+      return;
+    }
+
+    const roundedTravel = Math.round(latestTravel);
+    const delta = roundedTravel - Math.round(currentTravel);
+    const nowIso = new Date().toISOString();
+    if (Math.abs(delta) < ETA_MONITOR_SIGNIFICANT_MINUTES) {
+      upsertEtaResult({
+        monitorMessage: 'You\'re still on schedule',
+        monitorUpdatedAt: nowIso
+      });
+      renderResult();
+      return;
+    }
+
+    const airportTime = Number(result.airportTime) || 35;
+    const buffer = Number(result.buffer) || 15;
+    const nextTotal = roundedTravel + airportTime + buffer;
+    const priorLeaveDate = parseClockTimeToday(result.leaveBy);
+    const nextLeaveDate = priorLeaveDate ? new Date(priorLeaveDate.getTime() - (delta * 60000)) : null;
+    const nextLeaveBy = nextLeaveDate ? formatTime(nextLeaveDate) : result.leaveBy;
+    const message = delta > 0
+      ? `Traffic increased by ${delta} min. Leave ${delta} min earlier to stay on track.`
+      : `Traffic eased by ${Math.abs(delta)} min. You're still on schedule.`;
+
+    upsertEtaResult({
+      travel: roundedTravel,
+      total: nextTotal,
+      leaveBy: nextLeaveBy,
+      travelProvider: live?.provider || result.travelProvider || 'mock',
+      travelStatus: live?.status || result.travelStatus || 'fallback',
+      travelSource: live?.source || result.travelSource || 'Backup estimate',
+      travelTypical: Number.isFinite(Number(live?.typicalMinutes)) ? Number(live.typicalMinutes) : result.travelTypical,
+      monitorMessage: message,
+      monitorUpdatedAt: nowIso
+    });
+    renderResult();
+  } catch {
+    upsertEtaResult({
+      monitorMessage: 'Monitoring live traffic...',
+      monitorUpdatedAt: new Date().toISOString()
+    });
+    renderResult();
+  } finally {
+    etaMonitorInFlight = false;
+  }
 }
 
 function getSecurityWaitEstimate(result, selections) {

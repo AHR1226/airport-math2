@@ -2603,3 +2603,27 @@ textarea{
   color:#063D18;
   opacity:0.68;
 }
+
+#result.useHtmlResult .resultMonitorStatus{
+  margin-top:-1px;
+  margin-bottom:2px;
+  padding:0 2px;
+  font-family:"IBM Plex Sans", sans-serif;
+  color:#063D18;
+}
+
+#result.useHtmlResult .resultMonitorMessage{
+  font-size:12px;
+  line-height:1.3;
+  font-weight:500;
+  opacity:0.84;
+}
+
+#result.useHtmlResult .resultMonitorUpdated{
+  margin-top:2px;
+  min-height:14px;
+  font-size:11px;
+  line-height:1.25;
+  font-weight:400;
+  opacity:0.65;
+}
