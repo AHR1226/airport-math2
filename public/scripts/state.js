@@ -2,6 +2,7 @@ window.appState = {
   currentScreen: 'splash',
   form: {
     flightTime: '19:30',
+    flightNumber: '',
     airport: 'JFK',
     terminal: 'Terminal 4',
     startLocation: ''
@@ -37,11 +38,13 @@ window.stateApi = {
   },
   syncFormFromDom() {
     const flightEl = document.getElementById('flightTime');
+    const flightNumberEl = document.getElementById('flightNumberInput');
     const airportEl = document.getElementById('airportInput');
     const terminalEl = document.getElementById('terminalInput');
     const startLocationEl = document.getElementById('startingLocationInput');
 
     if (flightEl) window.appState.form.flightTime = flightEl.value || '19:30';
+    if (flightNumberEl) window.appState.form.flightNumber = flightNumberEl.value.trim();
     if (airportEl) window.appState.form.airport = airportEl.value || 'JFK';
     if (terminalEl) window.appState.form.terminal = terminalEl.value || 'Terminal 4';
     if (startLocationEl) {

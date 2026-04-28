@@ -724,7 +724,7 @@ async function calculateETA() {
     ?? ''
   ).trim();
   if (!startLocationRaw) {
-    showStartingLocationValidation('Add a starting address to calculate your ETA.');
+    showStartingLocationValidation('Add where you are leaving from to calculate your ETA.');
     return;
   }
   clearStartingLocationValidation();
@@ -734,6 +734,7 @@ async function calculateETA() {
   const selectedAirport = form.airport || document.getElementById('airportInput')?.value || 'JFK';
   const selectedTerminal = form.terminal || document.getElementById('terminalInput')?.value || DEFAULT_TERMINAL_BY_AIRPORT[selectedAirport] || 'Terminal 4';
   const flightTimeValue = form.flightTime || document.getElementById('flightTime')?.value || '19:30';
+  const flightNumberValue = String(form.flightNumber || document.getElementById('flightNumberInput')?.value || '').trim();
   const [hours, minutes] = flightTimeValue.split(':').map(Number);
 
   const flight = new Date();
@@ -765,6 +766,7 @@ async function calculateETA() {
   const etaResult = {
     leaveBy: formatTime(leave),
     flightTime: formatTime(flight),
+    flightNumber: flightNumberValue,
     airport: selectedAirport,
     terminal: selectedTerminal,
     origin: startLocationRaw,
@@ -910,6 +912,7 @@ function renderHtmlResult(result) {
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
+  const flightNumber = String(result.flightNumber || form.flightNumber || '').trim().toUpperCase();
   const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
   const transportMode = String(result.transportMode || '').trim();
   const pickupForUber = formatAddressForDisplay(result.origin || form.startLocation || '').trim();
@@ -933,7 +936,9 @@ function renderHtmlResult(result) {
   const urgency = getUrgencyPresentation(result);
   const showUrgencyDebug = shouldShowUrgencyDebug();
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
-  const heroFlightDepartLine = `Your domestic flight departs at ${scheduledFlightTime || '7:30 PM'}`;
+  const heroFlightDepartLine = flightNumber
+    ? `Your ${flightNumber} flight departs at ${scheduledFlightTime || '7:30 PM'}`
+    : `Your domestic flight departs at ${scheduledFlightTime || '7:30 PM'}`;
   const heroFlightMetaLine = `${airportLabel} · ${terminalLabel} · Gate`;
   const heroOriginPrefix = getTransportOriginPrefix(result.transportMode);
   const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';

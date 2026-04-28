@@ -65,6 +65,7 @@
           <option value="International">International</option>
         </select>
       </div>
+      <input id="flightNumberInput" class="full flightNumberInput" type="text" value="" placeholder="DL 1234" aria-label="Flight Number" autocomplete="off">
     </div>
 
     <div class="card dark">
@@ -82,7 +83,7 @@
     </div>
 
     <div class="card startingLocationCard">
-      <h2>Starting Location</h2>
+      <h2>Leaving From</h2>
       <div class="locationAutocomplete">
         <div class="locationInputRow">
           <button
@@ -95,7 +96,7 @@
               <path d="M3 11L21 3L13 21L11 13L3 11Z"></path>
             </svg>
           </button>
-          <input id="startingLocationInput" class="full" type="text" value="" placeholder="Enter your starting address" autocomplete="off">
+          <input id="startingLocationInput" class="full" type="text" value="" placeholder="Enter where you’re leaving from" autocomplete="off">
         </div>
         <div id="savedLocationQuickChips" class="savedLocationQuickChips" hidden></div>
         <div id="locationSuggestions" class="locationSuggestions" role="listbox" aria-label="Location suggestions"></div>
