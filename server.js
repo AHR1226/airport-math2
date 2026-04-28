@@ -154,37 +154,17 @@ async function routeAuto(params) {
   return fallback;
 }
 
-// JFK security minutes are terminal-aware fallbacks only. Live JFK HTML parsing is not enabled yet;
-// when an official feed exists, plug it in here and keep jfkSecurityEstimate() as the fallback path.
+// Airport security fallback maps are terminal-aware and used only when live parsing fails.
 const JFK_DEFAULT_SECURITY_TERMINAL = 'Terminal 4';
 const JFK_TERMINAL_SECURITY = {
-  'Terminal 1': { regular: 18, precheck: 6 },
-  'Terminal 4': { regular: 18, precheck: 2 },
-  'Terminal 5': { regular: 10, precheck: 4 },
-  'Terminal 7': { regular: 14, precheck: 5 },
-  'Terminal 8': { regular: 11, precheck: 4 }
+  'Terminal 1': { regular: 13, precheck: 3 },
+  'Terminal 4': { regular: 16, precheck: 6 },
+  'Terminal 5': { regular: 19, precheck: 2 },
+  'Terminal 7': { regular: 5, precheck: null },
+  'Terminal 8': { regular: 25, precheck: 7 }
 };
 
-function jfkSecurityEstimate(terminalQuery) {
-  const raw = String(terminalQuery || '').trim();
-  const label =
-    raw && Object.prototype.hasOwnProperty.call(JFK_TERMINAL_SECURITY, raw)
-      ? raw
-      : JFK_DEFAULT_SECURITY_TERMINAL;
-  const terminalValues = JFK_TERMINAL_SECURITY[label] || JFK_TERMINAL_SECURITY[JFK_DEFAULT_SECURITY_TERMINAL];
-  return {
-    status: 'estimate',
-    source: 'JFK terminal security fallback (live parsing not enabled)',
-    regular: terminalValues.regular,
-    precheck: terminalValues.precheck,
-    updatedAt: new Date().toISOString(),
-    terminal: label,
-    jfkMode: 'terminal_fallback'
-  };
-}
-
-// EWR security minutes are also terminal-aware fallbacks.
-// Live EWR parsing is not enabled yet; a stable official Newark source can replace this later.
+// EWR security minutes are terminal-aware fallbacks.
 const EWR_TERMINAL_SECURITY = {
   'Terminal A': 10,
   'Terminal B': 14,
@@ -198,43 +178,6 @@ const LGA_TERMINAL_SECURITY = {
 };
 const LGA_DEFAULT_SECURITY_TERMINAL = 'Terminal B';
 
-function ewrSecurityEstimate(terminalQuery) {
-  const raw = String(terminalQuery || '').trim();
-  const label =
-    raw && Object.prototype.hasOwnProperty.call(EWR_TERMINAL_SECURITY, raw)
-      ? raw
-      : EWR_DEFAULT_SECURITY_TERMINAL;
-  const regular = EWR_TERMINAL_SECURITY[label];
-  const precheck = Math.max(3, Math.round(regular * 0.45));
-  return {
-    status: 'estimate',
-    source: 'EWR terminal security fallback (live parsing not enabled)',
-    regular,
-    precheck,
-    updatedAt: new Date().toISOString(),
-    terminal: label,
-    ewrMode: 'terminal_fallback'
-  };
-}
-
-function lgaSecurityEstimate(terminalQuery) {
-  const raw = String(terminalQuery || '').trim();
-  const label =
-    raw && Object.prototype.hasOwnProperty.call(LGA_TERMINAL_SECURITY, raw)
-      ? raw
-      : LGA_DEFAULT_SECURITY_TERMINAL;
-  const terminalValues = LGA_TERMINAL_SECURITY[label] || LGA_TERMINAL_SECURITY[LGA_DEFAULT_SECURITY_TERMINAL];
-  return {
-    status: 'estimate',
-    source: 'LGA terminal reference map',
-    regular: terminalValues.regular,
-    precheck: terminalValues.precheck,
-    updatedAt: new Date().toISOString(),
-    terminal: label,
-    lgaMode: 'terminal_fallback'
-  };
-}
-
 function normalizeSecurityStatus(raw) {
   const s = String(raw || '').trim().toLowerCase();
   if (s.includes('standard')) return 'Standard';
@@ -243,30 +186,113 @@ function normalizeSecurityStatus(raw) {
   return 'PreCheck';
 }
 
-function resolveSecurityForRequest({ airport, terminal, securityStatus }) {
+function terminalFallbackSecurity(airport, terminal) {
   const airportCode = String(airport || 'OTHER').toUpperCase();
-  let base;
+  const terminalLabel = String(terminal || '').trim();
   if (airportCode === 'JFK') {
-    base = jfkSecurityEstimate(terminal);
-  } else if (airportCode === 'EWR') {
-    base = ewrSecurityEstimate(terminal);
-  } else if (airportCode === 'LGA') {
-    base = lgaSecurityEstimate(terminal);
-  } else {
-    base = securityFallback(airportCode);
+    const label = terminalLabel && Object.prototype.hasOwnProperty.call(JFK_TERMINAL_SECURITY, terminalLabel)
+      ? terminalLabel
+      : JFK_DEFAULT_SECURITY_TERMINAL;
+    const values = JFK_TERMINAL_SECURITY[label] || JFK_TERMINAL_SECURITY[JFK_DEFAULT_SECURITY_TERMINAL];
+    return {
+      status: 'estimated',
+      source: 'JFK terminal reference map',
+      regular: values.regular,
+      precheck: values.precheck,
+      terminal: label
+    };
+  }
+  if (airportCode === 'LGA') {
+    const label = terminalLabel && Object.prototype.hasOwnProperty.call(LGA_TERMINAL_SECURITY, terminalLabel)
+      ? terminalLabel
+      : LGA_DEFAULT_SECURITY_TERMINAL;
+    const values = LGA_TERMINAL_SECURITY[label] || LGA_TERMINAL_SECURITY[LGA_DEFAULT_SECURITY_TERMINAL];
+    return {
+      status: 'estimated',
+      source: 'LGA terminal reference map',
+      regular: values.regular,
+      precheck: values.precheck,
+      terminal: label
+    };
+  }
+  if (airportCode === 'EWR') {
+    const label = terminalLabel && Object.prototype.hasOwnProperty.call(EWR_TERMINAL_SECURITY, terminalLabel)
+      ? terminalLabel
+      : EWR_DEFAULT_SECURITY_TERMINAL;
+    const regular = EWR_TERMINAL_SECURITY[label];
+    const precheck = Math.max(3, Math.round(regular * 0.45));
+    return {
+      status: 'estimated',
+      source: 'EWR terminal security fallback (live parsing not enabled)',
+      regular,
+      precheck,
+      terminal: label
+    };
+  }
+  const generic = securityFallback(airportCode);
+  return {
+    status: 'estimated',
+    source: String(generic.source || 'Built-in fallback'),
+    regular: Number(generic.regular),
+    precheck: Number(generic.precheck),
+    terminal: terminalLabel
+  };
+}
+
+function parseTerminalFromLiveRows(terminal, byTerminalRows) {
+  const target = String(terminal || '').trim().toLowerCase();
+  if (!target || !Array.isArray(byTerminalRows)) return null;
+  const matched = byTerminalRows.find((row) => String(row || '').toLowerCase().includes(target));
+  if (!matched) return null;
+  const row = String(matched);
+  const regularMatch = row.match(/:\s*(\d+)\s*m/i);
+  const precheckMatch = row.match(/pre\s*(\d+)\s*m/i);
+  return {
+    regular: regularMatch ? Number(regularMatch[1]) : null,
+    precheck: precheckMatch ? Number(precheckMatch[1]) : null
+  };
+}
+
+async function resolveSecurityWait({ airport, terminal, securityStatus }) {
+  const airportCode = String(airport || 'OTHER').toUpperCase();
+  const terminalLabel = String(terminal || '').trim();
+  let base = null;
+  try {
+    const live = await fetchOfficialSecurity(airportCode);
+    if (live?.status === 'live') {
+      const terminalLive = parseTerminalFromLiveRows(terminalLabel, live?.byTerminal);
+      const liveRegular = Number.isFinite(Number(terminalLive?.regular))
+        ? Number(terminalLive.regular)
+        : Number(live?.regular);
+      const livePrecheck = Number.isFinite(Number(terminalLive?.precheck))
+        ? Number(terminalLive.precheck)
+        : Number(live?.precheck);
+      base = {
+        status: 'live',
+        source: String(live?.source || 'Official airport site'),
+        regular: Number.isFinite(liveRegular) ? liveRegular : null,
+        precheck: Number.isFinite(livePrecheck) ? livePrecheck : null,
+        terminal: terminalLabel || ''
+      };
+    }
+  } catch {}
+  if (!base) {
+    base = terminalFallbackSecurity(airportCode, terminalLabel);
   }
   const selected = normalizeSecurityStatus(securityStatus);
   const regularMinutes = Number(base?.regular);
   const precheckMinutes = Number(base?.precheck);
   const usePrecheck = selected === 'PreCheck' || selected === 'CLEAR + PreCheck';
-  const minutesRaw = usePrecheck ? precheckMinutes : regularMinutes;
+  const minutesRaw = usePrecheck
+    ? (Number.isFinite(precheckMinutes) ? precheckMinutes : regularMinutes)
+    : regularMinutes;
   const minutes = Number.isFinite(minutesRaw) ? minutesRaw : NaN;
   const resolved = {
     minutes,
-    status: base?.status === 'live' ? 'live' : 'estimated',
+    status: String(base?.status || 'estimated') === 'live' ? 'live' : 'estimated',
     source: String(base?.source || 'Security fallback'),
     airport: airportCode,
-    terminal: String(base?.terminal || terminal || ''),
+    terminal: String(base?.terminal || terminalLabel || ''),
     securityStatus: selected,
     regularMinutes: Number.isFinite(regularMinutes) ? regularMinutes : null,
     precheckMinutes: Number.isFinite(precheckMinutes) ? precheckMinutes : null
@@ -617,10 +643,10 @@ app.get('/api/security', async (req, res) => {
     const airport = String(req.query.airport || 'OTHER').toUpperCase();
     const terminal = String(req.query.terminal || '').trim();
     const securityStatus = String(req.query.securityStatus || '').trim();
-    const resolved = resolveSecurityForRequest({ airport, terminal, securityStatus });
+    const resolved = await resolveSecurityWait({ airport, terminal, securityStatus });
     res.json(resolved);
   } catch {
-    const fallback = resolveSecurityForRequest({
+    const fallback = await resolveSecurityWait({
       airport: String(req.query.airport || 'OTHER').toUpperCase(),
       terminal: String(req.query.terminal || '').trim(),
       securityStatus: String(req.query.securityStatus || '').trim()
