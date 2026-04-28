@@ -2668,6 +2668,8 @@ textarea{
 
 #result.useHtmlResult .resultUberCard{
   display:block;
+  position:relative;
+  z-index:1;
   border-radius:16px;
   border:1px solid rgba(6,72,25,0.1);
   background:#F6F6F4;
@@ -2675,6 +2677,8 @@ textarea{
   text-decoration:none;
   color:#063D18;
   min-height:44px;
+  pointer-events:auto;
+  cursor:pointer;
 }
 
 #result.useHtmlResult .resultUberCardHeader{

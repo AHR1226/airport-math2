@@ -1003,8 +1003,8 @@ function isValidUberDeepLink(url) {
 }
 
 function onUberLinkClick(uberHref) {
-  console.log('Uber href', uberHref);
-  console.log('Uber link clicked', uberHref);
+  console.log('Uber href:', uberHref);
+  console.log('Uber clicked:', uberHref);
   return true;
 }
 
