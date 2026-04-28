@@ -106,10 +106,22 @@
   <h2>Transportation</h2>
 
   <div class="chipGroup" data-group="transport">
-    <button class="chip active">Rideshare</button>
-    <button class="chip">Drive & park</button>
-    <button class="chip">Transit</button>
-    <button class="chip">Drop-off</button>
+    <button type="button" class="chip chip--transport active" data-selection="Rideshare">
+      <span class="transportChipLabel">Rideshare</span>
+      <span class="transportChipDesc">Flexible timing, affected by live traffic</span>
+    </button>
+    <button type="button" class="chip chip--transport" data-selection="Drive & park">
+      <span class="transportChipLabel">Driving</span>
+      <span class="transportChipDesc">Fastest when traffic is light, parking may add buffer</span>
+    </button>
+    <button type="button" class="chip chip--transport" data-selection="Transit">
+      <span class="transportChipLabel">Public transit</span>
+      <span class="transportChipDesc">More predictable, but may require extra transfer time</span>
+    </button>
+    <button type="button" class="chip chip--transport" data-selection="Drop-off">
+      <span class="transportChipLabel">Drop-off</span>
+      <span class="transportChipDesc">Quick curbside handoff with less parking overhead</span>
+    </button>
   </div>
 </div>
 

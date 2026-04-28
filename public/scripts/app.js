@@ -577,6 +577,7 @@ async function calculateETA() {
   flight.setHours(hours, minutes, 0, 0);
 
   const timing = minutesForSelection();
+  const selectedTransport = getActiveSelection('transport');
   const travelApi = await fetchTravelEstimate({
     airport: selectedAirport,
     terminal: selectedTerminal,
@@ -626,6 +627,7 @@ async function calculateETA() {
     buffer: timing.buffer,
     total: timing.total,
     style: getActiveSelection('style'),
+    transportMode: selectedTransport || null,
     travelProvider: travelApi?.provider || 'mock',
     travelStatus: travelApi?.status || 'fallback',
     travelSource: travelApi?.source || 'Backup estimate',
@@ -755,11 +757,16 @@ function renderHtmlResult(result) {
   const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
   const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
+  const transportMode = String(result.transportMode || '').trim();
   const flightMetaLines = [];
   if (scheduledFlightTime) {
     flightMetaLines.push(`Your flight departs at ${scheduledFlightTime}`);
   }
   flightMetaLines.push(`Domestic flight · ${airportLabel} · ${terminalLabel}`);
+  const transportContext = getTransportContextLine(transportMode);
+  if (transportContext) {
+    flightMetaLines.push(transportContext);
+  }
   if (startForDisplay) {
     flightMetaLines.push(`From ${startForDisplay}`);
   }
@@ -863,6 +870,15 @@ function getPaceMessage(result) {
   if (total >= 125) return 'Moving at a comfortable pace 😊';
   if (total <= 85) return 'You should leave soon';
   return 'Comfortably timed 🙂';
+}
+
+function getTransportContextLine(mode) {
+  const key = String(mode || '').toLowerCase();
+  if (!key) return '';
+  if (key.includes('rideshare')) return 'Rideshare timing reflects live traffic conditions';
+  if (key.includes('transit')) return 'Transit timing includes extra transfer buffer';
+  if (key.includes('drive')) return 'Driving timing may include parking buffer';
+  return '';
 }
 
 function getSecurityWaitEstimate(result, selections) {

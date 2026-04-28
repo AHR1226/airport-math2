@@ -346,6 +346,51 @@ button.tap{
   margin-right:-2px;
 }
 
+/* Transportation: compact label + helper copy on Calculate */
+#calculate [data-group="transport"]{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  margin-left:0;
+  margin-right:0;
+}
+
+#calculate [data-group="transport"] .chip--transport{
+  width:100%;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:2px;
+  box-sizing:border-box;
+  min-height:3.95rem;
+  padding:10px 12px;
+  text-align:left;
+  border-radius:11px;
+}
+
+#calculate [data-group="transport"] .transportChipLabel{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:-0.005em;
+  line-height:1.22;
+}
+
+#calculate [data-group="transport"] .transportChipDesc{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.33;
+  font-weight:400;
+  color:rgba(6,72,25,0.58);
+  letter-spacing:0.005em;
+}
+
+#calculate [data-group="transport"] .chip--transport.active .transportChipDesc{
+  color:rgba(6,72,25,0.72);
+}
+
 /* Travel Style: label + subtle description (Calculate + Settings) */
 #calculate [data-group="style"]{
   display:flex;
