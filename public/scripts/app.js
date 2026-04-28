@@ -763,7 +763,13 @@ function renderHtmlResult(result) {
     result.destination || destinationForSelection(airportLabel, terminalLabel)
   ).trim();
   const uberDeepLink = buildUberDeepLink(pickupForUber, destinationForUber);
-  const showUberCta = isRideshareTransportMode(transportMode) && Boolean(uberDeepLink);
+  const hasValidUberLink = isValidUberDeepLink(uberDeepLink);
+  const showUberCta = (
+    isRideshareTransportMode(transportMode)
+    && Boolean(pickupForUber)
+    && Boolean(destinationForUber)
+    && hasValidUberLink
+  );
   const flightMetaLines = [];
   if (scheduledFlightTime) {
     flightMetaLines.push(`Your flight departs at ${scheduledFlightTime}`);
@@ -825,7 +831,7 @@ function renderHtmlResult(result) {
       <div class="resultHtmlMetaBlock">${flightMetaMarkup}</div>
       ${showUberCta ? `
       <div class="resultUberInline">
-        <a class="resultUberInlineLink" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer">
+        <a class="resultUberInlineLink" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
           <span class="resultUberInlineAction">Continue in Uber <span aria-hidden="true">→</span></span>
           <span class="resultUberInlineHelp">Pickup and airport destination prefilled</span>
         </a>
@@ -909,6 +915,18 @@ function buildUberDeepLink(pickupAddress, dropoffAddress) {
     dropoff: dropoff
   });
   return `https://m.uber.com/ul/?${params.toString()}`;
+}
+
+function isValidUberDeepLink(url) {
+  const href = String(url || '').trim();
+  if (!href) return false;
+  if (href === '#' || href === 'undefined' || href === 'null') return false;
+  return href.startsWith('https://m.uber.com/');
+}
+
+function onUberLinkClick(uberHref) {
+  console.log('Uber link clicked', uberHref);
+  return true;
 }
 
 function getSecurityWaitEstimate(result, selections) {
