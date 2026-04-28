@@ -907,7 +907,6 @@ function renderHtmlResult(result) {
 
   const form = window.appState?.form || {};
   const selections = window.appState?.selections || {};
-  const paceMessage = getPaceMessage(result);
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
@@ -931,8 +930,8 @@ function renderHtmlResult(result) {
     && Boolean(destinationForUber)
     && hasValidUberLink
   );
-  const monitorMessage = String(result.monitorMessage || 'Monitoring live traffic...').trim();
-  const unifiedStatusText = getUnifiedHeroStatusText(paceMessage, monitorMessage);
+  const urgency = getUrgencyPresentation(result);
+  const showUrgencyDebug = shouldShowUrgencyDebug();
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
   const heroFlightDepartLine = `Your domestic flight departs at ${scheduledFlightTime || '7:30 PM'}`;
   const heroFlightMetaLine = `${airportLabel} · ${terminalLabel} · Gate`;
@@ -965,7 +964,7 @@ function renderHtmlResult(result) {
       <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
     </div>
     <div class="resultHeroCard">
-      <div class="resultHtmlEyebrow">Leave at</div>
+      <div class="resultHtmlEyebrow">${escapeHtml(`${urgency.leaveLabel} - ${urgency.eyebrowCopy}`)}</div>
       <div class="resultHeroClock" aria-hidden="true">
         <svg viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -978,10 +977,11 @@ function renderHtmlResult(result) {
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightMetaLine)}</div>
         ${heroOriginLine ? `<div class="resultHtmlMetaLine">${escapeHtml(heroOriginLine)}</div>` : ''}
       </div>
-      <div class="resultHtmlStatus" aria-live="polite">
+      <div class="resultHtmlStatus ${escapeHtml(urgency.statusClassName)}" aria-live="polite">
         <span class="resultHtmlStatusDot" aria-hidden="true"></span>
-        <span>${escapeHtml(unifiedStatusText)}</span>
+        <span>${escapeHtml(urgency.pillCopy)}</span>
       </div>
+      ${showUrgencyDebug ? `<div class="resultUrgencyDebug">DEBUG · ${escapeHtml(urgency.urgencyState)} · Cushion ${escapeHtml(formatDebugMinutes(urgency.remainingCushionMinutes))} · ${escapeHtml(String(urgency.reason || 'n/a'))}</div>` : ''}
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
     </div>
     <div class="resultBreakdownCard">
@@ -1043,14 +1043,97 @@ function renderHtmlResult(result) {
   `;
 }
 
-function getPaceMessage(result) {
-  const total = Number(result?.total) || 95;
-  const styleKey = normalizeTravelStyleKey(result?.style || '');
-  if (styleKey === 'Tight') return 'You should leave soon';
-  if (styleKey === 'Relaxed') return 'Moving at a comfortable pace 😊';
-  if (total >= 125) return 'Moving at a comfortable pace 😊';
-  if (total <= 85) return 'You should leave soon';
-  return 'Comfortably timed 🙂';
+function getUrgencyPresentation(result) {
+  const now = new Date();
+  const flightDate = parseClockTimeToday(result?.flightTime);
+  const leaveDate = parseClockTimeToday(result?.leaveBy);
+  const minutesUntilFlight = flightDate
+    ? Math.round((flightDate.getTime() - now.getTime()) / 60000)
+    : null;
+
+  const travelMinutes = Number.isFinite(Number(result?.travel)) ? Math.round(Number(result.travel)) : 0;
+  const securityMinutes = Number.isFinite(Number(result?.securityResolvedMinutes))
+    ? Math.round(Number(result.securityResolvedMinutes))
+    : 0;
+  const walkMinutes = Number.isFinite(Number(result?.lgaWalkToGate)) ? Math.round(Number(result.lgaWalkToGate)) : 0;
+  const bufferMinutes = Number.isFinite(Number(result?.buffer)) ? Math.round(Number(result.buffer)) : 0;
+  const boardingCutoffAllowance = Number.isFinite(Number(result?.boardingCutoffAllowance))
+    ? Math.max(0, Math.round(Number(result.boardingCutoffAllowance)))
+    : Math.max(
+      0,
+      Math.round((Number(result?.airportTime) || 0) - securityMinutes - walkMinutes)
+    );
+  const totalTripMinutesRemaining = travelMinutes + securityMinutes + walkMinutes + bufferMinutes + boardingCutoffAllowance;
+  const remainingCushionMinutes = Number.isFinite(minutesUntilFlight)
+    ? Math.round(minutesUntilFlight - totalTripMinutesRemaining)
+    : null;
+  const leaveTimePassed = Boolean(leaveDate && leaveDate.getTime() <= now.getTime());
+
+  let urgencyState = 'SAFE';
+  let reason = 'cushion_over_30';
+  if (leaveTimePassed) {
+    urgencyState = 'CRITICAL';
+    reason = 'leave_time_passed';
+  } else if (!Number.isFinite(remainingCushionMinutes)) {
+    urgencyState = 'SAFE';
+    reason = 'missing_time_inputs_default_safe';
+  } else if (remainingCushionMinutes < 10) {
+    urgencyState = 'CRITICAL';
+    reason = 'cushion_under_10';
+  } else if (remainingCushionMinutes <= 30) {
+    urgencyState = 'CAUTION';
+    reason = 'cushion_between_10_and_30';
+  }
+
+  const copyByState = {
+    SAFE: {
+      leaveLabel: 'LEAVE AT',
+      eyebrowCopy: "You're in good shape",
+      pillCopy: 'Monitoring live traffic',
+      statusClassName: 'resultHtmlStatus--safe'
+    },
+    CAUTION: {
+      leaveLabel: 'LEAVE SOON',
+      eyebrowCopy: "You're cutting it close",
+      pillCopy: 'Traffic could impact arrival',
+      statusClassName: 'resultHtmlStatus--caution'
+    },
+    CRITICAL: {
+      leaveLabel: 'LEAVE NOW',
+      eyebrowCopy: 'Leave immediately',
+      pillCopy: 'Arrival window at risk',
+      statusClassName: 'resultHtmlStatus--critical'
+    }
+  };
+  const selectedCopy = copyByState[urgencyState] || copyByState.SAFE;
+
+  console.log('[urgency-debug]', {
+    remainingCushionMinutes: Number.isFinite(remainingCushionMinutes) ? remainingCushionMinutes : null,
+    urgencyState,
+    reason
+  });
+
+  return {
+    ...selectedCopy,
+    urgencyState,
+    remainingCushionMinutes,
+    reason
+  };
+}
+
+function shouldShowUrgencyDebug() {
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    return params.get('debug') === '1';
+  } catch {
+    return false;
+  }
+}
+
+function formatDebugMinutes(value) {
+  const mins = Number(value);
+  if (!Number.isFinite(mins)) return '--';
+  return `${Math.round(mins)} min`;
 }
 
 function getTransportContextLine(mode) {
@@ -1091,20 +1174,6 @@ function formatDurationMinutes(value) {
   const mins = totalMins % 60;
   if (mins === 0) return `${hours} hr`;
   return `${hours} hr ${mins} min`;
-}
-
-function getUnifiedHeroStatusText(paceMessage, monitorMessage) {
-  const pace = String(paceMessage || '').toLowerCase();
-  const monitor = String(monitorMessage || '').trim();
-  let paceLabel = 'Balanced timing';
-  if (pace.includes('comfortable')) paceLabel = 'Comfortable pace';
-  if (pace.includes('leave soon')) paceLabel = 'Tight but manageable';
-  let monitorLabel = 'Live traffic monitored';
-  const lowerMonitor = monitor.toLowerCase();
-  if (lowerMonitor.includes('still on schedule')) monitorLabel = 'On schedule 😊';
-  else if (lowerMonitor.includes('monitoring')) monitorLabel = 'Monitoring traffic';
-  else if (monitor) monitorLabel = monitor;
-  return `${paceLabel} · ${monitorLabel}`;
 }
 
 function isRideshareTransportMode(mode) {

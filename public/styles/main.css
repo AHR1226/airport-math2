@@ -2691,6 +2691,47 @@ textarea{
   box-shadow:0 0 0 2px rgba(45,79,141,0.12);
 }
 
+#result.useHtmlResult .resultHtmlStatus--safe{
+  color:#2D4F8D;
+  background:#E5ECFF;
+}
+
+#result.useHtmlResult .resultHtmlStatus--safe .resultHtmlStatusDot{
+  background:rgba(45,79,141,0.78);
+  box-shadow:0 0 0 2px rgba(45,79,141,0.12);
+}
+
+#result.useHtmlResult .resultHtmlStatus--caution{
+  color:#7A4B00;
+  background:#FFF4CC;
+}
+
+#result.useHtmlResult .resultHtmlStatus--caution .resultHtmlStatusDot{
+  background:rgba(199,125,0,0.85);
+  box-shadow:0 0 0 2px rgba(199,125,0,0.14);
+}
+
+#result.useHtmlResult .resultHtmlStatus--critical{
+  color:#8A1123;
+  background:#FEE3E8;
+}
+
+#result.useHtmlResult .resultHtmlStatus--critical .resultHtmlStatusDot{
+  background:rgba(201,35,67,0.9);
+  box-shadow:0 0 0 2px rgba(201,35,67,0.16);
+}
+
+#result.useHtmlResult .resultUrgencyDebug{
+  margin-top:6px;
+  margin-left:2px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:10px;
+  line-height:1.25;
+  font-weight:500;
+  letter-spacing:0.02em;
+  color:rgba(6,72,25,0.68);
+}
+
 #result.useHtmlResult .resultMonitorUpdated{
   margin-top:6px;
   margin-left:2px;
