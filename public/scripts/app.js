@@ -758,6 +758,12 @@ function renderHtmlResult(result) {
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
   const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
   const transportMode = String(result.transportMode || '').trim();
+  const pickupForUber = formatAddressForDisplay(result.origin || form.startLocation || '').trim();
+  const destinationForUber = formatAddressForDisplay(
+    result.destination || destinationForSelection(airportLabel, terminalLabel)
+  ).trim();
+  const uberDeepLink = buildUberDeepLink(pickupForUber, destinationForUber);
+  const showUberCta = isRideshareTransportMode(transportMode) && Boolean(uberDeepLink);
   const flightMetaLines = [];
   if (scheduledFlightTime) {
     flightMetaLines.push(`Your flight departs at ${scheduledFlightTime}`);
@@ -825,6 +831,12 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownRow"><span>Security</span><strong>${escapeHtml(securityWait)} min</strong></div>
       <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(result.buffer || 15)} min</strong></div>
     </div>
+    ${showUberCta ? `
+    <div class="resultUberCtaWrap">
+      <a class="resultUberCtaButton" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer">Open in Uber</a>
+      <div class="resultUberCtaHelp">Pickup and airport destination will be prefilled.</div>
+    </div>
+    ` : ''}
     <div class="resultLiveCard">
       <div class="resultLiveTitle">Live Conditions</div>
       <div class="resultLiveRow primary">
@@ -879,6 +891,22 @@ function getTransportContextLine(mode) {
   if (key.includes('transit')) return 'Transit timing includes extra transfer buffer';
   if (key.includes('drive')) return 'Driving timing may include parking buffer';
   return '';
+}
+
+function isRideshareTransportMode(mode) {
+  return String(mode || '').toLowerCase().includes('rideshare');
+}
+
+function buildUberDeepLink(pickupAddress, dropoffAddress) {
+  const pickup = String(pickupAddress || '').trim();
+  const dropoff = String(dropoffAddress || '').trim();
+  if (!pickup || !dropoff) return '';
+  const params = new URLSearchParams({
+    action: 'setPickup',
+    pickup: pickup,
+    dropoff: dropoff
+  });
+  return `https://m.uber.com/ul/?${params.toString()}`;
 }
 
 function getSecurityWaitEstimate(result, selections) {
