@@ -846,9 +846,7 @@ function renderHtmlResult(result) {
     ? 'Live'
     : 'Estimated';
   const provider = String(result.travelProvider || '').toLowerCase();
-  const trafficSource = provider === 'google'
-    ? 'Live traffic data'
-    : (provider === 'mapbox' ? 'Mapbox routing' : 'Backup estimate');
+  const trafficTagLabel = provider === 'google' ? 'GOOGLE ROUTES' : trafficTag.toUpperCase();
 
   container.innerHTML = `
     <div class="resultHtmlHeader">
@@ -895,9 +893,8 @@ function renderHtmlResult(result) {
         <div class="resultLiveLabelWrap resultLiveLabelWrapTraffic">
           <div class="resultLiveLabelTopRow">
             <span class="resultLiveLabel">Traffic</span>
-            <span class="resultLiveTag">${escapeHtml(trafficTag)}</span>
+            <span class="resultLiveTag">${escapeHtml(trafficTagLabel)}</span>
           </div>
-          <span class="resultLiveSource">${escapeHtml(trafficSource)}</span>
         </div>
         <strong class="resultLiveValue">${escapeHtml(travelDuration)}</strong>
       </div>
