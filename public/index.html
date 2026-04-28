@@ -97,6 +97,7 @@
           </button>
           <input id="startingLocationInput" class="full" type="text" value="" placeholder="Enter your starting address" autocomplete="off">
         </div>
+        <div id="savedLocationQuickChips" class="savedLocationQuickChips" hidden></div>
         <div id="locationSuggestions" class="locationSuggestions" role="listbox" aria-label="Location suggestions"></div>
       </div>
       <p class="startingLocationValidation" id="startingLocationValidation" role="status" aria-live="polite" hidden></p>
@@ -350,6 +351,25 @@
     <div class="appCard">
       <div class="rowTitle">Transportation</div>
       <div class="rowSub">Rideshare</div>
+    </div>
+
+    <div class="sectionLabel">Saved Locations</div>
+
+    <div class="appCard">
+      <div class="listRow savedLocationRow" id="settingsSavedHomeRow">
+        <div>
+          <div class="rowTitle">Home</div>
+          <div class="rowSub" id="settingsSavedHomeValue">Not set</div>
+        </div>
+        <span class="rowChevron">›</span>
+      </div>
+      <div class="listRow savedLocationRow" id="settingsSavedWorkRow">
+        <div>
+          <div class="rowTitle">Work</div>
+          <div class="rowSub" id="settingsSavedWorkValue">Not set</div>
+        </div>
+        <span class="rowChevron">›</span>
+      </div>
     </div>
 
     <div class="appCard settingsTravelStyleCard">

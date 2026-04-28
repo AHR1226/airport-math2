@@ -524,6 +524,26 @@ input{
   flex:1;
 }
 
+.savedLocationQuickChips{
+  margin-top:8px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.savedLocationQuickChip{
+  border:0;
+  border-radius:999px;
+  padding:6px 11px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12px;
+  line-height:1;
+  font-weight:500;
+  color:#064819;
+  background:#EBEEEA;
+  cursor:pointer;
+}
+
 .locationSuggestions{
   display:none;
   position:absolute;
@@ -563,6 +583,17 @@ input{
   display:block;
 }
 
+.locationSuggestionsLabel{
+  padding:9px 16px 7px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:10px;
+  line-height:1;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:rgba(6,72,25,0.56);
+}
+
 .locationSuggestionItem{
   width:100%;
   border:0;
@@ -577,6 +608,10 @@ input{
 
 .locationSuggestionItem + .locationSuggestionItem{
   border-top:1px solid rgba(6,72,25,0.08);
+}
+
+.savedLocationRow{
+  cursor:pointer;
 }
 
 #calculate .locationIconButton{
@@ -2644,6 +2679,7 @@ textarea{
   display:inline-flex;
   align-items:center;
   gap:7px;
+  margin-top:12px;
 }
 
 #result.useHtmlResult .resultHtmlStatusDot{

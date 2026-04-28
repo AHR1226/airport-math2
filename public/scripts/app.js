@@ -1,5 +1,8 @@
 const app = document.getElementById('app');
 const USE_HTML_RESULT = true;
+const RECENT_ADDRESSES_KEY = 'eta_recent_addresses';
+const HOME_ADDRESS_KEY = 'eta_home_address';
+const WORK_ADDRESS_KEY = 'eta_work_address';
 const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
 const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
 let etaMonitorTimerId = null;
@@ -92,6 +95,7 @@ if (window.selectionsApi) {
 initializeAirportTerminalSelects();
 initializeStartingLocationAutocomplete();
 initializeUseCurrentLocationAction();
+initializeSavedLocationsUI();
 if (window.syncSettingsTravelStyleUI) {
   window.syncSettingsTravelStyleUI();
 }
@@ -169,27 +173,46 @@ function initializeStartingLocationAutocomplete() {
     setSuggestionsOpen(false);
   };
 
-  const openSuggestions = (items) => {
-    if (!items.length) {
+  const applyStartingLocation = (value) => {
+    input.value = value;
+    if (window.appState) window.appState.form.startLocation = value;
+    clearStartingLocationValidation();
+    closeSuggestions();
+  };
+
+  const renderSuggestionButton = (label) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'locationSuggestionItem';
+    button.textContent = label;
+    button.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+      applyStartingLocation(button.textContent || '');
+    });
+    return button;
+  };
+
+  const openSuggestions = ({ recentItems = [], suggestionItems = [] }) => {
+    if (!recentItems.length && !suggestionItems.length) {
       closeSuggestions();
       return;
     }
 
     suggestionsEl.innerHTML = '';
-    items.forEach((item) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'locationSuggestionItem';
-      button.textContent = item;
-      button.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-        const value = button.textContent || '';
-        input.value = value;
-        if (window.appState) window.appState.form.startLocation = value;
-        clearStartingLocationValidation();
-        closeSuggestions();
+    if (recentItems.length) {
+      const labelEl = document.createElement('div');
+      labelEl.className = 'locationSuggestionsLabel';
+      labelEl.textContent = 'Recent';
+      suggestionsEl.appendChild(labelEl);
+      recentItems.forEach((item) => {
+        suggestionsEl.appendChild(renderSuggestionButton(item));
       });
-      suggestionsEl.appendChild(button);
+    }
+    const dedupedSuggestions = suggestionItems.filter(
+      (item) => !recentItems.some((recent) => recent.toLowerCase() === item.toLowerCase())
+    );
+    dedupedSuggestions.forEach((item) => {
+      suggestionsEl.appendChild(renderSuggestionButton(item));
     });
     suggestionsEl.classList.add('active');
     setSuggestionsOpen(true);
@@ -224,15 +247,19 @@ function initializeStartingLocationAutocomplete() {
   const runSuggestions = async () => {
     const raw = input.value.trim();
     const query = raw.toLowerCase();
+    const recentItems = getRecentAddresses();
     if (query.length < 3) {
-      closeSuggestions();
+      openSuggestions({ recentItems, suggestionItems: [] });
       return;
     }
     const seq = ++suggestSeq;
     const localMatches = LOCAL_ADDRESS_SUGGESTIONS.filter((item) => item.toLowerCase().includes(query));
     const remote = await fetchMapboxSuggestions(raw);
     if (seq !== suggestSeq) return;
-    openSuggestions(mergeSuggestions(remote, localMatches));
+    openSuggestions({
+      recentItems,
+      suggestionItems: mergeSuggestions(remote, localMatches)
+    });
   };
 
   const scheduleSuggestions = () => {
@@ -249,7 +276,7 @@ function initializeStartingLocationAutocomplete() {
   });
 
   input.addEventListener('focus', () => {
-    if (input.value.trim().length >= 3) scheduleSuggestions();
+    scheduleSuggestions();
   });
 
   input.addEventListener('blur', () => {
@@ -332,6 +359,105 @@ function showStartingLocationValidation(message) {
   el.textContent = message;
   el.hidden = false;
 }
+
+function getStoredAddress(key) {
+  return formatAddressForDisplay(localStorage.getItem(key) || '').trim();
+}
+
+function setStoredAddress(key, value) {
+  const cleaned = formatAddressForDisplay(String(value || '')).trim();
+  if (!cleaned) {
+    localStorage.removeItem(key);
+    return '';
+  }
+  localStorage.setItem(key, cleaned);
+  return cleaned;
+}
+
+function getRecentAddresses() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RECENT_ADDRESSES_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    const out = [];
+    const seen = new Set();
+    parsed.forEach((entry) => {
+      const normalized = formatAddressForDisplay(String(entry || '')).trim();
+      const key = normalized.toLowerCase();
+      if (!normalized || seen.has(key)) return;
+      seen.add(key);
+      out.push(normalized);
+    });
+    return out.slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
+function pushRecentAddress(address) {
+  const next = formatAddressForDisplay(String(address || '')).trim();
+  if (!next) return;
+  const existing = getRecentAddresses();
+  const deduped = [next, ...existing.filter((item) => item.toLowerCase() !== next.toLowerCase())].slice(0, 3);
+  localStorage.setItem(RECENT_ADDRESSES_KEY, JSON.stringify(deduped));
+}
+
+function renderSavedLocationQuickChips() {
+  const wrap = document.getElementById('savedLocationQuickChips');
+  const input = document.getElementById('startingLocationInput');
+  if (!wrap || !input) return;
+  const home = getStoredAddress(HOME_ADDRESS_KEY);
+  const work = getStoredAddress(WORK_ADDRESS_KEY);
+  const chips = [];
+  if (home) chips.push({ label: 'Home', value: home });
+  if (work) chips.push({ label: 'Work', value: work });
+  wrap.innerHTML = '';
+  if (!chips.length) {
+    wrap.hidden = true;
+    return;
+  }
+  chips.forEach(({ label, value }) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'savedLocationQuickChip';
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      input.value = value;
+      if (window.appState) window.appState.form.startLocation = value;
+      clearStartingLocationValidation();
+      input.focus();
+    });
+    wrap.appendChild(btn);
+  });
+  wrap.hidden = false;
+}
+
+function initializeSavedLocationsUI() {
+  const homeRow = document.getElementById('settingsSavedHomeRow');
+  const workRow = document.getElementById('settingsSavedWorkRow');
+  const homeValue = document.getElementById('settingsSavedHomeValue');
+  const workValue = document.getElementById('settingsSavedWorkValue');
+
+  const refresh = () => {
+    const home = getStoredAddress(HOME_ADDRESS_KEY);
+    const work = getStoredAddress(WORK_ADDRESS_KEY);
+    if (homeValue) homeValue.textContent = home || 'Not set';
+    if (workValue) workValue.textContent = work || 'Not set';
+    renderSavedLocationQuickChips();
+  };
+
+  const promptForAddress = (key, label) => {
+    const current = getStoredAddress(key);
+    const next = window.prompt(`Set ${label} address`, current || '');
+    if (next === null) return;
+    setStoredAddress(key, next);
+    refresh();
+  };
+
+  homeRow?.addEventListener('click', () => promptForAddress(HOME_ADDRESS_KEY, 'Home'));
+  workRow?.addEventListener('click', () => promptForAddress(WORK_ADDRESS_KEY, 'Work'));
+  refresh();
+}
+
 function getActiveSelection(groupName) {
   if (window.selectionsApi) {
     return window.selectionsApi.getActive(groupName);
@@ -588,6 +714,7 @@ async function calculateETA() {
     return;
   }
   clearStartingLocationValidation();
+  pushRecentAddress(startLocationRaw);
 
   const form = window.appState?.form || {};
   const selectedAirport = form.airport || document.getElementById('airportInput')?.value || 'JFK';
@@ -851,7 +978,6 @@ function renderHtmlResult(result) {
         </svg>
       </div>
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
-      <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
       <div class="resultHtmlMetaBlock">
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightDepartLine)}</div>
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightMetaLine)}</div>
@@ -861,6 +987,7 @@ function renderHtmlResult(result) {
         <span class="resultHtmlStatusDot" aria-hidden="true"></span>
         <span>${escapeHtml(unifiedStatusText)}</span>
       </div>
+      <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
