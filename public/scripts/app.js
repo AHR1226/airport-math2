@@ -807,6 +807,7 @@ function renderHtmlResult(result) {
   );
   const flightMetaLines = [];
   const monitorMessage = String(result.monitorMessage || 'Monitoring live traffic...').trim();
+  const unifiedStatusText = getUnifiedHeroStatusText(paceMessage, monitorMessage);
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
   if (scheduledFlightTime) {
     flightMetaLines.push(`Your flight departs at ${scheduledFlightTime}`);
@@ -862,23 +863,12 @@ function renderHtmlResult(result) {
         </svg>
       </div>
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
-      <div class="resultMonitorStatus" aria-live="polite">
-        <div class="resultMonitorMessage">
-          <span class="resultMonitorDot" aria-hidden="true"></span>
-          <span>${escapeHtml(monitorMessage)}</span>
-        </div>
-        <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
+      <div class="resultHtmlStatus" aria-live="polite">
+        <span class="resultHtmlStatusDot" aria-hidden="true"></span>
+        <span>${escapeHtml(unifiedStatusText)}</span>
       </div>
-      <div class="resultHtmlStatus">${escapeHtml(paceMessage)}</div>
+      <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
       <div class="resultHtmlMetaBlock">${flightMetaMarkup}</div>
-      ${showUberCta ? `
-      <div class="resultUberInline">
-        <a class="resultUberInlineLink" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
-          <span class="resultUberInlineAction">Continue in Uber <span aria-hidden="true">→</span></span>
-          <span class="resultUberInlineHelp">Pickup and airport destination prefilled</span>
-        </a>
-      </div>
-      ` : ''}
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
@@ -887,6 +877,13 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownRow"><span>Security</span><strong>${escapeHtml(securityWait)} min</strong></div>
       <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(result.buffer || 15)} min</strong></div>
     </div>
+    ${showUberCta ? `
+    <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
+      <div class="resultUberCardTitle">Ride ready</div>
+      <div class="resultUberCardAction">Continue in Uber <span aria-hidden="true">→</span></div>
+      <div class="resultUberCardHelp">Pickup and airport destination prefilled</div>
+    </a>
+    ` : ''}
     <div class="resultLiveCard">
       <div class="resultLiveTitle">Live Conditions</div>
       <div class="resultLiveRow primary">
@@ -943,13 +940,27 @@ function getTransportContextLine(mode) {
 }
 
 function formatMonitorUpdatedLabel(updatedAt) {
-  if (!updatedAt) return '';
+  if (!updatedAt) return 'Updated just now';
   const stamp = new Date(updatedAt);
   if (Number.isNaN(stamp.getTime())) return 'Monitoring live traffic...';
   const mins = Math.max(0, Math.round((Date.now() - stamp.getTime()) / 60000));
   if (mins <= 0) return 'Updated just now';
   if (mins === 1) return 'Updated 1 min ago';
   return `Updated ${mins} min ago`;
+}
+
+function getUnifiedHeroStatusText(paceMessage, monitorMessage) {
+  const pace = String(paceMessage || '').toLowerCase();
+  const monitor = String(monitorMessage || '').trim();
+  let paceLabel = 'Balanced timing';
+  if (pace.includes('comfortable')) paceLabel = 'Comfortable pace';
+  if (pace.includes('leave soon')) paceLabel = 'Tight but manageable';
+  let monitorLabel = 'Live traffic monitored';
+  const lowerMonitor = monitor.toLowerCase();
+  if (lowerMonitor.includes('still on schedule')) monitorLabel = 'On schedule 😊';
+  else if (lowerMonitor.includes('monitoring')) monitorLabel = 'Monitoring traffic';
+  else if (monitor) monitorLabel = monitor;
+  return `${paceLabel} · ${monitorLabel}`;
 }
 
 function isRideshareTransportMode(mode) {

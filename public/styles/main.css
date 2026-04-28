@@ -2639,3 +2639,62 @@ textarea{
   font-weight:400;
   opacity:0.64;
 }
+
+#result.useHtmlResult .resultHtmlStatus{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+}
+
+#result.useHtmlResult .resultHtmlStatusDot{
+  width:6px;
+  height:6px;
+  flex:0 0 6px;
+  border-radius:999px;
+  background:rgba(45,79,141,0.78);
+  box-shadow:0 0 0 2px rgba(45,79,141,0.12);
+}
+
+#result.useHtmlResult .resultMonitorUpdated{
+  margin-top:6px;
+  margin-left:2px;
+}
+
+#result.useHtmlResult .resultUberCard{
+  display:block;
+  border-radius:16px;
+  border:1px solid rgba(6,72,25,0.1);
+  background:#F6F6F4;
+  padding:12px 14px;
+  text-decoration:none;
+  color:#063D18;
+  min-height:44px;
+}
+
+#result.useHtmlResult .resultUberCardTitle{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.1;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  opacity:0.62;
+}
+
+#result.useHtmlResult .resultUberCardAction{
+  margin-top:5px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:14px;
+  line-height:1.2;
+  font-weight:500;
+  letter-spacing:-0.005em;
+}
+
+#result.useHtmlResult .resultUberCardHelp{
+  margin-top:4px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.28;
+  font-weight:400;
+  opacity:0.68;
+}
