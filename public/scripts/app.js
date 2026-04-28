@@ -762,7 +762,13 @@ function renderHtmlResult(result) {
   const destinationForUber = formatAddressForDisplay(
     result.destination || destinationForSelection(airportLabel, terminalLabel)
   ).trim();
-  const uberDeepLink = buildUberDeepLink(pickupForUber, destinationForUber);
+  const dropoffNickname = `${airportLabel} ${terminalLabel}`.trim();
+  const uberDeepLink = buildUberDeepLink({
+    pickupAddress: pickupForUber,
+    dropoffAddress: destinationForUber,
+    dropoffNickname,
+    clientId: getUberClientId()
+  });
   const hasValidUberLink = isValidUberDeepLink(uberDeepLink);
   const showUberCta = (
     isRideshareTransportMode(transportMode)
@@ -905,28 +911,40 @@ function isRideshareTransportMode(mode) {
   return String(mode || '').toLowerCase().includes('rideshare');
 }
 
-function buildUberDeepLink(pickupAddress, dropoffAddress) {
+function buildUberDeepLink({ pickupAddress, dropoffAddress, dropoffNickname, clientId }) {
   const pickup = String(pickupAddress || '').trim();
   const dropoff = String(dropoffAddress || '').trim();
+  const dropoffName = String(dropoffNickname || '').trim();
+  const uberClientId = String(clientId || '').trim();
   if (!pickup || !dropoff) return '';
-  const params = new URLSearchParams({
-    action: 'setPickup',
-    pickup: pickup,
-    dropoff: dropoff
-  });
-  return `https://m.uber.com/ul/?${params.toString()}`;
+  const params = new URLSearchParams();
+  params.set('pickup[formatted_address]', pickup);
+  params.set('pickup[nickname]', 'Pickup');
+  params.set('dropoff[formatted_address]', dropoff);
+  if (dropoffName) params.set('dropoff[nickname]', dropoffName);
+  if (uberClientId) params.set('client_id', uberClientId);
+  const href = `https://m.uber.com/ul/?action=setPickup&${params.toString()}`;
+  return href;
 }
 
 function isValidUberDeepLink(url) {
   const href = String(url || '').trim();
   if (!href) return false;
   if (href === '#' || href === 'undefined' || href === 'null') return false;
-  return href.startsWith('https://m.uber.com/');
+  return href.startsWith('https://m.uber.com/ul/?action=setPickup');
 }
 
 function onUberLinkClick(uberHref) {
+  console.log('Uber href', uberHref);
   console.log('Uber link clicked', uberHref);
   return true;
+}
+
+function getUberClientId() {
+  const fromConfig = window.__APP_CONFIG__?.UBER_CLIENT_ID || window.__APP_CONFIG__?.uberClientId;
+  const fromWindow = window.UBER_CLIENT_ID;
+  const fromState = window.appState?.uberClientId;
+  return String(fromConfig || fromWindow || fromState || '').trim();
 }
 
 function getSecurityWaitEstimate(result, selections) {
