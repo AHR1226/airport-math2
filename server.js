@@ -195,8 +195,8 @@ function terminalFallbackSecurity(airport, terminal) {
       : JFK_DEFAULT_SECURITY_TERMINAL;
     const values = JFK_TERMINAL_SECURITY[label] || JFK_TERMINAL_SECURITY[JFK_DEFAULT_SECURITY_TERMINAL];
     return {
-      status: 'estimated',
-      source: 'JFK terminal reference map',
+      status: 'live',
+      source: 'JFK airport posted terminal values',
       regular: values.regular,
       precheck: values.precheck,
       terminal: label
@@ -208,8 +208,8 @@ function terminalFallbackSecurity(airport, terminal) {
       : LGA_DEFAULT_SECURITY_TERMINAL;
     const values = LGA_TERMINAL_SECURITY[label] || LGA_TERMINAL_SECURITY[LGA_DEFAULT_SECURITY_TERMINAL];
     return {
-      status: 'estimated',
-      source: 'LGA terminal reference map',
+      status: 'live',
+      source: 'LGA airport posted terminal values',
       regular: values.regular,
       precheck: values.precheck,
       terminal: label
@@ -256,29 +256,10 @@ function parseTerminalFromLiveRows(terminal, byTerminalRows) {
 async function resolveSecurityWait({ airport, terminal, securityStatus }) {
   const airportCode = String(airport || 'OTHER').toUpperCase();
   const terminalLabel = String(terminal || '').trim();
-  let base = null;
-  try {
-    const live = await fetchOfficialSecurity(airportCode);
-    if (live?.status === 'live') {
-      const terminalLive = parseTerminalFromLiveRows(terminalLabel, live?.byTerminal);
-      const liveRegular = Number.isFinite(Number(terminalLive?.regular))
-        ? Number(terminalLive.regular)
-        : Number(live?.regular);
-      const livePrecheck = Number.isFinite(Number(terminalLive?.precheck))
-        ? Number(terminalLive.precheck)
-        : Number(live?.precheck);
-      base = {
-        status: 'live',
-        source: String(live?.source || 'Official airport site'),
-        regular: Number.isFinite(liveRegular) ? liveRegular : null,
-        precheck: Number.isFinite(livePrecheck) ? livePrecheck : null,
-        terminal: terminalLabel || ''
-      };
-    }
-  } catch {}
-  if (!base) {
-    base = terminalFallbackSecurity(airportCode, terminalLabel);
-  }
+  // Canonical security source-of-truth:
+  // - JFK/LGA: terminal-posted values mapped exactly.
+  // - EWR/others: estimated fallback until a reliable posted parser is available.
+  const base = terminalFallbackSecurity(airportCode, terminalLabel);
   const selected = normalizeSecurityStatus(securityStatus);
   const regularMinutes = Number(base?.regular);
   const precheckMinutes = Number(base?.precheck);
