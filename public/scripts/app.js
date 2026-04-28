@@ -864,6 +864,13 @@ function renderHtmlResult(result) {
         </svg>
       </div>
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
+      <div class="resultMonitorStatus" aria-live="polite">
+        <div class="resultMonitorMessage">
+          <span class="resultMonitorDot" aria-hidden="true"></span>
+          <span>${escapeHtml(monitorMessage)}</span>
+        </div>
+        <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
+      </div>
       <div class="resultHtmlStatus">${escapeHtml(paceMessage)}</div>
       <div class="resultHtmlMetaBlock">${flightMetaMarkup}</div>
       ${showUberCta ? `
@@ -874,10 +881,6 @@ function renderHtmlResult(result) {
         </a>
       </div>
       ` : ''}
-    </div>
-    <div class="resultMonitorStatus" aria-live="polite">
-      <div class="resultMonitorMessage">${escapeHtml(monitorMessage)}</div>
-      <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">Trip breakdown</div>
