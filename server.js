@@ -239,20 +239,6 @@ function terminalFallbackSecurity(airport, terminal) {
   };
 }
 
-function parseTerminalFromLiveRows(terminal, byTerminalRows) {
-  const target = String(terminal || '').trim().toLowerCase();
-  if (!target || !Array.isArray(byTerminalRows)) return null;
-  const matched = byTerminalRows.find((row) => String(row || '').toLowerCase().includes(target));
-  if (!matched) return null;
-  const row = String(matched);
-  const regularMatch = row.match(/:\s*(\d+)\s*m/i);
-  const precheckMatch = row.match(/pre\s*(\d+)\s*m/i);
-  return {
-    regular: regularMatch ? Number(regularMatch[1]) : null,
-    precheck: precheckMatch ? Number(precheckMatch[1]) : null
-  };
-}
-
 async function resolveSecurityWait({ airport, terminal, securityStatus }) {
   const airportCode = String(airport || 'OTHER').toUpperCase();
   const terminalLabel = String(terminal || '').trim();
@@ -299,36 +285,6 @@ function securityFallback(airport) {
     OTHER:{ status:'fallback', source:'Built-in fallback', regular:35, precheck:16, updatedAt:'—' }
   };
   return map[airport] || map.OTHER;
-}
-
-function parseAirportSecurityHtml(airport, html) {
-  const $ = cheerio.load(html);
-  const text = $('body').text().replace(/\s+/g, ' ').trim();
-  let regular = null, precheck = null;
-  const generalMatch = text.match(/General(?:\s+TSA|\s+Line)?[^0-9]{0,40}(\d{1,3})\s*min/i);
-  const precheckMatch = text.match(/(?:TSA\s*Pre.?|PreCheck|Pre✓|PreCheck®)[^0-9]{0,40}(\d{1,3})\s*min/i);
-  if (generalMatch) regular = Number(generalMatch[1]);
-  if (precheckMatch) precheck = Number(precheckMatch[1]);
-  const byTerminal = [];
-  const terminalRegex = /(Terminal\s+[A-Z0-9]+|Gates?\s+\d{1,2}(?:-\d{1,2})?)[^\.]{0,90}?(\d{1,3})\s*min(?:[^\.]{0,40}?(?:TSA\s*Pre.?|PreCheck|Pre✓)[^0-9]{0,20}(\d{1,3})\s*min)?/gi;
-  let t;
-  while ((t = terminalRegex.exec(text)) !== null) {
-    const label = t[1], reg = t[2], pre = t[3];
-    byTerminal.push(pre ? `${label}: ${reg}m / Pre ${pre}m` : `${label}: ${reg}m`);
-    if (regular === null && reg) regular = Number(reg);
-    if (precheck === null && pre) precheck = Number(pre);
-  }
-  if (regular === null && precheck === null) throw new Error(`Could not parse security waits for ${airport}`);
-  return { status:'live', source:airport === 'EWR' ? 'Newark Airport official site' : 'Official airport site', regular:regular ?? securityFallback(airport).regular, precheck:precheck ?? Math.max(4, (regular ?? 20) - 10), updatedAt:new Date().toISOString(), byTerminal:byTerminal.slice(0,4) };
-}
-
-async function fetchOfficialSecurity(airport) {
-  const urls = { JFK:'https://www.jfkairport.com/', LGA:'https://www.laguardiaairport.com/', EWR:'https://www.newarkairport.com/' };
-  const url = urls[airport];
-  if (!url) return securityFallback(airport);
-  const res = await fetch(url, { headers:{ 'User-Agent':'Mozilla/5.0 AirportMath/1.0', 'Accept':'text/html,application/xhtml+xml' } });
-  if (!res.ok) throw new Error(`Security page fetch failed: ${res.status}`);
-  return parseAirportSecurityHtml(airport, await res.text());
 }
 
 function currentFaa(airport) {

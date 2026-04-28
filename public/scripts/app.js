@@ -940,11 +940,11 @@ function renderHtmlResult(result) {
   const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
   const securityBreakdownLabel = String(result.securityStatusLabel || selections.security || 'Security').trim() || 'Security';
-  const hasResolvedSecurity = Number.isFinite(Number(result.securityResolvedMinutes));
+  const hasResolvedSecurity = Number.isFinite(Number(result.securityResolvedMinutes)) && Number(result.securityResolvedMinutes) >= 0;
   const hasLgaWalk = Number.isFinite(Number(result.lgaWalkToGate)) && Number(result.lgaWalkToGate) > 0;
   const securityWait = hasResolvedSecurity
     ? Math.round(Number(result.securityResolvedMinutes))
-    : getSecurityWaitEstimate(result, selections);
+    : null;
   const walkToGateValue = isLga && hasLgaWalk
     ? `${Math.round(Number(result.lgaWalkToGate))} min`
     : '--';
@@ -988,7 +988,7 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownTitle">Trip breakdown</div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
-      <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(formatDurationMinutes(securityWait))}</strong></div>
+      <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
       <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(formatDurationMinutes(result.buffer || 15))}</strong></div>
     </div>
     ${showUberCta ? `
@@ -1023,7 +1023,7 @@ function renderHtmlResult(result) {
           <span class="resultLiveLabel">Security wait</span>
           <span class="resultLiveTag resultLiveTag--security">${escapeHtml(securityTag)}</span>
         </div>
-        <strong class="resultLiveValue">${escapeHtml(formatDurationMinutes(securityWait))}</strong>
+        <strong class="resultLiveValue">${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
@@ -1301,10 +1301,3 @@ async function refreshEtaMonitoring() {
   }
 }
 
-function getSecurityWaitEstimate(result, selections) {
-  const selected = (selections?.security || '').toLowerCase();
-  if (selected.includes('clear')) return 6;
-  if (selected.includes('pre')) return 8;
-  if (selected.includes('standard')) return 15;
-  return Math.max(8, Math.round((Number(result?.airportTime) || 35) * 0.4));
-}
