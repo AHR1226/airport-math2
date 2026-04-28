@@ -191,6 +191,12 @@ const EWR_TERMINAL_SECURITY = {
   'Terminal C': 12
 };
 const EWR_DEFAULT_SECURITY_TERMINAL = 'Terminal A';
+const LGA_TERMINAL_SECURITY = {
+  'Terminal A': { regular: 1, precheck: 2 },
+  'Terminal B': { regular: 1, precheck: 0 },
+  'Terminal C': { regular: 1, precheck: 1 }
+};
+const LGA_DEFAULT_SECURITY_TERMINAL = 'Terminal B';
 
 function ewrSecurityEstimate(terminalQuery) {
   const raw = String(terminalQuery || '').trim();
@@ -209,6 +215,73 @@ function ewrSecurityEstimate(terminalQuery) {
     terminal: label,
     ewrMode: 'terminal_fallback'
   };
+}
+
+function lgaSecurityEstimate(terminalQuery) {
+  const raw = String(terminalQuery || '').trim();
+  const label =
+    raw && Object.prototype.hasOwnProperty.call(LGA_TERMINAL_SECURITY, raw)
+      ? raw
+      : LGA_DEFAULT_SECURITY_TERMINAL;
+  const terminalValues = LGA_TERMINAL_SECURITY[label] || LGA_TERMINAL_SECURITY[LGA_DEFAULT_SECURITY_TERMINAL];
+  return {
+    status: 'estimate',
+    source: 'LGA terminal reference map',
+    regular: terminalValues.regular,
+    precheck: terminalValues.precheck,
+    updatedAt: new Date().toISOString(),
+    terminal: label,
+    lgaMode: 'terminal_fallback'
+  };
+}
+
+function normalizeSecurityStatus(raw) {
+  const s = String(raw || '').trim().toLowerCase();
+  if (s.includes('standard')) return 'Standard';
+  if (s.includes('clear')) return 'CLEAR + PreCheck';
+  if (s.includes('pre')) return 'PreCheck';
+  return 'PreCheck';
+}
+
+function resolveSecurityForRequest({ airport, terminal, securityStatus }) {
+  const airportCode = String(airport || 'OTHER').toUpperCase();
+  let base;
+  if (airportCode === 'JFK') {
+    base = jfkSecurityEstimate(terminal);
+  } else if (airportCode === 'EWR') {
+    base = ewrSecurityEstimate(terminal);
+  } else if (airportCode === 'LGA') {
+    base = lgaSecurityEstimate(terminal);
+  } else {
+    base = securityFallback(airportCode);
+  }
+  const selected = normalizeSecurityStatus(securityStatus);
+  const regularMinutes = Number(base?.regular);
+  const precheckMinutes = Number(base?.precheck);
+  const usePrecheck = selected === 'PreCheck' || selected === 'CLEAR + PreCheck';
+  const minutesRaw = usePrecheck ? precheckMinutes : regularMinutes;
+  const minutes = Number.isFinite(minutesRaw) ? minutesRaw : NaN;
+  const resolved = {
+    minutes,
+    status: base?.status === 'live' ? 'live' : 'estimated',
+    source: String(base?.source || 'Security fallback'),
+    airport: airportCode,
+    terminal: String(base?.terminal || terminal || ''),
+    securityStatus: selected,
+    regularMinutes: Number.isFinite(regularMinutes) ? regularMinutes : null,
+    precheckMinutes: Number.isFinite(precheckMinutes) ? precheckMinutes : null
+  };
+  console.log('[security-debug]', {
+    airport: resolved.airport,
+    terminal: resolved.terminal,
+    securityStatus: resolved.securityStatus,
+    regularMinutes: resolved.regularMinutes,
+    precheckMinutes: resolved.precheckMinutes,
+    resolvedMinutes: Number.isFinite(resolved.minutes) ? resolved.minutes : null,
+    source: resolved.source,
+    status: resolved.status
+  });
+  return resolved;
 }
 
 function securityFallback(airport) {
@@ -542,15 +615,17 @@ app.get('/api/lga-conditions', async (_req, res) => {
 app.get('/api/security', async (req, res) => {
   try {
     const airport = String(req.query.airport || 'OTHER').toUpperCase();
-    if (airport === 'JFK') {
-      return res.json(jfkSecurityEstimate(req.query.terminal));
-    }
-    if (airport === 'EWR') {
-      return res.json(ewrSecurityEstimate(req.query.terminal));
-    }
-    res.json(await fetchOfficialSecurity(airport));
+    const terminal = String(req.query.terminal || '').trim();
+    const securityStatus = String(req.query.securityStatus || '').trim();
+    const resolved = resolveSecurityForRequest({ airport, terminal, securityStatus });
+    res.json(resolved);
   } catch {
-    res.status(200).json(securityFallback(String(req.query.airport || 'OTHER').toUpperCase()));
+    const fallback = resolveSecurityForRequest({
+      airport: String(req.query.airport || 'OTHER').toUpperCase(),
+      terminal: String(req.query.terminal || '').trim(),
+      securityStatus: String(req.query.securityStatus || '').trim()
+    });
+    res.status(200).json(fallback);
   }
 });
 app.get('/api/faa', (req, res) => res.json(currentFaa(req.query.airport || 'OTHER')));

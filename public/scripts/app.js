@@ -574,33 +574,37 @@ function setAirportSecurityState(code, { minutes, estimated, walkMinutes = null 
   securityEl.classList.toggle('estimated', Boolean(estimated));
 }
 
-async function fetchAirportSecurityEstimate(airportCode, terminalLabel) {
+async function fetchAirportSecurityEstimate(airportCode, terminalLabel, securityStatus) {
   try {
     const code = String(airportCode || '').toUpperCase();
     const resolvedTerminal = String(terminalLabel || '').trim();
+    const resolvedStatus = String(securityStatus || window.appState?.selections?.security || '').trim();
     const params = new URLSearchParams({ airport: code || 'OTHER' });
     if ((code === 'JFK' || code === 'EWR') && resolvedTerminal) {
       params.set('terminal', resolvedTerminal);
     }
+    if (code === 'LGA' && resolvedTerminal) {
+      params.set('terminal', resolvedTerminal);
+    }
+    if (resolvedStatus) {
+      params.set('securityStatus', resolvedStatus);
+    }
     const res = await fetch(`/api/security?${params.toString()}`);
     if (!res.ok) return null;
     const data = await res.json();
-    const mode = String(window.appState?.selections?.security || '').toLowerCase();
-    const preferPre = mode.includes('pre') || mode.includes('clear');
-    const regularMinutes = Number(data?.regular);
-    const precheckMinutes = Number(data?.precheck);
-    const minutesRaw = preferPre ? precheckMinutes : regularMinutes;
-    const minutes = Number(minutesRaw);
-    const estimated = data?.status !== 'live';
-    console.log('[security-debug]', {
-      selectedSecurityMode: mode,
-      selectedTerminal: resolvedTerminal || data?.terminal || '',
-      regularMinutes: Number.isFinite(regularMinutes) ? regularMinutes : null,
-      precheckMinutes: Number.isFinite(precheckMinutes) ? precheckMinutes : null,
-      resolvedSecurityMinutes: Number.isFinite(minutes) ? minutes : null
-    });
-    if (!Number.isFinite(minutes)) return { minutes: NaN, estimated: true };
-    return { minutes, estimated };
+    const minutes = Number(data?.minutes);
+    const status = String(data?.status || 'estimated');
+    const source = String(data?.source || 'Security fallback');
+    return {
+      minutes: Number.isFinite(minutes) ? minutes : NaN,
+      status,
+      source,
+      airport: String(data?.airport || code),
+      terminal: String(data?.terminal || resolvedTerminal),
+      securityStatus: String(data?.securityStatus || resolvedStatus),
+      regularMinutes: Number.isFinite(Number(data?.regularMinutes)) ? Number(data.regularMinutes) : null,
+      precheckMinutes: Number.isFinite(Number(data?.precheckMinutes)) ? Number(data.precheckMinutes) : null
+    };
   } catch {
     return null;
   }
@@ -638,28 +642,28 @@ async function refreshAirportConditions() {
       let securityMinutes = NaN;
       let securityEstimated = true;
       let walkMinutes = null;
+      const preferredSecurityStatus = String(window.appState?.selections?.security || 'PreCheck');
 
       if (code === 'LGA') {
         const lga = await fetchLgaConditions();
-        const mode = String(window.appState?.selections?.security || '').toLowerCase();
-        const preferPre = mode.includes('pre') || mode.includes('clear');
-        securityMinutes = Number(preferPre ? lga?.securityPrecheckMinutes : lga?.securityGeneralMinutes);
+        const security = await fetchAirportSecurityEstimate('LGA', terminal, preferredSecurityStatus);
+        securityMinutes = Number(security?.minutes);
         walkMinutes = Number(lga?.walkToGateMinutes);
-        securityEstimated = true;
+        securityEstimated = String(security?.status || 'estimated') !== 'live';
       } else if (code === 'JFK') {
         // Airports list: show Terminal 4 default until a live multi-terminal JFK feed exists.
-        const security = await fetchAirportSecurityEstimate('JFK', 'Terminal 4');
+        const security = await fetchAirportSecurityEstimate('JFK', 'Terminal 4', preferredSecurityStatus);
         securityMinutes = Number(security?.minutes);
-        securityEstimated = security?.estimated !== false;
+        securityEstimated = String(security?.status || 'estimated') !== 'live';
       } else if (code === 'EWR') {
         // Airports list: use Terminal A fallback until a stable live Newark endpoint is available.
-        const security = await fetchAirportSecurityEstimate('EWR', 'Terminal A');
+        const security = await fetchAirportSecurityEstimate('EWR', 'Terminal A', preferredSecurityStatus);
         securityMinutes = Number(security?.minutes);
-        securityEstimated = security?.estimated !== false;
+        securityEstimated = String(security?.status || 'estimated') !== 'live';
       } else {
-        const security = await fetchAirportSecurityEstimate(code);
+        const security = await fetchAirportSecurityEstimate(code, terminal, preferredSecurityStatus);
         securityMinutes = Number(security?.minutes);
-        securityEstimated = security?.estimated !== false;
+        securityEstimated = String(security?.status || 'estimated') !== 'live';
       }
 
       setAirportRowState(code, { travelText, isLive: rowLive });
@@ -752,26 +756,9 @@ async function calculateETA() {
   if (selectedAirport === 'LGA') {
     lgaConditions = await fetchLgaConditions();
   }
-  let jfkSecurityWait = null;
-  if (selectedAirport === 'JFK') {
-    const jfkSec = await fetchAirportSecurityEstimate('JFK', selectedTerminal);
-    if (Number.isFinite(Number(jfkSec?.minutes))) {
-      jfkSecurityWait = Math.round(Number(jfkSec.minutes));
-    }
-  }
-  let ewrSecurityWait = null;
-  if (selectedAirport === 'EWR') {
-    const ewrSec = await fetchAirportSecurityEstimate('EWR', selectedTerminal);
-    if (Number.isFinite(Number(ewrSec?.minutes))) {
-      ewrSecurityWait = Math.round(Number(ewrSec.minutes));
-    }
-  }
-  const securityMode = String(window.appState?.selections?.security || '').toLowerCase();
   const selectedSecurityStatus = getActiveSelection('security') || window.appState?.selections?.security || 'Security';
-  const preferPrecheck = securityMode.includes('pre') || securityMode.includes('clear');
-  const lgaSecurityMinutes = selectedAirport === 'LGA'
-    ? Number(preferPrecheck ? lgaConditions?.securityPrecheckMinutes : lgaConditions?.securityGeneralMinutes)
-    : null;
+  const resolvedSecurity = await fetchAirportSecurityEstimate(selectedAirport, selectedTerminal, selectedSecurityStatus);
+  const resolvedSecurityMinutes = Number(resolvedSecurity?.minutes);
   const lgaWalkMinutes = selectedAirport === 'LGA' ? Number(lgaConditions?.walkToGateMinutes) : null;
   const leave = new Date(flight.getTime() - timing.total * 60000);
 
@@ -793,17 +780,17 @@ async function calculateETA() {
     travelStatus: travelApi?.status || 'fallback',
     travelSource: travelApi?.source || 'Backup estimate',
     travelTypical: Number.isFinite(Number(travelApi?.typicalMinutes)) ? Number(travelApi.typicalMinutes) : null,
-    lgaSecurityWait: Number.isFinite(lgaSecurityMinutes) ? lgaSecurityMinutes : null,
+    securityResolvedMinutes: Number.isFinite(resolvedSecurityMinutes) ? Math.round(resolvedSecurityMinutes) : null,
+    securityResolvedStatus: String(resolvedSecurity?.status || 'estimated'),
+    securityResolvedSource: String(resolvedSecurity?.source || 'Security fallback'),
+    securityResolvedTerminal: String(resolvedSecurity?.terminal || selectedTerminal || ''),
+    securityResolvedAirport: String(resolvedSecurity?.airport || selectedAirport || ''),
+    securityResolvedSelection: String(resolvedSecurity?.securityStatus || selectedSecurityStatus || ''),
+    lgaSecurityWait: Number.isFinite(resolvedSecurityMinutes) && selectedAirport === 'LGA' ? Math.round(resolvedSecurityMinutes) : null,
     lgaWalkToGate: Number.isFinite(lgaWalkMinutes) ? lgaWalkMinutes : null,
     lgaConditionsStatus: selectedAirport === 'LGA' ? String(lgaConditions?.status || 'estimated') : null,
-    jfkSecurityWait:
-      selectedAirport === 'JFK' && jfkSecurityWait != null && Number.isFinite(jfkSecurityWait)
-        ? jfkSecurityWait
-        : null,
-    ewrSecurityWait:
-      selectedAirport === 'EWR' && ewrSecurityWait != null && Number.isFinite(ewrSecurityWait)
-        ? ewrSecurityWait
-        : null,
+    jfkSecurityWait: Number.isFinite(resolvedSecurityMinutes) && selectedAirport === 'JFK' ? Math.round(resolvedSecurityMinutes) : null,
+    ewrSecurityWait: Number.isFinite(resolvedSecurityMinutes) && selectedAirport === 'EWR' ? Math.round(resolvedSecurityMinutes) : null,
     monitorMessage: 'Monitoring live traffic...',
     monitorUpdatedAt: null
   };
@@ -952,24 +939,18 @@ function renderHtmlResult(result) {
   const heroOriginPrefix = getTransportOriginPrefix(result.transportMode);
   const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
-  const isJfk = String(result.airport || '').toUpperCase() === 'JFK';
-  const isEwr = String(result.airport || '').toUpperCase() === 'EWR';
   const securityBreakdownLabel = String(result.securityStatusLabel || selections.security || 'Security').trim() || 'Security';
-  const hasLgaSecurity = Number.isFinite(Number(result.lgaSecurityWait)) && Number(result.lgaSecurityWait) > 0;
-  const hasJfkSecurity = Number.isFinite(Number(result.jfkSecurityWait)) && Number(result.jfkSecurityWait) > 0;
-  const hasEwrSecurity = Number.isFinite(Number(result.ewrSecurityWait)) && Number(result.ewrSecurityWait) > 0;
+  const hasResolvedSecurity = Number.isFinite(Number(result.securityResolvedMinutes));
   const hasLgaWalk = Number.isFinite(Number(result.lgaWalkToGate)) && Number(result.lgaWalkToGate) > 0;
-  const securityWait = isLga && hasLgaSecurity
-    ? Math.round(Number(result.lgaSecurityWait))
-    : isJfk && hasJfkSecurity
-      ? Math.round(Number(result.jfkSecurityWait))
-      : isEwr && hasEwrSecurity
-        ? Math.round(Number(result.ewrSecurityWait))
-        : getSecurityWaitEstimate(result, selections);
+  const securityWait = hasResolvedSecurity
+    ? Math.round(Number(result.securityResolvedMinutes))
+    : getSecurityWaitEstimate(result, selections);
   const walkToGateValue = isLga && hasLgaWalk
     ? `${Math.round(Number(result.lgaWalkToGate))} min`
     : '--';
-  const securityTag = isLga ? 'Estimated' : 'Estimated';
+  const securityTag = String(result.securityResolvedStatus || '').toLowerCase() === 'live'
+    ? 'Live'
+    : 'TSA Estimated';
   const walkTag = isLga ? 'Estimated' : 'Estimated';
   const travelDuration = formatDurationMinutes(result.travel);
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
@@ -1040,7 +1021,7 @@ function renderHtmlResult(result) {
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">Security wait</span>
-          <span class="resultLiveTag resultLiveTag--security">TSA Estimated</span>
+          <span class="resultLiveTag resultLiveTag--security">${escapeHtml(securityTag)}</span>
         </div>
         <strong class="resultLiveValue">${escapeHtml(formatDurationMinutes(securityWait))}</strong>
       </div>
@@ -1102,7 +1083,8 @@ function formatMonitorUpdatedLabel(updatedAt) {
 
 function formatDurationMinutes(value) {
   const minutesRaw = Number(value);
-  if (!Number.isFinite(minutesRaw) || minutesRaw <= 0) return '--';
+  if (!Number.isFinite(minutesRaw) || minutesRaw < 0) return '--';
+  if (minutesRaw === 0) return '0 min';
   const totalMins = Math.round(minutesRaw);
   if (totalMins < 60) return `${totalMins} min`;
   const hours = Math.floor(totalMins / 60);
