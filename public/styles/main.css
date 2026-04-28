@@ -2556,6 +2556,26 @@ textarea{
   margin-top:12px;
 }
 
+#result.useHtmlResult .resultUberInlineLink{
+  display:inline-flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:4px;
+  min-height:44px;
+  text-decoration:none;
+  color:inherit;
+  cursor:pointer;
+}
+
+#result.useHtmlResult .resultUberInlineLink:hover{
+  opacity:0.92;
+}
+
+#result.useHtmlResult .resultUberInlineLink:active{
+  opacity:0.86;
+}
+
 #result.useHtmlResult .resultUberInlineAction{
   display:inline-flex;
   align-items:center;
@@ -2574,7 +2594,6 @@ textarea{
 }
 
 #result.useHtmlResult .resultUberInlineHelp{
-  margin-top:4px;
   font-family:"IBM Plex Sans", sans-serif;
   font-size:11px;
   line-height:1.28;

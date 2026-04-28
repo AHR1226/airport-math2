@@ -825,8 +825,10 @@ function renderHtmlResult(result) {
       <div class="resultHtmlMetaBlock">${flightMetaMarkup}</div>
       ${showUberCta ? `
       <div class="resultUberInline">
-        <a class="resultUberInlineAction" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer">Continue in Uber <span aria-hidden="true">→</span></a>
-        <div class="resultUberInlineHelp">Pickup and airport destination prefilled</div>
+        <a class="resultUberInlineLink" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer">
+          <span class="resultUberInlineAction">Continue in Uber <span aria-hidden="true">→</span></span>
+          <span class="resultUberInlineHelp">Pickup and airport destination prefilled</span>
+        </a>
       </div>
       ` : ''}
     </div>
