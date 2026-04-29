@@ -208,7 +208,19 @@
 
 </section>
 
-<section id="loading" class="screen"><img class="shot" src="/assets/loading.png"></section>
+<section id="loading" class="screen loadingScreen" aria-live="polite" aria-busy="true">
+  <div class="loadingContent">
+    <div class="loadingSymbol" aria-hidden="true">
+      <span>✈</span>
+      <span>+</span>
+      <span>÷</span>
+      <span>→</span>
+      <span>⏱</span>
+    </div>
+    <div class="loadingTitle">Doin’ the math</div>
+    <div class="loadingSubtitle">Checking traffic, security, and airport timing</div>
+  </div>
+</section>
 <section id="result" class="screen scroll">
   <img class="shot resultShot" src="/assets/result.png">
 

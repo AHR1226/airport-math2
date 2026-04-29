@@ -1424,10 +1424,11 @@ async function calculateETA() {
 
   show('loading');
 
+  // TEMP: loading screen visibility delay for UI refinement
   setTimeout(() => {
     show('result');
     renderResult();
-  }, 1200);
+  }, 2500);
 }
 
 function renderResult() {

@@ -3532,3 +3532,135 @@ body{
   font-weight:400;
   letter-spacing:0.005em;
 }
+
+/* Branded loading micro-interaction */
+#loading.loadingScreen{
+  background:#A8AE97;
+  color:#F6F6F4;
+  overflow:hidden;
+}
+
+#loading.loadingScreen.active{
+  animation:loadingScreenIn 360ms ease both;
+}
+
+#result.active{
+  animation:resultScreenIn 340ms ease both;
+}
+
+.loadingContent{
+  min-height:100%;
+  padding:56px 24px calc(64px + env(safe-area-inset-bottom));
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-family:"IBM Plex Sans", sans-serif;
+}
+
+.loadingSymbol{
+  position:relative;
+  width:86px;
+  height:86px;
+  margin-bottom:24px;
+  border-radius:999px;
+}
+
+.loadingSymbol::before{
+  content:"";
+  position:absolute;
+  inset:10px;
+  border-radius:999px;
+  background:rgba(241,242,237,0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 18px 40px rgba(6,72,25,0.12);
+  animation:loadingHalo 4200ms ease-in-out infinite;
+}
+
+.loadingSymbol span{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:34px;
+  line-height:1;
+  font-weight:500;
+  color:#CFFF4E;
+  opacity:0;
+  transform:translateY(7px) scale(.94);
+  animation:loadingSymbolCycle 7500ms cubic-bezier(.2,.8,.2,1) infinite;
+}
+
+.loadingSymbol span:nth-child(2){ animation-delay:1500ms; }
+.loadingSymbol span:nth-child(3){ animation-delay:3000ms; }
+.loadingSymbol span:nth-child(4){ animation-delay:4500ms; }
+.loadingSymbol span:nth-child(5){ animation-delay:6000ms; }
+
+.loadingTitle{
+  font-size:17px;
+  line-height:1.2;
+  font-weight:500;
+  letter-spacing:0.035em;
+  color:#F1F2ED;
+}
+
+.loadingSubtitle{
+  margin-top:9px;
+  max-width:18rem;
+  font-size:11px;
+  line-height:1.35;
+  font-weight:400;
+  letter-spacing:0.01em;
+  color:rgba(241,242,237,0.68);
+}
+
+@keyframes loadingSymbolCycle{
+  0%, 14%{
+    opacity:0;
+    transform:translateY(7px) scale(.94);
+  }
+  20%, 34%{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+  42%, 100%{
+    opacity:0;
+    transform:translateY(-7px) scale(.96);
+  }
+}
+
+@keyframes loadingHalo{
+  0%, 100%{
+    transform:scale(.96);
+    opacity:.74;
+  }
+  50%{
+    transform:scale(1.04);
+    opacity:1;
+  }
+}
+
+@keyframes loadingScreenIn{
+  from{
+    opacity:0;
+  }
+  to{
+    opacity:1;
+  }
+}
+
+@keyframes resultScreenIn{
+  from{
+    opacity:0;
+    transform:translateY(6px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
