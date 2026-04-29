@@ -1057,7 +1057,7 @@ function renderResult() {
     const travelSummary = formatDurationMinutes(result.travel);
     summaryEl.innerHTML = `
       <div>Flight: ${result.flightTime || '7:30 PM'} from ${result.airport || 'JFK'}</div>
-      <div>Travel time: ${travelSummary}</div>
+      <div>Travel to airport: ${travelSummary}</div>
       <div>Airport time: ${formatDurationMinutes(result.airportTime || 35)}</div>
       <div>Time at airport: ${formatDurationMinutes(getAirportTimingMinutes(result))}</div>
       <div>Total planning window: ${formatDurationMinutes(result.total || 95)}</div>
@@ -1185,14 +1185,17 @@ function renderHtmlResult(result) {
   const gateArrivalTime = formatMilestoneTime(gateArrivalTarget) || '--';
   const flightDateContext = formatFlightDateContext(result);
   const heroFlightSubject = flightNumber ? `${flightNumber} flight` : `${flightType.toLowerCase()} flight`;
-  const heroFlightDepartLine = isPlanningMode
-    ? `Your ${heroFlightSubject} will depart at ${scheduledFlightTime || '7:30 PM'}${flightDateContext ? ` on ${flightDateContext}` : ''}`
-    : `Your ${heroFlightSubject} departs at ${scheduledFlightTime || '7:30 PM'}`;
+  const heroFlightDepartLine = `Your ${heroFlightSubject} departs at ${scheduledFlightTime || '7:30 PM'}`;
+  const planningHeroFlightLine = `${flightType} flight`;
+  const planningHeroDepartLine = `Departs ${scheduledFlightTime || '7:30 PM'}${flightDateContext ? ` · ${flightDateContext}` : ''}`;
   const heroFlightMetaLine = isPlanningMode
     ? `${airportLabel} · ${terminalLabel}`
     : `${airportLabel} · ${terminalLabel} · Gate`;
   const heroOriginPrefix = getTransportOriginPrefix(result.transportMode);
   const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';
+  const heroMetaBlockClass = isPlanningMode
+    ? 'resultHtmlMetaBlock resultHtmlMetaBlock--planning'
+    : 'resultHtmlMetaBlock';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
   const securityBreakdownLabel = String(result.securityStatusLabel || selections.security || 'Security').trim() || 'Security';
   const hasResolvedSecurity = Number.isFinite(Number(result.securityResolvedMinutes)) && Number(result.securityResolvedMinutes) >= 0;
@@ -1239,10 +1242,17 @@ function renderHtmlResult(result) {
         </svg>
       </div>
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
-      <div class="resultHtmlMetaBlock">
+      <div class="${escapeHtml(heroMetaBlockClass)}">
+        ${isPlanningMode ? `
+        <div class="resultHtmlMetaLine resultHtmlMetaLine--flightType">${escapeHtml(planningHeroFlightLine)}</div>
+        <div class="resultHtmlMetaLine resultHtmlMetaLine--departure">${escapeHtml(planningHeroDepartLine)}</div>
+        <div class="resultHtmlMetaLine">${escapeHtml(heroFlightMetaLine)}</div>
+        ${heroOriginLine ? `<div class="resultHtmlMetaLine resultHtmlMetaLine--origin">${escapeHtml(heroOriginLine)}</div>` : ''}
+        ` : `
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightDepartLine)}</div>
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightMetaLine)}</div>
         ${heroOriginLine ? `<div class="resultHtmlMetaLine">${escapeHtml(heroOriginLine)}</div>` : ''}
+        `}
       </div>
       <div class="resultHtmlStatus ${escapeHtml(urgency.statusClassName)}" aria-live="polite">
         <span class="resultHtmlStatusDot" aria-hidden="true"></span>
@@ -1256,7 +1266,7 @@ function renderHtmlResult(result) {
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
-      <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
+      <div class="resultBreakdownRow"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
       <div class="resultBreakdownRow"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
