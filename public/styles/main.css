@@ -2526,15 +2526,15 @@ textarea{
   color:rgba(243,250,222,0.68);
 }
 
-#result.useHtmlResult .resultBreakdownRow--support span,
-#result.useHtmlResult .resultBreakdownRow--support strong{
+#result.useHtmlResult .resultBreakdownRow.resultBreakdownRow--support span,
+#result.useHtmlResult .resultBreakdownRow.resultBreakdownRow--support strong{
   font-size:12px;
   line-height:1.25;
   font-weight:400;
   color:rgba(243,250,222,0.68);
 }
 
-#result.useHtmlResult .resultBreakdownRow--support strong{
+#result.useHtmlResult .resultBreakdownRow.resultBreakdownRow--support strong{
   min-width:3.5rem;
 }
 

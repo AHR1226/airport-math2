@@ -556,16 +556,34 @@ function minutesForSelection(options = {}) {
   let travel = 45;
   let airport = 35;
   let buffer = 15;
+  const airportTimingReasons = [
+    { label: 'Airport baseline', minutes: 35 }
+  ];
+  const bufferTimingReasons = [
+    { label: 'Base timing cushion', minutes: 15 }
+  ];
 
   if (transport === 'Transit') travel += 20;
   if (transport === 'Drive & park') travel += 15;
   if (transport === 'Drop-off') travel -= 5;
 
-  if (luggage === 'Checking bags') airport += 25;
-  if (luggage === 'Bag drop') airport += 15;
+  if (luggage === 'Checking bags') {
+    airport += 25;
+    airportTimingReasons.push({ label: 'Checked bag processing', minutes: 25 });
+  }
+  if (luggage === 'Bag drop') {
+    airport += 15;
+    airportTimingReasons.push({ label: 'Bag drop', minutes: 15 });
+  }
 
-  if (security === 'Standard') airport += 25;
-  if (security === 'CLEAR + PreCheck') airport -= 10;
+  if (security === 'Standard') {
+    airport += 25;
+    airportTimingReasons.push({ label: 'Standard security', minutes: 25 });
+  }
+  if (security === 'CLEAR + PreCheck') {
+    airport -= 10;
+    airportTimingReasons.push({ label: 'CLEAR + PreCheck', minutes: -10 });
+  }
 
   const preferenceReasons = [];
   if (boarding === 'Lounge') {
@@ -579,7 +597,10 @@ function minutesForSelection(options = {}) {
     preferenceReasons.push({ label: 'Hudson News stop', minutes: hudsonNewsMinutes, category: 'preference' });
   }
 
-  if (style === 'Tight') buffer -= 10;
+  if (style === 'Tight') {
+    buffer -= 10;
+    bufferTimingReasons.push({ label: 'Tight travel style', minutes: -10 });
+  }
   if (style === 'Relaxed') {
     const relaxedMinutes = isInternational ? 45 : 25;
     buffer += relaxedMinutes;
@@ -619,6 +640,8 @@ function minutesForSelection(options = {}) {
     securityBuffer: internationalAdjustments.securityBuffer,
     peakBuffer: internationalAdjustments.peakBuffer,
     timingAdjustmentReasons: [
+      ...airportTimingReasons,
+      ...bufferTimingReasons,
       ...internationalAdjustments.reasons,
       ...preferenceReasons
     ]
@@ -1329,7 +1352,7 @@ function renderHtmlResult(result) {
 function renderTimingReasonRows(reasons) {
   if (!Array.isArray(reasons)) return '';
   const rows = reasons
-    .filter((item) => Number(item?.minutes) > 0 && String(item?.label || '').trim())
+    .filter((item) => Number.isFinite(Number(item?.minutes)) && Number(item.minutes) !== 0 && String(item?.label || '').trim())
     .map((item) => ({
       label: formatTimingReasonLabel(item.label),
       minutes: Math.round(Number(item.minutes))
@@ -1340,10 +1363,17 @@ function renderTimingReasonRows(reasons) {
     return `
         <div class="resultBreakdownRow resultBreakdownRow--support resultBreakdownRow--timingReason">
           <span>${escapeHtml(item.label)}</span>
-          <strong>+${escapeHtml(item.minutes)} min</strong>
+          <strong>${escapeHtml(formatSignedMinutes(item.minutes))}</strong>
         </div>
       `;
   }).join('');
+}
+
+function formatSignedMinutes(minutes) {
+  const rounded = Math.round(Number(minutes));
+  if (!Number.isFinite(rounded)) return '--';
+  const sign = rounded > 0 ? '+' : '';
+  return `${sign}${rounded} min`;
 }
 
 function getAirportTimingMinutes(result) {
