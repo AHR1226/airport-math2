@@ -2534,6 +2534,10 @@ textarea{
   color:rgba(243,250,222,0.68);
 }
 
+#result.useHtmlResult .resultBreakdownRow--support strong{
+  min-width:3.5rem;
+}
+
 #result.useHtmlResult .resultLiveLabelWrap{
   flex:1;
   min-width:0;

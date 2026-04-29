@@ -1339,7 +1339,8 @@ function renderTimingReasonRows(reasons) {
   return rows.map((item) => {
     return `
         <div class="resultBreakdownRow resultBreakdownRow--support resultBreakdownRow--timingReason">
-          <span>+${escapeHtml(item.minutes)} min ${escapeHtml(item.label)}</span>
+          <span>${escapeHtml(item.label)}</span>
+          <strong>+${escapeHtml(item.minutes)} min</strong>
         </div>
       `;
   }).join('');
