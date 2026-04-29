@@ -557,6 +557,7 @@ function minutesForSelection(options = {}) {
   const luggage = getActiveSelection('luggage');
   const security = getActiveSelection('security');
   const boarding = getActiveSelection('boarding');
+  const complexity = getActiveSelection('complexity') || 'Just me';
   const style = normalizeTravelStyleKey(getActiveSelection('style'));
   const flightType = normalizeFlightType(
     options.flightType
@@ -614,6 +615,12 @@ function minutesForSelection(options = {}) {
     preferenceReasons.push({ label: 'Hudson News stop', minutes: hudsonNewsMinutes, category: 'preference' });
   }
 
+  const complexityMinutes = getTravelComplexityMinutes(complexity, isInternational);
+  if (complexityMinutes > 0) {
+    airport += complexityMinutes;
+    preferenceReasons.push({ label: complexity, minutes: complexityMinutes, category: 'complexity' });
+  }
+
   if (style === 'Tight') {
     buffer -= 10;
     bufferTimingReasons.push({ label: 'Tight travel style', minutes: -10 });
@@ -651,6 +658,7 @@ function minutesForSelection(options = {}) {
     luggageSelection: luggage,
     securityStatus: security,
     travelStyle: style,
+    travelComplexity: complexity,
     peakWindow: internationalAdjustments.peakWindow,
     internationalBuffer: internationalAdjustments.internationalBuffer,
     luggageBuffer: internationalAdjustments.luggageBuffer,
@@ -663,6 +671,16 @@ function minutesForSelection(options = {}) {
       ...preferenceReasons
     ]
   };
+}
+
+function getTravelComplexityMinutes(complexity, isInternational) {
+  const key = String(complexity || 'Just me').trim().toLowerCase();
+  const values = {
+    'family / children': isInternational ? 40 : 25,
+    'traveling with pets': isInternational ? 35 : 20,
+    'group travel': isInternational ? 30 : 15
+  };
+  return values[key] || 0;
 }
 
 function destinationForSelection(airport, terminal) {
@@ -1050,6 +1068,7 @@ async function calculateETA() {
     total: timing.total,
     timingAdjustmentReasons: timing.timingAdjustmentReasons,
     style: getActiveSelection('style'),
+    complexity: getActiveSelection('complexity') || 'Just me',
     transportMode: selectedTransport || null,
     securityStatusLabel: selectedSecurityStatus,
     travelProvider: travelApi?.provider || 'mock',
@@ -1668,6 +1687,15 @@ function getTimingReasonGroup(label) {
   }
   if (normalized.includes('hudson') || normalized.includes('grab food')) {
     return { key: 'hudson-news-stop', label: 'Hudson News stop', order: 70 };
+  }
+  if (normalized.includes('family')) {
+    return { key: 'family-children', label: 'Family / children', order: 75 };
+  }
+  if (normalized.includes('pets')) {
+    return { key: 'traveling-with-pets', label: 'Traveling with pets', order: 75 };
+  }
+  if (normalized.includes('group travel')) {
+    return { key: 'group-travel', label: 'Group travel', order: 75 };
   }
   if (normalized.includes('lounge')) {
     return { key: 'lounge-time', label: 'Lounge time', order: 80 };

@@ -56,18 +56,8 @@
     <h1>Plan Your Trip</h1>
     <p class="subtitle">Tell us about your flight details</p>
 
-    <div class="card lime flightDetailsCard">
-      <h2>Flight Details</h2>
-      <div class="fieldRow flightDetailsDateTimeRow">
-        <div class="flightDetailField">
-          <label for="flightDate" class="flightDetailLabel">Flight Date</label>
-          <input id="flightDate" type="date">
-        </div>
-        <div class="flightDetailField">
-          <label for="flightTime" class="flightDetailLabel">Departure Time</label>
-          <input id="flightTime" type="time" value="19:30">
-        </div>
-      </div>
+    <div class="card lime flightDetailsCard calcDecisionSection">
+      <h2>Flight</h2>
       <div class="fieldRow flightDetailsAirportRow">
         <div class="flightDetailField">
           <label for="airportInput" class="flightDetailLabel">Airport</label>
@@ -84,23 +74,34 @@
           </select>
         </div>
       </div>
+      <div class="fieldRow flightDetailsDateTimeRow">
+        <div class="flightDetailField">
+          <label for="flightDate" class="flightDetailLabel">Departure date</label>
+          <input id="flightDate" type="date">
+        </div>
+        <div class="flightDetailField">
+          <label for="flightTime" class="flightDetailLabel">Departure time</label>
+          <input id="flightTime" type="time" value="19:30">
+        </div>
+      </div>
       <div class="fieldRow flightDetailsMetaRow">
         <div class="flightDetailField flightTypeField">
-          <label for="flightType" class="flightDetailLabel">Flight Type</label>
+          <label for="flightType" class="flightDetailLabel">Flight type</label>
           <select id="flightType" class="flightTypeSelect" aria-label="Flight Type">
             <option value="Domestic" selected>Domestic</option>
             <option value="International">International</option>
           </select>
         </div>
         <div class="flightDetailField flightNumberField">
-          <label for="flightNumberInput" class="flightNumberLabel">Flight Number (optional)</label>
+          <label for="flightNumberInput" class="flightNumberLabel">Flight number (optional)</label>
           <input id="flightNumberInput" class="full flightNumberInput" type="text" value="" placeholder="DL 1234" autocomplete="off">
         </div>
       </div>
     </div>
 
-    <div class="card startingLocationCard">
-      <h2>Leaving From</h2>
+    <div class="card startingLocationCard calcDecisionSection">
+      <h2>Getting there</h2>
+      <p class="calcSectionHint">Where you’re leaving from and how you’ll travel.</p>
       <div class="locationAutocomplete">
         <div class="locationInputRow">
           <button
@@ -119,82 +120,94 @@
         <div id="locationSuggestions" class="locationSuggestions" role="listbox" aria-label="Location suggestions"></div>
       </div>
       <p class="startingLocationValidation" id="startingLocationValidation" role="status" aria-live="polite" hidden></p>
+      <div class="chipGroup calcNestedGroup" data-group="transport">
+        <button type="button" class="chip chip--transport active" data-selection="Rideshare">
+          <span class="transportChipLabel">Rideshare</span>
+          <span class="transportChipDesc">Flexible timing, affected by live traffic</span>
+        </button>
+        <button type="button" class="chip chip--transport" data-selection="Drive & park">
+          <span class="transportChipLabel">Driving</span>
+          <span class="transportChipDesc">Fastest when traffic is light, parking may add buffer</span>
+        </button>
+        <button type="button" class="chip chip--transport" data-selection="Transit">
+          <span class="transportChipLabel">Public transit</span>
+          <span class="transportChipDesc">More predictable, but may require extra transfer time</span>
+        </button>
+        <button type="button" class="chip chip--transport" data-selection="Drop-off">
+          <span class="transportChipLabel">Drop-off</span>
+          <span class="transportChipDesc">Quick curbside handoff with less parking overhead</span>
+        </button>
+      </div>
     </div>
 
-<div class="card">
-  <h2>Transportation</h2>
+    <div class="card calcDecisionSection">
+      <h2>Airport flow</h2>
+      <p class="calcSectionHint">What you’ll need to do once you arrive.</p>
+      <div class="calcControlGroup">
+        <div class="calcControlLabel">Bags</div>
+        <div class="chipGroup" data-group="luggage">
+          <button class="chip active">Carry-on only</button>
+          <button class="chip">Checking bags</button>
+          <button class="chip">Bag drop</button>
+        </div>
+      </div>
+      <div class="calcControlGroup">
+        <div class="calcControlLabel">Security</div>
+        <div class="chipGroup" data-group="security">
+          <button class="chip">CLEAR + PreCheck</button>
+          <button class="chip active">PreCheck</button>
+          <button class="chip">Standard</button>
+        </div>
+      </div>
+      <div class="calcControlGroup">
+        <div class="calcControlLabel">Before boarding</div>
+        <div class="chipGroup" data-group="boarding">
+          <button class="chip">Lounge</button>
+          <button class="chip">Grab food</button>
+          <button class="chip active">Head to gate</button>
+        </div>
+      </div>
+    </div>
 
-  <div class="chipGroup" data-group="transport">
-    <button type="button" class="chip chip--transport active" data-selection="Rideshare">
-      <span class="transportChipLabel">Rideshare</span>
-      <span class="transportChipDesc">Flexible timing, affected by live traffic</span>
-    </button>
-    <button type="button" class="chip chip--transport" data-selection="Drive & park">
-      <span class="transportChipLabel">Driving</span>
-      <span class="transportChipDesc">Fastest when traffic is light, parking may add buffer</span>
-    </button>
-    <button type="button" class="chip chip--transport" data-selection="Transit">
-      <span class="transportChipLabel">Public transit</span>
-      <span class="transportChipDesc">More predictable, but may require extra transfer time</span>
-    </button>
-    <button type="button" class="chip chip--transport" data-selection="Drop-off">
-      <span class="transportChipLabel">Drop-off</span>
-      <span class="transportChipDesc">Quick curbside handoff with less parking overhead</span>
-    </button>
-  </div>
-</div>
+    <div class="card calcDecisionSection">
+      <h2>Travel complexity</h2>
+      <p class="calcSectionHint">Extra coordination that changes airport timing.</p>
+      <div class="chipGroup chipGroup--stacked" data-group="complexity">
+        <button type="button" class="chip chip--complexity active" data-selection="Just me">
+          <span class="styleChipLabel">Just me</span>
+        </button>
+        <button type="button" class="chip chip--complexity" data-selection="Family / children">
+          <span class="styleChipLabel">Family / children</span>
+          <span class="styleChipDesc">Extra coordination and transition time</span>
+        </button>
+        <button type="button" class="chip chip--complexity" data-selection="Traveling with pets">
+          <span class="styleChipLabel">Traveling with pets</span>
+          <span class="styleChipDesc">Additional airport handling and check-in time</span>
+        </button>
+        <button type="button" class="chip chip--complexity" data-selection="Group travel">
+          <span class="styleChipLabel">Group travel</span>
+          <span class="styleChipDesc">More coordination between travelers</span>
+        </button>
+      </div>
+    </div>
 
-<div class="card">
-  <h2>Luggage</h2>
-
-  <div class="chipGroup" data-group="luggage">
-    <button class="chip active">Carry-on only</button>
-    <button class="chip">Checking bags</button>
-    <button class="chip">Bag drop</button>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Security Status</h2>
-
-  <div class="chipGroup" data-group="security">
-    <button class="chip">CLEAR + PreCheck</button>
-    <button class="chip active">PreCheck</button>
-    <button class="chip">Standard</button>
-  </div>
-
-</div>
-
-<div class="card">
-  <h2>Before Boarding</h2>
-
-  <div class="chipGroup" data-group="boarding">
-    <button class="chip">Lounge</button>
-    <button class="chip">Grab food</button>
-    <button class="chip active">Head to gate</button>
-  </div>
-
-</div>
-
- <div class="card lime">
-    <h2>Your Travel Style</h2>
-
- <div class="chipGroup" data-group="style">
-    <button type="button" class="chip chip--travelStyle" data-selection="Relaxed">
-      <span class="styleChipLabel">Relaxed</span>
-      <span class="styleChipDesc">Extra buffer for a low stress airport experience</span>
-    </button>
-    <button type="button" class="chip chip--travelStyle active" data-selection="Balanced">
-      <span class="styleChipLabel">Balanced</span>
-      <span class="styleChipDesc">A comfortable arrival window with some buffer time</span>
-    </button>
-    <button type="button" class="chip chip--travelStyle" data-selection="Tight">
-      <span class="styleChipLabel">Tight</span>
-      <span class="styleChipDesc">Less time at the airport overall</span>
-    </button>
- </div>
-
-</div>
+    <div class="card lime calcDecisionSection">
+      <h2>Timing style</h2>
+      <div class="chipGroup chipGroup--stacked" data-group="style">
+        <button type="button" class="chip chip--travelStyle" data-selection="Tight">
+          <span class="styleChipLabel">Cutting it close</span>
+          <span class="styleChipDesc">Less time at the airport overall</span>
+        </button>
+        <button type="button" class="chip chip--travelStyle active" data-selection="Balanced">
+          <span class="styleChipLabel">Balanced</span>
+          <span class="styleChipDesc">A comfortable arrival window with some buffer time</span>
+        </button>
+        <button type="button" class="chip chip--travelStyle" data-selection="Relaxed">
+          <span class="styleChipLabel">Relaxed</span>
+          <span class="styleChipDesc">Extra buffer for a low stress airport experience</span>
+        </button>
+      </div>
+    </div>
 
 <button class="ctaButton" onclick="calculateETA()">
   Calculate My ETA

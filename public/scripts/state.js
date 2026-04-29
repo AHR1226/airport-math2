@@ -14,6 +14,7 @@ window.appState = {
     luggage: 'Carry-on only',
     security: 'PreCheck',
     boarding: 'Head to gate',
+    complexity: 'Just me',
     style: 'Balanced'
   },
   eta: {

@@ -393,6 +393,66 @@ button.tap{
   color:rgba(6,72,25,0.72);
 }
 
+#calculate .calcDecisionSection{
+  padding:18px;
+}
+
+#calculate .calcSectionHint{
+  margin:-2px 0 12px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12px;
+  line-height:1.35;
+  font-weight:400;
+  color:rgba(6,72,25,0.62);
+}
+
+#calculate .calcNestedGroup{
+  margin-top:14px;
+}
+
+#calculate .calcControlGroup + .calcControlGroup{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid rgba(6,72,25,0.07);
+}
+
+#calculate .calcControlLabel{
+  margin:0 0 8px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1;
+  font-weight:600;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:rgba(6,72,25,0.58);
+}
+
+#calculate .chipGroup--stacked{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  margin-left:0;
+  margin-right:0;
+}
+
+#calculate .chip--complexity,
+#calculate .chipGroup--stacked .chip--travelStyle{
+  width:100%;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:3px;
+  min-height:42px;
+  text-align:left;
+  box-sizing:border-box;
+}
+
+#calculate .chip--complexity.active .styleChipDesc{
+  color:rgba(6,72,25,0.74);
+}
+
 /* Travel Style: label + subtle description (Calculate + Settings) */
 #calculate [data-group="style"]{
   display:flex;
