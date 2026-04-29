@@ -569,18 +569,21 @@ function minutesForSelection(options = {}) {
 
   const preferenceReasons = [];
   if (boarding === 'Lounge') {
-    airport += 35;
-    preferenceReasons.push({ label: 'Lounge time', minutes: 35, category: 'preference' });
+    const loungeMinutes = isInternational ? 90 : 60;
+    airport += loungeMinutes;
+    preferenceReasons.push({ label: 'Lounge time', minutes: loungeMinutes, category: 'preference' });
   }
   if (boarding === 'Grab food') {
-    airport += 20;
-    preferenceReasons.push({ label: 'Hudson News stop', minutes: 20, category: 'preference' });
+    const hudsonNewsMinutes = 15;
+    airport += hudsonNewsMinutes;
+    preferenceReasons.push({ label: 'Hudson News stop', minutes: hudsonNewsMinutes, category: 'preference' });
   }
 
   if (style === 'Tight') buffer -= 10;
   if (style === 'Relaxed') {
-    buffer += 25;
-    preferenceReasons.push({ label: 'Relaxed travel style', minutes: 25, category: 'preference' });
+    const relaxedMinutes = isInternational ? 45 : 25;
+    buffer += relaxedMinutes;
+    preferenceReasons.push({ label: 'Relaxed travel style', minutes: relaxedMinutes, category: 'preference' });
   }
 
   const baseAirportBuffer = airport;
