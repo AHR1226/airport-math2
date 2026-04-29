@@ -1184,7 +1184,9 @@ function buildTripFromCurrentResult() {
   };
 }
 
-function saveCurrentTrip(button) {
+function saveCurrentTrip(button, event) {
+  event?.preventDefault();
+  event?.stopPropagation();
   const trip = buildTripFromCurrentResult();
   const trips = readSavedTrips();
   const existingIndex = trips.findIndex((item) => item.key === trip.key);
@@ -1198,10 +1200,8 @@ function saveCurrentTrip(button) {
   if (button) {
     button.textContent = 'Saved';
     button.classList.add('isSaved');
-    window.setTimeout(() => {
-      button.textContent = 'Save trip';
-      button.classList.remove('isSaved');
-    }, 1400);
+    button.disabled = true;
+    button.setAttribute('aria-label', 'Trip saved');
   }
 }
 
@@ -1480,7 +1480,7 @@ function renderHtmlResult(result) {
     <div class="resultHtmlHeader">
       <h2 class="resultHtmlTitle">Your ETA</h2>
       <div class="resultHtmlActions">
-        <button class="resultHtmlEdit resultHtmlSaveTrip" onclick="saveCurrentTrip(this)">Save trip</button>
+        <button type="button" class="resultHtmlEdit resultHtmlSaveTrip" onclick="saveCurrentTrip(this, event)">Save trip</button>
         <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
       </div>
     </div>

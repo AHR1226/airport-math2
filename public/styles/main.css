@@ -1010,6 +1010,11 @@ input{
   display:none;
 }
 
+#result.useHtmlResult .editHotspot{
+  display:none;
+  pointer-events:none;
+}
+
 #result.useHtmlResult .resultHtmlContainer{
   display:block;
   position:absolute;
@@ -1078,6 +1083,8 @@ input{
 .resultHtmlSaveTrip.isSaved{
   background:#D7F4D7;
   color:#23573A;
+  cursor:default;
+  opacity:0.95;
 }
 
 .resultHeroCard{
