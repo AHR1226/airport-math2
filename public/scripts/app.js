@@ -155,9 +155,13 @@ function initializeCalculateProgressiveFlow() {
     const header = document.createElement('button');
     header.type = 'button';
     header.className = 'calcAccordionHeader';
+    const titleText = title.textContent.trim();
     header.innerHTML = `
-      <span class="calcAccordionTitle">${escapeHtml(title.textContent.trim())}</span>
-      <span class="calcAccordionSummary" data-calc-summary></span>
+      <span class="calcAccordionIcon" aria-hidden="true">${escapeHtml(getCalculateSectionIcon(titleText))}</span>
+      <span class="calcAccordionText">
+        <span class="calcAccordionTitle">${escapeHtml(titleText)}</span>
+        <span class="calcAccordionSummary" data-calc-summary></span>
+      </span>
       <span class="calcAccordionChevron" aria-hidden="true"></span>
     `;
 
@@ -230,6 +234,15 @@ function setCalculateSectionOpen(index) {
       body.style.opacity = isOpen ? '1' : '0';
     }
   });
+}
+
+function getCalculateSectionIcon(title) {
+  if (title === 'Flight') return 'FL';
+  if (title === 'Getting there') return 'GO';
+  if (title === 'Airport flow') return 'AF';
+  if (title === 'Who’s traveling') return 'WT';
+  if (title === 'Timing style') return 'TS';
+  return 'ETA';
 }
 
 function scheduleCalculateAutoAdvance(section) {
@@ -308,6 +321,8 @@ function isCalculateSectionComplete(section) {
 
 function updateCalculateLiveEtaPreview() {
   const timeEl = document.getElementById('calcLiveEtaTime');
+  const metaEl = document.getElementById('calcLiveEtaMeta');
+  const scheduleEl = document.getElementById('calcLiveEtaSchedule');
   const reasonsEl = document.getElementById('calcLiveEtaReasons');
   if (!timeEl || !reasonsEl) return;
 
@@ -317,21 +332,32 @@ function updateCalculateLiveEtaPreview() {
   );
   if (!(flight instanceof Date) || Number.isNaN(flight.getTime())) {
     timeEl.textContent = '--';
+    if (metaEl) metaEl.textContent = 'Flight details will appear here.';
+    if (scheduleEl) scheduleEl.textContent = 'Departure timing will appear here.';
     reasonsEl.textContent = 'Add trip details to preview your timing.';
     return;
   }
 
+  const airport = document.getElementById('airportInput')?.value || 'JFK';
+  const terminal = document.getElementById('terminalInput')?.value || 'Terminal 4';
+  const flightType = normalizeFlightType(document.getElementById('flightType')?.value || 'Domestic');
+  const dateLabel = flight.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const departureTime = formatFlightTimeForDisplay(document.getElementById('flightTime')?.value || '19:30') || '7:30 PM';
   const timing = minutesForSelection({
-    flightType: document.getElementById('flightType')?.value || 'Domestic',
+    flightType,
     departureDate: flight
   });
   const leave = new Date(flight.getTime() - timing.total * 60000);
   timeEl.textContent = formatTime(leave);
+  if (metaEl) metaEl.textContent = `${flightType} · ${airport} ${terminal}`;
+  if (scheduleEl) scheduleEl.textContent = `${dateLabel} · ${departureTime} departure`;
   const reasons = aggregateTimingReasonRows(timing.timingAdjustmentReasons)
     .filter((item) => item.minutes > 0)
-    .slice(0, 2)
-    .map((item) => `${formatSignedMinutes(item.minutes)} for ${item.label.toLowerCase()}`);
-  reasonsEl.textContent = reasons.length ? reasons.join(' · ') : 'Balanced airport timing based on your choices.';
+    .slice(0, 3)
+    .map((item) => `${formatSignedMinutes(item.minutes)} ${item.label}`);
+  reasonsEl.innerHTML = reasons.length
+    ? reasons.map((reason) => `<div>${escapeHtml(reason)}</div>`).join('')
+    : '<div>Balanced airport timing based on your choices.</div>';
 }
 
 function initializeAirportTerminalSelects() {
