@@ -6,8 +6,11 @@ const WORK_ADDRESS_KEY = 'eta_work_address';
 const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
 const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
 const LIVE_MODE_WINDOW_HOURS = 12;
-const INTERNATIONAL_BASE_BUFFER_MINUTES = 30;
-const INTERNATIONAL_CHECKED_BAG_BUFFER_MINUTES = 15;
+const INTERNATIONAL_CARRY_ON_CHECK_IN_MINUTES = 25;
+const INTERNATIONAL_BAG_DROP_CHECK_IN_MINUTES = 45;
+const INTERNATIONAL_BAG_DROP_ONLY_CHECK_IN_MINUTES = 35;
+const DOMESTIC_CHECKED_BAG_DROP_MINUTES = 20;
+const DOMESTIC_BAG_DROP_MINUTES = 15;
 const INTERNATIONAL_STANDARD_SECURITY_BUFFER_MINUTES = 10;
 const INTERNATIONAL_PEAK_BUFFER_MINUTES = 15;
 let etaMonitorTimerId = null;
@@ -518,20 +521,28 @@ function buildInternationalTimingAdjustments({ isInternational, luggage, securit
     };
   }
 
-  const luggageBuffer = luggage === 'Checking bags' ? INTERNATIONAL_CHECKED_BAG_BUFFER_MINUTES : 0;
+  const checkInMinutes = luggage === 'Checking bags'
+    ? INTERNATIONAL_BAG_DROP_CHECK_IN_MINUTES
+    : luggage === 'Bag drop'
+      ? INTERNATIONAL_BAG_DROP_ONLY_CHECK_IN_MINUTES
+      : INTERNATIONAL_CARRY_ON_CHECK_IN_MINUTES;
   const securityBuffer = security === 'Standard' ? INTERNATIONAL_STANDARD_SECURITY_BUFFER_MINUTES : 0;
   const peakBuffer = peakWindow ? INTERNATIONAL_PEAK_BUFFER_MINUTES : 0;
   const reasons = [
-    { label: 'International check-in', minutes: INTERNATIONAL_BASE_BUFFER_MINUTES }
+    {
+      label: luggage === 'Checking bags' || luggage === 'Bag drop'
+        ? 'International bag drop/check-in'
+        : 'International check-in',
+      minutes: checkInMinutes
+    }
   ];
-  if (luggageBuffer) reasons.push({ label: 'Checked bags', minutes: luggageBuffer });
   if (securityBuffer) reasons.push({ label: 'Security cushion', minutes: securityBuffer });
   if (peakBuffer) reasons.push({ label: 'Peak travel window', minutes: peakBuffer });
 
   return {
     peakWindow,
-    internationalBuffer: INTERNATIONAL_BASE_BUFFER_MINUTES,
-    luggageBuffer,
+    internationalBuffer: checkInMinutes,
+    luggageBuffer: 0,
     securityBuffer,
     peakBuffer,
     reasons
@@ -560,20 +571,20 @@ function minutesForSelection(options = {}) {
     { label: 'Terminal navigation', minutes: 35 }
   ];
   const bufferTimingReasons = [
-    { label: 'Boarding buffer', minutes: 15 }
+    { label: 'Boarding time', minutes: 15 }
   ];
 
   if (transport === 'Transit') travel += 20;
   if (transport === 'Drive & park') travel += 15;
   if (transport === 'Drop-off') travel -= 5;
 
-  if (luggage === 'Checking bags') {
-    airport += 25;
-    airportTimingReasons.push({ label: 'Checked bags', minutes: 25 });
+  if (!isInternational && luggage === 'Checking bags') {
+    airport += DOMESTIC_CHECKED_BAG_DROP_MINUTES;
+    airportTimingReasons.push({ label: 'Bag drop', minutes: DOMESTIC_CHECKED_BAG_DROP_MINUTES });
   }
-  if (luggage === 'Bag drop') {
-    airport += 15;
-    airportTimingReasons.push({ label: 'Bag drop', minutes: 15 });
+  if (!isInternational && luggage === 'Bag drop') {
+    airport += DOMESTIC_BAG_DROP_MINUTES;
+    airportTimingReasons.push({ label: 'Bag drop', minutes: DOMESTIC_BAG_DROP_MINUTES });
   }
 
   if (security === 'Standard') {
@@ -1405,6 +1416,9 @@ function combineInternationalBagTiming(groups) {
 
 function getTimingReasonGroup(label) {
   const normalized = String(label || '').trim().toLowerCase();
+  if (normalized.includes('international bag drop')) {
+    return { key: 'international-bag-drop-check-in', label: 'International bag drop/check-in', order: 10 };
+  }
   if (normalized.includes('international check-in')) {
     return { key: 'international-check-in', label: 'International check-in', order: 10 };
   }
@@ -1423,8 +1437,8 @@ function getTimingReasonGroup(label) {
   if (normalized.includes('terminal navigation') || normalized.includes('airport baseline')) {
     return { key: 'terminal-navigation', label: 'Terminal navigation', order: 40 };
   }
-  if (normalized.includes('boarding buffer') || normalized.includes('base timing cushion')) {
-    return { key: 'boarding-buffer', label: 'Boarding buffer', order: 50 };
+  if (normalized.includes('boarding time') || normalized.includes('boarding buffer') || normalized.includes('base timing cushion')) {
+    return { key: 'boarding-time', label: 'Boarding time', order: 50 };
   }
   if (normalized.includes('peak travel window')) {
     return { key: 'peak-travel-window', label: 'Peak travel window', order: 60 };
