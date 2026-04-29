@@ -6,6 +6,10 @@ const WORK_ADDRESS_KEY = 'eta_work_address';
 const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
 const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
 const LIVE_MODE_WINDOW_HOURS = 12;
+const INTERNATIONAL_BASE_BUFFER_MINUTES = 30;
+const INTERNATIONAL_CHECKED_BAG_BUFFER_MINUTES = 15;
+const INTERNATIONAL_STANDARD_SECURITY_BUFFER_MINUTES = 10;
+const INTERNATIONAL_PEAK_BUFFER_MINUTES = 15;
 let etaMonitorTimerId = null;
 let etaMonitorKey = '';
 let etaMonitorInFlight = false;
@@ -485,12 +489,69 @@ function getActiveSelection(groupName) {
   return chip.textContent.trim();
 }
 
-function minutesForSelection() {
+function normalizeFlightType(raw) {
+  return String(raw || '').trim().toLowerCase() === 'international'
+    ? 'International'
+    : 'Domestic';
+}
+
+function isPeakDepartureWindow(departureDate) {
+  if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) return false;
+  const day = departureDate.getDay();
+  const hour = departureDate.getHours();
+  const isFridayAfterThree = day === 5 && hour >= 15;
+  const isSundayAfternoonEvening = day === 0 && hour >= 12 && hour <= 21;
+  const isWeekdayMorning = day >= 1 && day <= 5 && hour >= 6 && hour < 9;
+  return isFridayAfterThree || isSundayAfternoonEvening || isWeekdayMorning;
+}
+
+function buildInternationalTimingAdjustments({ isInternational, luggage, security, departureDate }) {
+  const peakWindow = isPeakDepartureWindow(departureDate);
+  if (!isInternational) {
+    return {
+      peakWindow,
+      internationalBuffer: 0,
+      luggageBuffer: 0,
+      securityBuffer: 0,
+      peakBuffer: 0,
+      reasons: []
+    };
+  }
+
+  const luggageBuffer = luggage === 'Checking bags' ? INTERNATIONAL_CHECKED_BAG_BUFFER_MINUTES : 0;
+  const securityBuffer = security === 'Standard' ? INTERNATIONAL_STANDARD_SECURITY_BUFFER_MINUTES : 0;
+  const peakBuffer = peakWindow ? INTERNATIONAL_PEAK_BUFFER_MINUTES : 0;
+  const reasons = [
+    { label: 'international check-in buffer', minutes: INTERNATIONAL_BASE_BUFFER_MINUTES }
+  ];
+  if (luggageBuffer) reasons.push({ label: 'checked-bag buffer', minutes: luggageBuffer });
+  if (securityBuffer) reasons.push({ label: 'standard security cushion', minutes: securityBuffer });
+  if (peakBuffer) reasons.push({ label: 'peak travel window', minutes: peakBuffer });
+
+  return {
+    peakWindow,
+    internationalBuffer: INTERNATIONAL_BASE_BUFFER_MINUTES,
+    luggageBuffer,
+    securityBuffer,
+    peakBuffer,
+    reasons
+  };
+}
+
+function minutesForSelection(options = {}) {
   const transport = getActiveSelection('transport');
   const luggage = getActiveSelection('luggage');
   const security = getActiveSelection('security');
   const boarding = getActiveSelection('boarding');
   const style = normalizeTravelStyleKey(getActiveSelection('style'));
+  const flightType = normalizeFlightType(
+    options.flightType
+    || window.appState?.form?.flightType
+    || document.getElementById('flightType')?.value
+    || 'Domestic'
+  );
+  const isInternational = flightType === 'International';
+  const departureDate = options.departureDate || null;
 
   let travel = 45;
   let airport = 35;
@@ -512,7 +573,40 @@ function minutesForSelection() {
   if (style === 'Tight') buffer -= 10;
   if (style === 'Relaxed') buffer += 25;
 
-  return { travel, airport, buffer, total: travel + airport + buffer };
+  const baseAirportBuffer = airport;
+  const baseBuffer = buffer;
+  const internationalAdjustments = buildInternationalTimingAdjustments({
+    isInternational,
+    luggage,
+    security,
+    departureDate
+  });
+  buffer += (
+    internationalAdjustments.internationalBuffer
+    + internationalAdjustments.luggageBuffer
+    + internationalAdjustments.securityBuffer
+    + internationalAdjustments.peakBuffer
+  );
+
+  return {
+    travel,
+    airport,
+    buffer,
+    total: travel + airport + buffer,
+    flightType,
+    isInternational,
+    baseAirportBuffer,
+    baseBuffer,
+    luggageSelection: luggage,
+    securityStatus: security,
+    travelStyle: style,
+    peakWindow: internationalAdjustments.peakWindow,
+    internationalBuffer: internationalAdjustments.internationalBuffer,
+    luggageBuffer: internationalAdjustments.luggageBuffer,
+    securityBuffer: internationalAdjustments.securityBuffer,
+    peakBuffer: internationalAdjustments.peakBuffer,
+    timingAdjustmentReasons: internationalAdjustments.reasons
+  };
 }
 
 function destinationForSelection(airport, terminal) {
@@ -818,13 +912,17 @@ async function calculateETA() {
   const selectedTerminal = form.terminal || document.getElementById('terminalInput')?.value || DEFAULT_TERMINAL_BY_AIRPORT[selectedAirport] || 'Terminal 4';
   const flightDateValue = form.flightDate || document.getElementById('flightDate')?.value || formatDateInputValue(new Date());
   const flightTimeValue = form.flightTime || document.getElementById('flightTime')?.value || '19:30';
+  const selectedFlightType = normalizeFlightType(form.flightType || document.getElementById('flightType')?.value || 'Domestic');
   const flightNumberValue = String(form.flightNumber || document.getElementById('flightNumberInput')?.value || '').trim();
   const flight = buildFlightDepartureDate(flightDateValue, flightTimeValue) || new Date();
   const calculationMode = getDepartureCalculationMode(flight);
   const isLiveMode = calculationMode === 'live';
   const isPlanningMode = calculationMode === 'planning';
 
-  const timing = minutesForSelection();
+  const timing = minutesForSelection({
+    flightType: selectedFlightType,
+    departureDate: flight
+  });
   const selectedTransport = getActiveSelection('transport');
   const travelApi = isLiveMode
     ? await fetchTravelEstimate({
@@ -845,6 +943,21 @@ async function calculateETA() {
     timing.travel = Math.round(liveTravel);
     timing.total = timing.travel + timing.airport + timing.buffer;
   }
+  console.log('[international-debug]', {
+    flightType: selectedFlightType,
+    isInternational: selectedFlightType === 'International',
+    luggageSelection: timing.luggageSelection,
+    securityStatus: timing.securityStatus,
+    travelStyle: timing.travelStyle,
+    peakWindow: timing.peakWindow,
+    baseBuffer: timing.baseBuffer,
+    internationalBuffer: timing.internationalBuffer,
+    luggageBuffer: timing.luggageBuffer,
+    securityBuffer: timing.securityBuffer,
+    peakBuffer: timing.peakBuffer,
+    finalBuffer: timing.buffer,
+    totalRecommendedMinutes: timing.total
+  });
   let lgaConditions = null;
   if (isLiveMode && selectedAirport === 'LGA') {
     lgaConditions = await fetchLgaConditions();
@@ -864,6 +977,7 @@ async function calculateETA() {
     leaveBy: formatTime(leave),
     flightDate: flightDateValue,
     flightTime: formatTime(flight),
+    flightType: selectedFlightType,
     flightDepartureAt: flight.toISOString(),
     flightNumber: flightNumberValue,
     calculationMode,
@@ -877,6 +991,7 @@ async function calculateETA() {
     airportTime: timing.airport,
     buffer: timing.buffer,
     total: timing.total,
+    timingAdjustmentReasons: timing.timingAdjustmentReasons,
     style: getActiveSelection('style'),
     transportMode: selectedTransport || null,
     securityStatusLabel: selectedSecurityStatus,
@@ -1018,6 +1133,7 @@ function renderHtmlResult(result) {
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
+  const flightType = normalizeFlightType(result.flightType || form.flightType || 'Domestic');
   const flightNumber = String(result.flightNumber || form.flightNumber || '').trim().toUpperCase();
   const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
   const transportMode = String(result.transportMode || '').trim();
@@ -1045,7 +1161,7 @@ function renderHtmlResult(result) {
   const modeContextLine = getCalculationModeContextLine(result);
   const heroFlightDepartLine = flightNumber
     ? `Your ${flightNumber} flight departs at ${scheduledFlightTime || '7:30 PM'}`
-    : `Your domestic flight departs at ${scheduledFlightTime || '7:30 PM'}`;
+    : `Your ${flightType.toLowerCase()} flight departs at ${scheduledFlightTime || '7:30 PM'}`;
   const heroFlightMetaLine = `${airportLabel} · ${terminalLabel} · Gate`;
   const heroOriginPrefix = getTransportOriginPrefix(result.transportMode);
   const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';
@@ -1069,6 +1185,16 @@ function renderHtmlResult(result) {
     : 'Estimated';
   const provider = String(result.travelProvider || '').toLowerCase();
   const trafficTagLabel = provider === 'google' ? 'GOOGLE ROUTES' : trafficTag.toUpperCase();
+  const timingReasonRows = Array.isArray(result.timingAdjustmentReasons)
+    ? result.timingAdjustmentReasons
+      .filter((item) => Number(item?.minutes) > 0 && String(item?.label || '').trim())
+      .map((item) => `
+        <div class="resultTimingReasonRow">
+          <span>+${escapeHtml(Math.round(Number(item.minutes)))} min ${escapeHtml(item.label)}</span>
+        </div>
+      `)
+      .join('')
+    : '';
 
   container.innerHTML = `
     <div class="resultHtmlHeader">
@@ -1104,6 +1230,7 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
       <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(formatDurationMinutes(result.buffer || 15))}</strong></div>
+      ${timingReasonRows ? `<div class="resultTimingReasons" aria-label="How this was calculated">${timingReasonRows}</div>` : ''}
     </div>
     ${showUberCta ? `
     <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
