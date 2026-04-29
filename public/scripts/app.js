@@ -157,7 +157,7 @@ function initializeCalculateProgressiveFlow() {
     header.className = 'calcAccordionHeader';
     const titleText = title.textContent.trim();
     header.innerHTML = `
-      <span class="calcAccordionIcon" aria-hidden="true">${escapeHtml(getCalculateSectionIcon(titleText))}</span>
+      <span class="calcAccordionIcon" aria-hidden="true">${getCalculateSectionIcon(titleText)}</span>
       <span class="calcAccordionText">
         <span class="calcAccordionTitle">${escapeHtml(titleText)}</span>
         <span class="calcAccordionSummary" data-calc-summary></span>
@@ -177,20 +177,21 @@ function initializeCalculateProgressiveFlow() {
       node = next;
     }
     body.appendChild(bodyInner);
+    const footer = document.createElement('div');
+    footer.className = 'calcAccordionFooter';
+    footer.innerHTML = '<button type="button" class="calcDoneButton">Done</button>';
+    body.appendChild(footer);
     title.replaceWith(header);
     section.appendChild(body);
 
     header.addEventListener('click', () => setCalculateSectionOpen(index));
+    footer.querySelector('.calcDoneButton')?.addEventListener('click', () => advanceCalculateSection(section));
   });
 
   calculate.addEventListener('change', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
     updateCalculateProgressiveUI();
-    const section = target.closest('.calcDecisionSection');
-    if (section && isCalculateSectionComplete(section)) {
-      scheduleCalculateAutoAdvance(section);
-    }
   });
 
   calculate.addEventListener('input', (event) => {
@@ -202,19 +203,11 @@ function initializeCalculateProgressiveFlow() {
   calculate.addEventListener('blur', (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-    const section = target.closest('.calcDecisionSection');
-    if (section && isCalculateSectionComplete(section)) {
-      scheduleCalculateAutoAdvance(section);
-    }
+    updateCalculateProgressiveUI();
   }, true);
 
-  document.addEventListener('eta:selectionchange', (event) => {
-    const group = document.querySelector(`[data-group="${event.detail?.groupName}"]`);
-    const section = group?.closest('.calcDecisionSection');
+  document.addEventListener('eta:selectionchange', () => {
     updateCalculateProgressiveUI();
-    if (section && isCalculateSectionComplete(section)) {
-      scheduleCalculateAutoAdvance(section);
-    }
   });
 
   setCalculateSectionOpen(0);
@@ -237,22 +230,38 @@ function setCalculateSectionOpen(index) {
 }
 
 function getCalculateSectionIcon(title) {
-  if (title === 'Flight') return 'FL';
-  if (title === 'Getting there') return 'GO';
-  if (title === 'Airport flow') return 'AF';
-  if (title === 'Who’s traveling') return 'WT';
-  if (title === 'Timing style') return 'TS';
-  return 'ETA';
+  if (title === 'Flight') {
+    return '<svg viewBox="0 0 24 24"><path d="M3 11.5L21 4L13.5 21L10 14L3 11.5Z"></path></svg>';
+  }
+  if (title === 'Getting there') {
+    return '<svg viewBox="0 0 24 24"><path d="M6 17L9 7H15L18 17"></path><path d="M7 17H17"></path><path d="M8 19H8.01"></path><path d="M16 19H16.01"></path></svg>';
+  }
+  if (title === 'Airport flow') {
+    return '<svg viewBox="0 0 24 24"><path d="M6 20V8L12 4L18 8V20"></path><path d="M9 20V13H15V20"></path></svg>';
+  }
+  if (title === 'Who’s traveling') {
+    return '<svg viewBox="0 0 24 24"><path d="M8 11A3 3 0 1 0 8 5A3 3 0 0 0 8 11Z"></path><path d="M16 11A2.5 2.5 0 1 0 16 6A2.5 2.5 0 0 0 16 11Z"></path><path d="M3.5 20C4 16.5 5.6 14.5 8 14.5C10.4 14.5 12 16.5 12.5 20"></path><path d="M13 15C15.6 15.2 17.2 16.9 17.8 20"></path></svg>';
+  }
+  if (title === 'Timing style') {
+    return '<svg viewBox="0 0 24 24"><path d="M12 6V12L16 14"></path><path d="M12 21A9 9 0 1 0 12 3A9 9 0 0 0 12 21Z"></path></svg>';
+  }
+  return '<svg viewBox="0 0 24 24"><path d="M4 12H20"></path><path d="M12 4V20"></path></svg>';
 }
 
-function scheduleCalculateAutoAdvance(section) {
-  window.clearTimeout(Number(section.dataset.advanceTimer || 0));
-  section.dataset.advanceTimer = String(window.setTimeout(() => {
-    const index = Number(section.dataset.calcIndex);
-    const sections = [...document.querySelectorAll('#calculate .calcDecisionSection')];
-    if (!Number.isFinite(index) || !section.classList.contains('isOpen')) return;
-    if (index < sections.length - 1) setCalculateSectionOpen(index + 1);
-  }, 420));
+function advanceCalculateSection(section) {
+  if (!isCalculateSectionComplete(section)) {
+    section.classList.add('needsAttention');
+    window.setTimeout(() => section.classList.remove('needsAttention'), 700);
+    return;
+  }
+  const index = Number(section.dataset.calcIndex);
+  const sections = [...document.querySelectorAll('#calculate .calcDecisionSection')];
+  if (!Number.isFinite(index)) return;
+  if (index < sections.length - 1) {
+    setCalculateSectionOpen(index + 1);
+    return;
+  }
+  updateCalculateProgressiveUI();
 }
 
 function updateCalculateProgressiveUI() {
