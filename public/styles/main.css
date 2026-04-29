@@ -3488,3 +3488,14 @@ body{
 #calculate .ctaButton{
   margin-bottom:calc(20px + var(--bottom-nav-clearance));
 }
+
+/* Settings labels mirror Calculate accordion headers */
+#settings .settingsField .rowTitle,
+#settings .settingsToggleRow .rowTitle{
+  font-family:"IBM Plex Sans", sans-serif !important;
+  font-size:13px !important;
+  line-height:1.1 !important;
+  font-weight:600 !important;
+  letter-spacing:0 !important;
+  color:#064819 !important;
+}
