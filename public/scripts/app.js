@@ -1189,8 +1189,7 @@ function renderHtmlResult(result) {
   const flightDateContext = formatFlightDateContext(result);
   const heroFlightSubject = flightNumber ? `${flightNumber} flight` : `${flightType.toLowerCase()} flight`;
   const heroFlightDepartLine = `Your ${heroFlightSubject} departs at ${scheduledFlightTime || '7:30 PM'}`;
-  const planningHeroFlightLine = `${flightType} flight`;
-  const planningHeroDepartLine = `Departs ${scheduledFlightTime || '7:30 PM'}${flightDateContext ? ` · ${flightDateContext}` : ''}`;
+  const planningHeroFlightLine = `${flightType} flight · Departs ${scheduledFlightTime || '7:30 PM'}${flightDateContext ? ` · ${flightDateContext}` : ''}`;
   const heroFlightMetaLine = isPlanningMode
     ? `${airportLabel} · ${terminalLabel}`
     : `${airportLabel} · ${terminalLabel} · Gate`;
@@ -1249,7 +1248,6 @@ function renderHtmlResult(result) {
       <div class="${escapeHtml(heroMetaBlockClass)}">
         ${isPlanningMode ? `
         <div class="resultHtmlMetaLine resultHtmlMetaLine--flightType">${escapeHtml(planningHeroFlightLine)}</div>
-        <div class="resultHtmlMetaLine resultHtmlMetaLine--departure">${escapeHtml(planningHeroDepartLine)}</div>
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightMetaLine)}</div>
         ${heroOriginLine ? `<div class="resultHtmlMetaLine resultHtmlMetaLine--origin">${escapeHtml(heroOriginLine)}</div>` : ''}
         ` : `
@@ -1270,8 +1268,8 @@ function renderHtmlResult(result) {
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
-      <div class="resultBreakdownRow"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>Arrive at airport</span><strong>${escapeHtml(arriveAtAirportTime)}</strong></div>
+      <div class="resultBreakdownRow resultBreakdownRow--support"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
       <div class="resultBreakdownRow"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
