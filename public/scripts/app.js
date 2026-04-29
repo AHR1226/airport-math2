@@ -1382,9 +1382,25 @@ function aggregateTimingReasonRows(reasons) {
       groups.set(group.key, current);
     });
 
+  combineInternationalBagTiming(groups);
+
   return Array.from(groups.values())
     .filter((item) => item.minutes !== 0 || isZeroMinuteTimingReason(item.label))
     .sort((a, b) => a.order - b.order);
+}
+
+function combineInternationalBagTiming(groups) {
+  const internationalCheckIn = groups.get('international-check-in');
+  const bagHandling = groups.get('bag-handling');
+  if (!internationalCheckIn || !bagHandling) return;
+
+  groups.set('international-bag-drop-check-in', {
+    label: 'International bag drop/check-in',
+    minutes: internationalCheckIn.minutes + bagHandling.minutes,
+    order: 10
+  });
+  groups.delete('international-check-in');
+  groups.delete('bag-handling');
 }
 
 function getTimingReasonGroup(label) {
@@ -1393,7 +1409,7 @@ function getTimingReasonGroup(label) {
     return { key: 'international-check-in', label: 'International check-in', order: 10 };
   }
   if (normalized.includes('checked') || normalized.includes('bag drop')) {
-    return { key: 'checked-bags', label: normalized.includes('bag drop') ? 'Bag drop' : 'Checked bags', order: 20 };
+    return { key: 'bag-handling', label: 'Bag drop', order: 20 };
   }
   if (normalized.includes('standard security') || normalized.includes('security cushion')) {
     return { key: 'standard-security', label: 'Standard security', order: 30 };
