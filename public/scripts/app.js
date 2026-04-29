@@ -969,7 +969,7 @@ function renderHtmlResult(result) {
       <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
     </div>
     <div class="resultHeroCard">
-      <div class="resultHtmlEyebrow">${escapeHtml(`${urgency.leaveLabel} - ${urgency.eyebrowCopy}`)}</div>
+      <div class="resultHtmlEyebrow">${escapeHtml(urgency.leaveLabel)}</div>
       <div class="resultHeroClock" aria-hidden="true">
         <svg viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9"></circle>
@@ -1093,19 +1093,16 @@ function getUrgencyPresentation(result) {
   const copyByState = {
     SAFE: {
       leaveLabel: 'LEAVE AT',
-      eyebrowCopy: "You're in good shape",
       pillCopy: 'Monitoring live traffic',
       statusClassName: 'resultHtmlStatus--safe'
     },
     CAUTION: {
       leaveLabel: 'LEAVE SOON',
-      eyebrowCopy: "You're cutting it close",
       pillCopy: 'Traffic could impact arrival',
       statusClassName: 'resultHtmlStatus--caution'
     },
     CRITICAL: {
       leaveLabel: 'LEAVE NOW',
-      eyebrowCopy: 'Leave immediately',
       pillCopy: 'Arrival window at risk',
       statusClassName: 'resultHtmlStatus--critical'
     }
