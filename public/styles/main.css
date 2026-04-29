@@ -463,6 +463,29 @@ button.tap{
   gap:10px;
 }
 
+.flightDetailField{
+  min-width:0;
+}
+
+.flightDetailLabel{
+  display:block;
+  margin-bottom:5px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:rgba(6,72,25,0.58);
+}
+
+.flightTypeField{
+  margin-top:10px;
+}
+
+.flightTypeField .flightTypeSelect{
+  width:100%;
+}
+
 .flightNumberField{
   margin-top:12px;
 }
@@ -2771,6 +2794,16 @@ textarea{
 }
 
 #result.useHtmlResult .resultUrgencyHelper{
+  margin-top:6px;
+  margin-left:2px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.25;
+  font-weight:400;
+  color:rgba(6,72,25,0.68);
+}
+
+#result.useHtmlResult .resultModeContext{
   margin-top:6px;
   margin-left:2px;
   font-family:"IBM Plex Sans", sans-serif;

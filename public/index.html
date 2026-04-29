@@ -58,8 +58,18 @@
 
     <div class="card lime">
       <h2>Flight Details</h2>
-      <div class="fieldRow">
-        <input id="flightTime" type="time" value="19:30">
+      <div class="fieldRow flightDetailsDateTimeRow">
+        <div class="flightDetailField">
+          <label for="flightDate" class="flightDetailLabel">Flight Date</label>
+          <input id="flightDate" type="date">
+        </div>
+        <div class="flightDetailField">
+          <label for="flightTime" class="flightDetailLabel">Departure Time</label>
+          <input id="flightTime" type="time" value="19:30">
+        </div>
+      </div>
+      <div class="flightDetailField flightTypeField">
+        <label for="flightType" class="flightDetailLabel">Flight Type</label>
         <select id="flightType" class="flightTypeSelect" aria-label="Flight Type">
           <option value="Domestic" selected>Domestic</option>
           <option value="International">International</option>

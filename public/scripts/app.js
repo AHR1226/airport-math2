@@ -92,6 +92,7 @@ if (window.navigationApi) {
 if (window.selectionsApi) {
   window.selectionsApi.init();
 }
+initializeFlightDateInput();
 initializeAirportTerminalSelects();
 initializeStartingLocationAutocomplete();
 initializeUseCurrentLocationAction();
@@ -117,6 +118,14 @@ document.addEventListener('visibilitychange', () => {
     syncEtaMonitoring(latest);
   }
 });
+
+function initializeFlightDateInput() {
+  const input = document.getElementById('flightDate');
+  if (!input) return;
+  const today = formatDateInputValue(new Date());
+  if (!input.value) input.value = window.appState?.form?.flightDate || today;
+  if (window.appState?.form) window.appState.form.flightDate = input.value;
+}
 
 function initializeAirportTerminalSelects() {
   const airportSelect = document.getElementById('airportInput');
@@ -713,6 +722,62 @@ function formatFlightTimeForDisplay(raw) {
   return `${hours12}:${minutes} ${suffix}`;
 }
 
+function formatDateInputValue(date) {
+  const d = date instanceof Date ? date : new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function buildFlightDepartureDate(flightDateValue, flightTimeValue) {
+  const dateValue = String(flightDateValue || formatDateInputValue(new Date())).trim();
+  const timeValue = String(flightTimeValue || '19:30').trim();
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hours, minutes] = timeValue.split(':').map(Number);
+  if (
+    !Number.isFinite(year)
+    || !Number.isFinite(month)
+    || !Number.isFinite(day)
+    || !Number.isFinite(hours)
+    || !Number.isFinite(minutes)
+  ) {
+    return null;
+  }
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+}
+
+function getDepartureCalculationMode(departureDate, now = new Date()) {
+  if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) return 'live';
+  if (departureDate.getTime() < now.getTime()) return 'past_flight';
+  const departureDay = formatDateInputValue(departureDate);
+  const today = formatDateInputValue(now);
+  if (departureDay > today) return 'planning';
+  return 'live';
+}
+
+function getEstimatedSecurityForPlanning(airport, securityStatus) {
+  const airportCode = String(airport || '').toUpperCase();
+  const selected = String(securityStatus || '').toLowerCase();
+  const regularByAirport = { JFK: 31, LGA: 21, EWR: 27 };
+  const precheckByAirport = { JFK: 12, LGA: 8, EWR: 10 };
+  const regular = regularByAirport[airportCode] ?? 35;
+  const precheck = precheckByAirport[airportCode] ?? 16;
+  const minutes = selected.includes('clear')
+    ? Math.max(3, Math.round(precheck * 0.6))
+    : selected.includes('pre')
+      ? precheck
+      : regular;
+  return {
+    minutes,
+    status: 'estimated',
+    source: 'Planning estimate',
+    terminal: '',
+    airport: airportCode,
+    securityStatus: securityStatus || ''
+  };
+}
+
 async function calculateETA() {
   if (window.stateApi) {
     window.stateApi.syncFormFromDom();
@@ -733,40 +798,59 @@ async function calculateETA() {
   const form = window.appState?.form || {};
   const selectedAirport = form.airport || document.getElementById('airportInput')?.value || 'JFK';
   const selectedTerminal = form.terminal || document.getElementById('terminalInput')?.value || DEFAULT_TERMINAL_BY_AIRPORT[selectedAirport] || 'Terminal 4';
+  const flightDateValue = form.flightDate || document.getElementById('flightDate')?.value || formatDateInputValue(new Date());
   const flightTimeValue = form.flightTime || document.getElementById('flightTime')?.value || '19:30';
   const flightNumberValue = String(form.flightNumber || document.getElementById('flightNumberInput')?.value || '').trim();
-  const [hours, minutes] = flightTimeValue.split(':').map(Number);
-
-  const flight = new Date();
-  flight.setHours(hours, minutes, 0, 0);
+  const flight = buildFlightDepartureDate(flightDateValue, flightTimeValue) || new Date();
+  const calculationMode = getDepartureCalculationMode(flight);
+  const isLiveMode = calculationMode === 'live';
+  const isPlanningMode = calculationMode === 'planning';
 
   const timing = minutesForSelection();
   const selectedTransport = getActiveSelection('transport');
-  const travelApi = await fetchTravelEstimate({
-    airport: selectedAirport,
-    terminal: selectedTerminal,
-    origin: startLocationRaw,
-    departAt: flight.toISOString()
-  });
+  const travelApi = isLiveMode
+    ? await fetchTravelEstimate({
+      airport: selectedAirport,
+      terminal: selectedTerminal,
+      origin: startLocationRaw,
+      departAt: flight.toISOString()
+    })
+    : {
+      travelMinutes: timing.travel,
+      provider: 'planning',
+      status: 'estimated',
+      source: 'Typical planning estimate',
+      typicalMinutes: timing.travel
+    };
   const liveTravel = Number(travelApi?.travelMinutes);
   if (Number.isFinite(liveTravel) && liveTravel > 0) {
     timing.travel = Math.round(liveTravel);
     timing.total = timing.travel + timing.airport + timing.buffer;
   }
   let lgaConditions = null;
-  if (selectedAirport === 'LGA') {
+  if (isLiveMode && selectedAirport === 'LGA') {
     lgaConditions = await fetchLgaConditions();
   }
   const selectedSecurityStatus = getActiveSelection('security') || window.appState?.selections?.security || 'Security';
-  const resolvedSecurity = await fetchAirportSecurityEstimate(selectedAirport, selectedTerminal, selectedSecurityStatus);
+  const resolvedSecurity = isLiveMode
+    ? await fetchAirportSecurityEstimate(selectedAirport, selectedTerminal, selectedSecurityStatus)
+    : {
+      ...getEstimatedSecurityForPlanning(selectedAirport, selectedSecurityStatus),
+      terminal: selectedTerminal
+    };
   const resolvedSecurityMinutes = Number(resolvedSecurity?.minutes);
   const lgaWalkMinutes = selectedAirport === 'LGA' ? Number(lgaConditions?.walkToGateMinutes) : null;
   const leave = new Date(flight.getTime() - timing.total * 60000);
 
   const etaResult = {
     leaveBy: formatTime(leave),
+    flightDate: flightDateValue,
     flightTime: formatTime(flight),
+    flightDepartureAt: flight.toISOString(),
     flightNumber: flightNumberValue,
+    calculationMode,
+    isPlanningMode,
+    isLiveMode,
     airport: selectedAirport,
     terminal: selectedTerminal,
     origin: startLocationRaw,
@@ -793,7 +877,11 @@ async function calculateETA() {
     lgaConditionsStatus: selectedAirport === 'LGA' ? String(lgaConditions?.status || 'estimated') : null,
     jfkSecurityWait: Number.isFinite(resolvedSecurityMinutes) && selectedAirport === 'JFK' ? Math.round(resolvedSecurityMinutes) : null,
     ewrSecurityWait: Number.isFinite(resolvedSecurityMinutes) && selectedAirport === 'EWR' ? Math.round(resolvedSecurityMinutes) : null,
-    monitorMessage: 'Monitoring live traffic...',
+    monitorMessage: isPlanningMode
+      ? 'Using typical traffic patterns'
+      : calculationMode === 'past_flight'
+        ? 'This flight time has passed'
+        : 'Monitoring live traffic...',
     monitorUpdatedAt: null
   };
 
@@ -936,6 +1024,7 @@ function renderHtmlResult(result) {
   const urgency = getUrgencyPresentation(result);
   const showUrgencyDebug = shouldShowUrgencyDebug();
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
+  const modeContextLine = getCalculationModeContextLine(result);
   const heroFlightDepartLine = flightNumber
     ? `Your ${flightNumber} flight departs at ${scheduledFlightTime || '7:30 PM'}`
     : `Your domestic flight departs at ${scheduledFlightTime || '7:30 PM'}`;
@@ -987,6 +1076,7 @@ function renderHtmlResult(result) {
         <span>${escapeHtml(urgency.pillCopy)}</span>
       </div>
       ${urgency.helperCopy ? `<div class="resultUrgencyHelper">${escapeHtml(urgency.helperCopy)}</div>` : ''}
+      ${modeContextLine ? `<div class="resultModeContext">${escapeHtml(modeContextLine)}</div>` : ''}
       ${showUrgencyDebug ? `<div class="resultUrgencyDebug">DEBUG · ${escapeHtml(urgency.urgencyState)} · Cushion ${escapeHtml(formatDebugMinutes(urgency.remainingCushionMinutes))} · ${escapeHtml(String(urgency.reason || 'n/a'))}</div>` : ''}
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
     </div>
@@ -1051,8 +1141,9 @@ function renderHtmlResult(result) {
 
 function getUrgencyPresentation(result) {
   const now = new Date();
-  const flightDate = parseClockTimeToday(result?.flightTime);
+  const flightDate = parseFlightDepartureDate(result) || parseClockTimeToday(result?.flightTime);
   const leaveDate = parseClockTimeToday(result?.leaveBy);
+  const calculationMode = String(result?.calculationMode || getDepartureCalculationMode(flightDate, now));
   const minutesUntilFlight = flightDate
     ? Math.round((flightDate.getTime() - now.getTime()) / 60000)
     : null;
@@ -1078,13 +1169,17 @@ function getUrgencyPresentation(result) {
 
   let urgencyState = 'SAFE';
   let reason = 'cushion_over_30';
-  if (flightTimePassed) {
+  if (calculationMode === 'past_flight' || flightTimePassed) {
     urgencyState = 'past_flight';
     reason = 'flight_time_passed';
     console.log('[urgency-debug] past flight time detected', {
       selectedFlightTime: result?.flightTime || null,
+      selectedDepartureAt: result?.flightDepartureAt || null,
       remainingCushionMinutes: Number.isFinite(remainingCushionMinutes) ? remainingCushionMinutes : null
     });
+  } else if (calculationMode === 'planning') {
+    urgencyState = 'planning';
+    reason = 'future_flight_planning_mode';
   } else if (leaveTimePassed) {
     urgencyState = 'CRITICAL';
     reason = 'leave_time_passed';
@@ -1120,6 +1215,11 @@ function getUrgencyPresentation(result) {
       pillCopy: 'This flight time has passed',
       helperCopy: 'Are you planning a future flight?',
       statusClassName: 'resultHtmlStatus--pastFlight'
+    },
+    planning: {
+      leaveLabel: 'PLANNED DEPARTURE',
+      pillCopy: 'Using typical traffic patterns',
+      statusClassName: 'resultHtmlStatus--safe'
     }
   };
   const selectedCopy = copyByState[urgencyState] || copyByState.SAFE;
@@ -1136,6 +1236,25 @@ function getUrgencyPresentation(result) {
     remainingCushionMinutes,
     reason
   };
+}
+
+function parseFlightDepartureDate(result) {
+  const explicit = String(result?.flightDepartureAt || '').trim();
+  if (explicit) {
+    const parsed = new Date(explicit);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  if (result?.flightDate && result?.flightTime) {
+    return buildFlightDepartureDate(result.flightDate, result.flightTime);
+  }
+  return null;
+}
+
+function getCalculationModeContextLine(result) {
+  const mode = String(result?.calculationMode || '').trim();
+  if (mode === 'planning') return 'Estimated for your selected departure date';
+  if (mode === 'live') return 'Using live traffic + airport conditions';
+  return '';
 }
 
 function shouldShowUrgencyDebug() {
@@ -1238,13 +1357,17 @@ function buildEtaMonitorKey(result) {
   const terminal = String(result?.terminal || '').trim();
   const origin = String(result?.origin || '').trim();
   const destination = String(result?.destination || '').trim();
-  const flightTime = String(result?.flightTime || '').trim();
+  const flightTime = String(result?.flightDepartureAt || result?.flightTime || '').trim();
   if (!airport || !origin || !destination) return '';
   return [airport, terminal, origin, destination, flightTime].join('|');
 }
 
 function syncEtaMonitoring(result) {
   if (!result) {
+    stopEtaMonitoring();
+    return;
+  }
+  if (String(result.calculationMode || '') !== 'live') {
     stopEtaMonitoring();
     return;
   }
@@ -1317,6 +1440,10 @@ async function refreshEtaMonitoring() {
     return;
   }
   const result = getLatestEtaResult();
+  if (String(result.calculationMode || '') !== 'live') {
+    stopEtaMonitoring();
+    return;
+  }
   const origin = String(result.origin || '').trim();
   const airport = String(result.airport || '').trim().toUpperCase();
   if (!origin || !airport) {

@@ -1,6 +1,7 @@
 window.appState = {
   currentScreen: 'splash',
   form: {
+    flightDate: '',
     flightTime: '19:30',
     flightNumber: '',
     airport: 'JFK',
@@ -16,7 +17,10 @@ window.appState = {
   },
   eta: {
     leaveBy: '5:42 PM',
+    flightDate: '',
     flightTime: '7:30 PM',
+    flightDepartureAt: '',
+    calculationMode: 'live',
     airport: 'JFK',
     travel: null,
     airportTime: 35,
@@ -37,12 +41,14 @@ window.stateApi = {
     return window.appState.selections[groupName] || '';
   },
   syncFormFromDom() {
+    const flightDateEl = document.getElementById('flightDate');
     const flightEl = document.getElementById('flightTime');
     const flightNumberEl = document.getElementById('flightNumberInput');
     const airportEl = document.getElementById('airportInput');
     const terminalEl = document.getElementById('terminalInput');
     const startLocationEl = document.getElementById('startingLocationInput');
 
+    if (flightDateEl) window.appState.form.flightDate = flightDateEl.value;
     if (flightEl) window.appState.form.flightTime = flightEl.value || '19:30';
     if (flightNumberEl) window.appState.form.flightNumber = flightNumberEl.value.trim();
     if (airportEl) window.appState.form.airport = airportEl.value || 'JFK';
