@@ -2915,12 +2915,6 @@ textarea{
   color:#8A5C2B;
 }
 
-#result.useHtmlResult .resultLiveTag--estimated,
-#result.useHtmlResult .resultLiveRow.primary .resultLiveTag--estimated{
-  background:#F3ECE2;
-  color:#8A5C2B;
-}
-
 #result.useHtmlResult .resultLiveTag--faa,
 #result.useHtmlResult .resultLiveTag--clear{
   background:#DDEDDD;
@@ -2931,6 +2925,15 @@ textarea{
   margin-top:8px;
   padding-top:8px;
   border-top:1px solid rgba(243,250,222,0.12);
+}
+
+#result.useHtmlResult .resultTimingReasonsLabel{
+  margin-bottom:3px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:10px;
+  line-height:1.2;
+  font-weight:500;
+  color:rgba(243,250,222,0.54);
 }
 
 #result.useHtmlResult .resultTimingReasonRow{

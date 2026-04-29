@@ -522,11 +522,11 @@ function buildInternationalTimingAdjustments({ isInternational, luggage, securit
   const securityBuffer = security === 'Standard' ? INTERNATIONAL_STANDARD_SECURITY_BUFFER_MINUTES : 0;
   const peakBuffer = peakWindow ? INTERNATIONAL_PEAK_BUFFER_MINUTES : 0;
   const reasons = [
-    { label: 'international check-in buffer', minutes: INTERNATIONAL_BASE_BUFFER_MINUTES }
+    { label: 'International check-in', minutes: INTERNATIONAL_BASE_BUFFER_MINUTES }
   ];
-  if (luggageBuffer) reasons.push({ label: 'checked-bag buffer', minutes: luggageBuffer });
+  if (luggageBuffer) reasons.push({ label: 'Checked bags', minutes: luggageBuffer });
   if (securityBuffer) reasons.push({ label: 'standard security cushion', minutes: securityBuffer });
-  if (peakBuffer) reasons.push({ label: 'peak travel window', minutes: peakBuffer });
+  if (peakBuffer) reasons.push({ label: 'Peak travel window', minutes: peakBuffer });
 
   return {
     peakWindow,
@@ -1159,7 +1159,13 @@ function renderHtmlResult(result) {
   const showUrgencyDebug = shouldShowUrgencyDebug();
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
   const modeContextLine = getCalculationModeContextLine(result);
-  const isPlanningMode = String(result.calculationMode || '').trim() === 'planning';
+  const calculationMode = String(result.calculationMode || '').trim();
+  const isPlanningMode = calculationMode === 'planning';
+  const breakdownTitle = isPlanningMode
+    ? 'Planned Timing Breakdown'
+    : calculationMode === 'live'
+      ? 'Live Timing Breakdown'
+      : 'Trip Breakdown';
   const heroFlightDepartLine = flightNumber
     ? `Your ${flightNumber} flight departs at ${scheduledFlightTime || '7:30 PM'}`
     : `Your ${flightType.toLowerCase()} flight departs at ${scheduledFlightTime || '7:30 PM'}`;
@@ -1201,7 +1207,7 @@ function renderHtmlResult(result) {
       .filter((item) => Number(item?.minutes) > 0 && String(item?.label || '').trim())
       .map((item) => `
         <div class="resultTimingReasonRow">
-          <span>+${escapeHtml(Math.round(Number(item.minutes)))} min ${escapeHtml(item.label)}</span>
+          <span>+${escapeHtml(Math.round(Number(item.minutes)))} min ${escapeHtml(formatTimingReasonLabel(item.label))}</span>
         </div>
       `)
       .join('')
@@ -1236,12 +1242,12 @@ function renderHtmlResult(result) {
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
     </div>
     <div class="resultBreakdownCard">
-      <div class="resultBreakdownTitle">Trip breakdown</div>
+      <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
       <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(formatDurationMinutes(result.buffer || 15))}</strong></div>
-      ${timingReasonRows ? `<div class="resultTimingReasons" aria-label="How this was calculated">${timingReasonRows}</div>` : ''}
+      ${timingReasonRows ? `<div class="resultTimingReasons" aria-label="Buffer includes"><div class="resultTimingReasonsLabel">Buffer includes</div>${timingReasonRows}</div>` : ''}
     </div>
     ${showUberCta ? `
     <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
@@ -1293,6 +1299,16 @@ function renderHtmlResult(result) {
       </div>
     </div>
   `;
+}
+
+function formatTimingReasonLabel(label) {
+  const normalized = String(label || '').trim().toLowerCase();
+  const labels = {
+    'international check-in buffer': 'International check-in',
+    'checked-bag buffer': 'Checked bags',
+    'peak travel window': 'Peak travel window'
+  };
+  return labels[normalized] || String(label || '').trim();
 }
 
 function getUrgencyPresentation(result) {
