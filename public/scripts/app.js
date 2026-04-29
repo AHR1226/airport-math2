@@ -567,11 +567,21 @@ function minutesForSelection(options = {}) {
   if (security === 'Standard') airport += 25;
   if (security === 'CLEAR + PreCheck') airport -= 10;
 
-  if (boarding === 'Lounge') airport += 35;
-  if (boarding === 'Grab food') airport += 20;
+  const preferenceReasons = [];
+  if (boarding === 'Lounge') {
+    airport += 35;
+    preferenceReasons.push({ label: 'Lounge time', minutes: 35, category: 'preference' });
+  }
+  if (boarding === 'Grab food') {
+    airport += 20;
+    preferenceReasons.push({ label: 'Hudson News stop', minutes: 20, category: 'preference' });
+  }
 
   if (style === 'Tight') buffer -= 10;
-  if (style === 'Relaxed') buffer += 25;
+  if (style === 'Relaxed') {
+    buffer += 25;
+    preferenceReasons.push({ label: 'Relaxed travel style', minutes: 25, category: 'preference' });
+  }
 
   const baseAirportBuffer = airport;
   const baseBuffer = buffer;
@@ -605,7 +615,10 @@ function minutesForSelection(options = {}) {
     luggageBuffer: internationalAdjustments.luggageBuffer,
     securityBuffer: internationalAdjustments.securityBuffer,
     peakBuffer: internationalAdjustments.peakBuffer,
-    timingAdjustmentReasons: internationalAdjustments.reasons
+    timingAdjustmentReasons: [
+      ...internationalAdjustments.reasons,
+      ...preferenceReasons
+    ]
   };
 }
 
@@ -1166,10 +1179,14 @@ function renderHtmlResult(result) {
     : calculationMode === 'live'
       ? 'Live Timing Breakdown'
       : 'Trip Breakdown';
-  const heroFlightDepartLine = flightNumber
-    ? `Your ${flightNumber} flight departs at ${scheduledFlightTime || '7:30 PM'}`
-    : `Your ${flightType.toLowerCase()} flight departs at ${scheduledFlightTime || '7:30 PM'}`;
-  const heroFlightMetaLine = `${airportLabel} · ${terminalLabel} · Gate`;
+  const flightDateContext = formatFlightDateContext(result);
+  const heroFlightSubject = flightNumber ? `${flightNumber} flight` : `${flightType.toLowerCase()} flight`;
+  const heroFlightDepartLine = isPlanningMode
+    ? `Your ${heroFlightSubject} will depart at ${scheduledFlightTime || '7:30 PM'}${flightDateContext ? ` on ${flightDateContext}` : ''}`
+    : `Your ${heroFlightSubject} departs at ${scheduledFlightTime || '7:30 PM'}`;
+  const heroFlightMetaLine = isPlanningMode
+    ? `${airportLabel} · ${terminalLabel}`
+    : `${airportLabel} · ${terminalLabel} · Gate`;
   const heroOriginPrefix = getTransportOriginPrefix(result.transportMode);
   const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
@@ -1192,26 +1209,16 @@ function renderHtmlResult(result) {
     : 'Estimated';
   const provider = String(result.travelProvider || '').toLowerCase();
   const trafficTagLabel = provider === 'google' ? 'GOOGLE ROUTES' : trafficTag.toUpperCase();
-  const planningConditionsTag = 'ESTIMATED';
   const conditionsTitle = isPlanningMode ? 'Estimated Conditions' : 'Live Conditions';
-  const conditionsTrafficTagLabel = isPlanningMode ? planningConditionsTag : trafficTagLabel;
+  const conditionsTrafficTagLabel = isPlanningMode ? 'GOOGLE ROUTES ESTIMATED' : trafficTagLabel;
   const conditionsTrafficTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--traffic';
-  const conditionsSecurityTagLabel = isPlanningMode ? planningConditionsTag : securityTag;
+  const conditionsSecurityTagLabel = isPlanningMode ? 'TSA ESTIMATED' : securityTag;
   const conditionsSecurityTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--security';
-  const conditionsAirportTagLabel = isPlanningMode ? planningConditionsTag : (isLga ? walkTag : 'FAA');
+  const conditionsAirportTagLabel = isPlanningMode ? 'FAA ESTIMATED' : (isLga ? walkTag : 'FAA');
   const conditionsAirportTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--faa';
-  const conditionsWeatherTagLabel = isPlanningMode ? planningConditionsTag : 'Clear';
+  const conditionsWeatherTagLabel = isPlanningMode ? 'WEATHER ESTIMATED' : 'Clear';
   const conditionsWeatherTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--clear';
-  const timingReasonRows = Array.isArray(result.timingAdjustmentReasons)
-    ? result.timingAdjustmentReasons
-      .filter((item) => Number(item?.minutes) > 0 && String(item?.label || '').trim())
-      .map((item) => `
-        <div class="resultTimingReasonRow">
-          <span>+${escapeHtml(Math.round(Number(item.minutes)))} min ${escapeHtml(formatTimingReasonLabel(item.label))}</span>
-        </div>
-      `)
-      .join('')
-    : '';
+  const timingReasonRows = renderTimingReasonRows(result.timingAdjustmentReasons);
 
   container.innerHTML = `
     <div class="resultHtmlHeader">
@@ -1301,14 +1308,48 @@ function renderHtmlResult(result) {
   `;
 }
 
+function renderTimingReasonRows(reasons) {
+  if (!Array.isArray(reasons)) return '';
+  const rows = reasons
+    .filter((item) => Number(item?.minutes) > 0 && String(item?.label || '').trim())
+    .map((item) => ({
+      label: formatTimingReasonLabel(item.label),
+      minutes: Math.round(Number(item.minutes)),
+      category: String(item?.category || 'operational').trim().toLowerCase()
+    }));
+  if (!rows.length) return '';
+
+  let hasRenderedPreferenceLabel = false;
+  return rows.map((item) => {
+    const isPreference = item.category === 'preference';
+    const preferenceLabel = isPreference && !hasRenderedPreferenceLabel
+      ? '<div class="resultTimingReasonsSubLabel">Preferences</div>'
+      : '';
+    if (isPreference) hasRenderedPreferenceLabel = true;
+    return `
+        ${preferenceLabel}
+        <div class="resultTimingReasonRow${isPreference ? ' resultTimingReasonRow--preference' : ''}">
+          <span>+${escapeHtml(item.minutes)} min ${escapeHtml(item.label)}</span>
+        </div>
+      `;
+  }).join('');
+}
+
 function formatTimingReasonLabel(label) {
   const normalized = String(label || '').trim().toLowerCase();
-  const labels = {
-    'international check-in buffer': 'International check-in',
-    'checked-bag buffer': 'Checked bags',
-    'peak travel window': 'Peak travel window'
-  };
-  return labels[normalized] || String(label || '').trim();
+  if (normalized.includes('international check-in')) return 'International check-in';
+  if (normalized.includes('checked-bag')) return 'Checked bags';
+  if (normalized.includes('peak travel window')) return 'Peak travel window';
+  return String(label || '').trim();
+}
+
+function formatFlightDateContext(result) {
+  const flightDate = parseFlightDepartureDate(result);
+  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return '';
+  return flightDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric'
+  });
 }
 
 function getUrgencyPresentation(result) {

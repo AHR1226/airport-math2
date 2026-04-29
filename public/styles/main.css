@@ -2936,6 +2936,15 @@ textarea{
   color:rgba(243,250,222,0.54);
 }
 
+#result.useHtmlResult .resultTimingReasonsSubLabel{
+  margin:6px 0 2px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:10px;
+  line-height:1.2;
+  font-weight:500;
+  color:rgba(243,250,222,0.48);
+}
+
 #result.useHtmlResult .resultTimingReasonRow{
   padding:3px 0;
   font-family:"IBM Plex Sans", sans-serif;
