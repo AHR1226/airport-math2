@@ -2760,6 +2760,26 @@ textarea{
   box-shadow:0 0 0 2px rgba(201,35,67,0.16);
 }
 
+#result.useHtmlResult .resultHtmlStatus--pastFlight{
+  color:#6B5530;
+  background:#F3E9D7;
+}
+
+#result.useHtmlResult .resultHtmlStatus--pastFlight .resultHtmlStatusDot{
+  background:rgba(129,101,57,0.82);
+  box-shadow:0 0 0 2px rgba(129,101,57,0.13);
+}
+
+#result.useHtmlResult .resultUrgencyHelper{
+  margin-top:6px;
+  margin-left:2px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.25;
+  font-weight:400;
+  color:rgba(6,72,25,0.68);
+}
+
 #result.useHtmlResult .resultUrgencyDebug{
   margin-top:6px;
   margin-left:2px;

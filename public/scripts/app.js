@@ -986,6 +986,7 @@ function renderHtmlResult(result) {
         <span class="resultHtmlStatusDot" aria-hidden="true"></span>
         <span>${escapeHtml(urgency.pillCopy)}</span>
       </div>
+      ${urgency.helperCopy ? `<div class="resultUrgencyHelper">${escapeHtml(urgency.helperCopy)}</div>` : ''}
       ${showUrgencyDebug ? `<div class="resultUrgencyDebug">DEBUG · ${escapeHtml(urgency.urgencyState)} · Cushion ${escapeHtml(formatDebugMinutes(urgency.remainingCushionMinutes))} · ${escapeHtml(String(urgency.reason || 'n/a'))}</div>` : ''}
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
     </div>
@@ -1072,11 +1073,19 @@ function getUrgencyPresentation(result) {
   const remainingCushionMinutes = Number.isFinite(minutesUntilFlight)
     ? Math.round(minutesUntilFlight - totalTripMinutesRemaining)
     : null;
+  const flightTimePassed = Boolean(flightDate && flightDate.getTime() < now.getTime());
   const leaveTimePassed = Boolean(leaveDate && leaveDate.getTime() <= now.getTime());
 
   let urgencyState = 'SAFE';
   let reason = 'cushion_over_30';
-  if (leaveTimePassed) {
+  if (flightTimePassed) {
+    urgencyState = 'past_flight';
+    reason = 'flight_time_passed';
+    console.log('[urgency-debug] past flight time detected', {
+      selectedFlightTime: result?.flightTime || null,
+      remainingCushionMinutes: Number.isFinite(remainingCushionMinutes) ? remainingCushionMinutes : null
+    });
+  } else if (leaveTimePassed) {
     urgencyState = 'CRITICAL';
     reason = 'leave_time_passed';
   } else if (!Number.isFinite(remainingCushionMinutes)) {
@@ -1105,6 +1114,12 @@ function getUrgencyPresentation(result) {
       leaveLabel: 'LEAVE NOW',
       pillCopy: 'Arrival window at risk',
       statusClassName: 'resultHtmlStatus--critical'
+    },
+    past_flight: {
+      leaveLabel: 'CHECK FLIGHT TIME',
+      pillCopy: 'This flight time has passed',
+      helperCopy: 'Are you planning a future flight?',
+      statusClassName: 'resultHtmlStatus--pastFlight'
     }
   };
   const selectedCopy = copyByState[urgencyState] || copyByState.SAFE;
