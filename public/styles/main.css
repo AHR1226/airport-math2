@@ -463,8 +463,41 @@ button.tap{
   gap:10px;
 }
 
-.flightNumberInput{
-  margin-top:10px;
+.flightNumberField{
+  margin-top:12px;
+}
+
+.flightNumberLabel{
+  display:block;
+  margin-bottom:5px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:rgba(6,72,25,0.52);
+}
+
+#calculate .flightNumberField .flightNumberInput{
+  margin-top:0;
+  height:40px;
+  font-size:12px;
+  font-weight:500;
+  color:rgba(6,72,25,0.82);
+  background:rgba(255,255,255,0.55);
+  border:1px solid rgba(6,72,25,0.1);
+  box-shadow:none;
+}
+
+#calculate .flightNumberField .flightNumberInput::placeholder{
+  color:rgba(6,72,25,0.42);
+  font-weight:400;
+}
+
+#calculate .flightNumberField .flightNumberInput:focus{
+  outline:none;
+  border-color:rgba(6,72,25,0.22);
+  background:rgba(255,255,255,0.75);
 }
 
 input{
