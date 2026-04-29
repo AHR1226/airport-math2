@@ -525,7 +525,7 @@ function buildInternationalTimingAdjustments({ isInternational, luggage, securit
     { label: 'International check-in', minutes: INTERNATIONAL_BASE_BUFFER_MINUTES }
   ];
   if (luggageBuffer) reasons.push({ label: 'Checked bags', minutes: luggageBuffer });
-  if (securityBuffer) reasons.push({ label: 'standard security cushion', minutes: securityBuffer });
+  if (securityBuffer) reasons.push({ label: 'Security cushion', minutes: securityBuffer });
   if (peakBuffer) reasons.push({ label: 'Peak travel window', minutes: peakBuffer });
 
   return {
@@ -1059,7 +1059,7 @@ function renderResult() {
       <div>Flight: ${result.flightTime || '7:30 PM'} from ${result.airport || 'JFK'}</div>
       <div>Travel time: ${travelSummary}</div>
       <div>Airport time: ${formatDurationMinutes(result.airportTime || 35)}</div>
-      <div>Airport timing: ${formatDurationMinutes(getAirportTimingMinutes(result))}</div>
+      <div>Time at airport: ${formatDurationMinutes(getAirportTimingMinutes(result))}</div>
       <div>Total planning window: ${formatDurationMinutes(result.total || 95)}</div>
     `;
   }
@@ -1255,13 +1255,13 @@ function renderHtmlResult(result) {
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
-      <div class="resultBreakdownRow"><span>Flight departs</span><strong>${escapeHtml(flightDepartureTime)}</strong></div>
-      <div class="resultBreakdownRow"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
-      <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
-      <div class="resultBreakdownRow"><span>Airport timing</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
-      <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
-      ${timingReasonRows ? `<div class="resultTimingReasons" aria-label="Airport timing includes"><div class="resultTimingReasonsLabel">Airport timing includes</div>${timingReasonRows}</div>` : ''}
+      <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
+      <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
+      <div class="resultBreakdownRow"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
+      <div class="resultBreakdownRow"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
+      <div class="resultBreakdownRow"><span>Flight departs</span><strong>${escapeHtml(flightDepartureTime)}</strong></div>
+      ${timingReasonRows ? `<div class="resultTimingReasons" aria-label="Time at airport includes"><div class="resultTimingReasonsLabel">Time at airport includes</div>${timingReasonRows}</div>` : ''}
     </div>
     ${showUberCta ? `
     <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
@@ -1380,6 +1380,7 @@ function formatTimingReasonLabel(label) {
   const normalized = String(label || '').trim().toLowerCase();
   if (normalized.includes('international check-in')) return 'International check-in';
   if (normalized.includes('checked-bag')) return 'Checked bags';
+  if (normalized.includes('security cushion')) return 'Security cushion';
   if (normalized.includes('peak travel window')) return 'Peak travel window';
   return String(label || '').trim();
 }
