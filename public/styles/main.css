@@ -2915,6 +2915,12 @@ textarea{
   color:#8A5C2B;
 }
 
+#result.useHtmlResult .resultLiveTag--estimated,
+#result.useHtmlResult .resultLiveRow.primary .resultLiveTag--estimated{
+  background:#F3ECE2;
+  color:#8A5C2B;
+}
+
 #result.useHtmlResult .resultLiveTag--faa,
 #result.useHtmlResult .resultLiveTag--clear{
   background:#DDEDDD;

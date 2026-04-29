@@ -1011,7 +1011,7 @@ async function calculateETA() {
     jfkSecurityWait: Number.isFinite(resolvedSecurityMinutes) && selectedAirport === 'JFK' ? Math.round(resolvedSecurityMinutes) : null,
     ewrSecurityWait: Number.isFinite(resolvedSecurityMinutes) && selectedAirport === 'EWR' ? Math.round(resolvedSecurityMinutes) : null,
     monitorMessage: isPlanningMode
-      ? 'Using typical traffic patterns'
+      ? 'Estimating typical traffic patterns'
       : calculationMode === 'past_flight'
         ? 'This flight time has passed'
         : 'Monitoring live traffic...',
@@ -1159,6 +1159,7 @@ function renderHtmlResult(result) {
   const showUrgencyDebug = shouldShowUrgencyDebug();
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
   const modeContextLine = getCalculationModeContextLine(result);
+  const isPlanningMode = String(result.calculationMode || '').trim() === 'planning';
   const heroFlightDepartLine = flightNumber
     ? `Your ${flightNumber} flight departs at ${scheduledFlightTime || '7:30 PM'}`
     : `Your ${flightType.toLowerCase()} flight departs at ${scheduledFlightTime || '7:30 PM'}`;
@@ -1185,6 +1186,16 @@ function renderHtmlResult(result) {
     : 'Estimated';
   const provider = String(result.travelProvider || '').toLowerCase();
   const trafficTagLabel = provider === 'google' ? 'GOOGLE ROUTES' : trafficTag.toUpperCase();
+  const planningConditionsTag = 'ESTIMATED';
+  const conditionsTitle = isPlanningMode ? 'Estimated Conditions' : 'Live Conditions';
+  const conditionsTrafficTagLabel = isPlanningMode ? planningConditionsTag : trafficTagLabel;
+  const conditionsTrafficTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--traffic';
+  const conditionsSecurityTagLabel = isPlanningMode ? planningConditionsTag : securityTag;
+  const conditionsSecurityTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--security';
+  const conditionsAirportTagLabel = isPlanningMode ? planningConditionsTag : (isLga ? walkTag : 'FAA');
+  const conditionsAirportTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--faa';
+  const conditionsWeatherTagLabel = isPlanningMode ? planningConditionsTag : 'Clear';
+  const conditionsWeatherTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--clear';
   const timingReasonRows = Array.isArray(result.timingAdjustmentReasons)
     ? result.timingAdjustmentReasons
       .filter((item) => Number(item?.minutes) > 0 && String(item?.label || '').trim())
@@ -1249,12 +1260,12 @@ function renderHtmlResult(result) {
     </a>
     ` : ''}
     <div class="resultLiveCard">
-      <div class="resultLiveTitle">Live Conditions</div>
+      <div class="resultLiveTitle">${escapeHtml(conditionsTitle)}</div>
       <div class="resultLiveRow primary">
         <div class="resultLiveLabelWrap resultLiveLabelWrapTraffic">
           <div class="resultLiveLabelTopRow">
             <span class="resultLiveLabel">Traffic</span>
-            <span class="resultLiveTag resultLiveTag--traffic">${escapeHtml(trafficTagLabel)}</span>
+            <span class="resultLiveTag ${escapeHtml(conditionsTrafficTagClass)}">${escapeHtml(conditionsTrafficTagLabel)}</span>
           </div>
         </div>
         <strong class="resultLiveValue">${escapeHtml(travelDuration)}</strong>
@@ -1262,21 +1273,21 @@ function renderHtmlResult(result) {
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">Security wait</span>
-          <span class="resultLiveTag resultLiveTag--security">${escapeHtml(securityTag)}</span>
+          <span class="resultLiveTag ${escapeHtml(conditionsSecurityTagClass)}">${escapeHtml(conditionsSecurityTagLabel)}</span>
         </div>
         <strong class="resultLiveValue">${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">${isLga ? 'Walk to gate' : 'Airport status'}</span>
-          <span class="resultLiveTag resultLiveTag--faa">${isLga ? escapeHtml(walkTag) : 'FAA'}</span>
+          <span class="resultLiveTag ${escapeHtml(conditionsAirportTagClass)}">${escapeHtml(conditionsAirportTagLabel)}</span>
         </div>
         <strong class="resultLiveValue text">${escapeHtml(isLga ? walkToGateValue : 'No advisory')}</strong>
       </div>
       <div class="resultLiveRow">
         <div class="resultLiveLabelWrap">
           <span class="resultLiveLabel">Weather</span>
-          <span class="resultLiveTag resultLiveTag--clear">Clear</span>
+          <span class="resultLiveTag ${escapeHtml(conditionsWeatherTagClass)}">${escapeHtml(conditionsWeatherTagLabel)}</span>
         </div>
         <strong class="resultLiveValue text">${escapeHtml('No delays')}</strong>
       </div>
@@ -1363,7 +1374,7 @@ function getUrgencyPresentation(result) {
     },
     planning: {
       leaveLabel: 'PLANNED DEPARTURE',
-      pillCopy: 'Using typical traffic patterns',
+      pillCopy: 'Estimating typical traffic patterns',
       statusClassName: 'resultHtmlStatus--safe'
     }
   };
@@ -1397,7 +1408,6 @@ function parseFlightDepartureDate(result) {
 
 function getCalculationModeContextLine(result) {
   const mode = String(result?.calculationMode || '').trim();
-  if (mode === 'planning') return 'Estimated for your selected departure date';
   if (mode === 'live') return 'Using live traffic + airport conditions';
   return '';
 }
