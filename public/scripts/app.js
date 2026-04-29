@@ -157,7 +157,6 @@ function initializeCalculateProgressiveFlow() {
     header.className = 'calcAccordionHeader';
     const titleText = title.textContent.trim();
     header.innerHTML = `
-      <span class="calcAccordionIcon" aria-hidden="true">${getCalculateSectionIcon(titleText)}</span>
       <span class="calcAccordionText">
         <span class="calcAccordionTitle">${escapeHtml(titleText)}</span>
         <span class="calcAccordionSummary" data-calc-summary></span>
@@ -231,25 +230,6 @@ function setCalculateSectionOpen(index) {
       body.style.opacity = isOpen ? '1' : '0';
     }
   });
-}
-
-function getCalculateSectionIcon(title) {
-  if (title === 'Flight') {
-    return '<svg viewBox="0 0 24 24"><path d="M3 11.5L21 4L13.5 21L10 14L3 11.5Z"></path></svg>';
-  }
-  if (title === 'Getting there') {
-    return '<svg viewBox="0 0 24 24"><path d="M6 17L9 7H15L18 17"></path><path d="M7 17H17"></path><path d="M8 19H8.01"></path><path d="M16 19H16.01"></path></svg>';
-  }
-  if (title === 'Airport flow') {
-    return '<svg viewBox="0 0 24 24"><path d="M6 20V8L12 4L18 8V20"></path><path d="M9 20V13H15V20"></path></svg>';
-  }
-  if (title === 'Who’s traveling') {
-    return '<svg viewBox="0 0 24 24"><path d="M8 11A3 3 0 1 0 8 5A3 3 0 0 0 8 11Z"></path><path d="M16 11A2.5 2.5 0 1 0 16 6A2.5 2.5 0 0 0 16 11Z"></path><path d="M3.5 20C4 16.5 5.6 14.5 8 14.5C10.4 14.5 12 16.5 12.5 20"></path><path d="M13 15C15.6 15.2 17.2 16.9 17.8 20"></path></svg>';
-  }
-  if (title === 'Timing style') {
-    return '<svg viewBox="0 0 24 24"><path d="M12 6V12L16 14"></path><path d="M12 21A9 9 0 1 0 12 3A9 9 0 0 0 12 21Z"></path></svg>';
-  }
-  return '<svg viewBox="0 0 24 24"><path d="M4 12H20"></path><path d="M12 4V20"></path></svg>';
 }
 
 function updateCalculateProgressiveUI() {

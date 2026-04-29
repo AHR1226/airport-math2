@@ -306,7 +306,7 @@ button.tap{
   line-height:1.4;
   color:#66725F;
 
-  margin-bottom:22px;
+  margin-bottom:46px;
 }
 
 .card{
@@ -426,14 +426,14 @@ button.tap{
 #calculate .calcAccordionHeader{
   width:100%;
   margin:0;
-  padding:16px 17px;
+  padding:17px 22px;
   border:0;
   background:transparent;
   color:inherit;
   text-align:left;
   display:grid;
-  grid-template-columns:auto minmax(0, 1fr) auto;
-  column-gap:12px;
+  grid-template-columns:minmax(0, 1fr) auto;
+  column-gap:14px;
   align-items:center;
   cursor:pointer;
   -webkit-tap-highlight-color:transparent;
@@ -442,30 +442,6 @@ button.tap{
 
 #calculate .calcDecisionSection.isOpen .calcAccordionHeader{
   background:transparent;
-}
-
-#calculate .calcAccordionIcon{
-  width:19px;
-  height:19px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:rgba(6,72,25,0.5);
-}
-
-#calculate .calcDecisionSection.isOpen .calcAccordionIcon{
-  color:#064819;
-}
-
-#calculate .calcAccordionIcon svg{
-  width:15.5px;
-  height:15.5px;
-  display:block;
-  fill:none;
-  stroke:currentColor;
-  stroke-width:1.55;
-  stroke-linecap:round;
-  stroke-linejoin:round;
 }
 
 #calculate .calcAccordionText{
@@ -538,7 +514,7 @@ button.tap{
 }
 
 #calculate .calcAccordionBodyInner{
-  padding:0 17px 17px;
+  padding:0 22px 18px;
 }
 
 #calculate .calcSectionHint{
@@ -586,10 +562,20 @@ button.tap{
   align-items:flex-start;
   justify-content:center;
   gap:2px;
-  min-height:40px;
-  padding:9px 11px;
+  min-height:44px;
+  padding:10px 12px;
   text-align:left;
   box-sizing:border-box;
+  border-radius:14px;
+}
+
+#calculate .chip--complexity:not(:has(.styleChipDesc)){
+  min-height:auto;
+  width:auto;
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:7px 12px;
 }
 
 #calculate .chip--complexity .styleChipDesc{
@@ -633,16 +619,16 @@ button.tap{
   min-height:4.5rem;
   padding:11px 12px;
   text-align:left;
-  border-radius:11px;
+  border-radius:14px;
 }
 
 #calculate [data-group="style"] .chip--travelStyle.active{
   transform:none;
-  border-radius:11px;
+  border-radius:14px;
 }
 
 #calculate [data-group="style"] .chip--travelStyle:active{
-  border-radius:11px;
+  border-radius:14px;
 }
 
 #calculate [data-group="style"] .styleChipLabel{
