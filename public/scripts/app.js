@@ -1059,7 +1059,7 @@ function renderResult() {
       <div>Flight: ${result.flightTime || '7:30 PM'} from ${result.airport || 'JFK'}</div>
       <div>Travel time: ${travelSummary}</div>
       <div>Airport time: ${formatDurationMinutes(result.airportTime || 35)}</div>
-      <div>Buffer: ${formatDurationMinutes(result.buffer || 15)}</div>
+      <div>Airport timing: ${formatDurationMinutes(getAirportTimingMinutes(result))}</div>
       <div>Total planning window: ${formatDurationMinutes(result.total || 95)}</div>
     `;
   }
@@ -1179,6 +1179,10 @@ function renderHtmlResult(result) {
     : calculationMode === 'live'
       ? 'Live Timing Breakdown'
       : 'Trip Breakdown';
+  const flightDepartureDate = parseFlightDepartureDate(result);
+  const flightDepartureTime = formatMilestoneTime(flightDepartureDate) || scheduledFlightTime || '7:30 PM';
+  const gateArrivalTarget = getGateArrivalTarget(result, flightType);
+  const gateArrivalTime = formatMilestoneTime(gateArrivalTarget) || '--';
   const flightDateContext = formatFlightDateContext(result);
   const heroFlightSubject = flightNumber ? `${flightNumber} flight` : `${flightType.toLowerCase()} flight`;
   const heroFlightDepartLine = isPlanningMode
@@ -1204,6 +1208,7 @@ function renderHtmlResult(result) {
     : 'TSA Estimated';
   const walkTag = isLga ? 'Estimated' : 'Estimated';
   const travelDuration = formatDurationMinutes(result.travel);
+  const airportTimingDuration = formatDurationMinutes(getAirportTimingMinutes(result));
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
     ? 'Live'
     : 'Estimated';
@@ -1250,11 +1255,13 @@ function renderHtmlResult(result) {
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
-      <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
-      <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
+      <div class="resultBreakdownRow"><span>Flight departs</span><strong>${escapeHtml(flightDepartureTime)}</strong></div>
+      <div class="resultBreakdownRow"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
       <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
-      <div class="resultBreakdownRow"><span>Buffer</span><strong>${escapeHtml(formatDurationMinutes(result.buffer || 15))}</strong></div>
-      ${timingReasonRows ? `<div class="resultTimingReasons" aria-label="Buffer includes"><div class="resultTimingReasonsLabel">Buffer includes</div>${timingReasonRows}</div>` : ''}
+      <div class="resultBreakdownRow"><span>Airport timing</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
+      <div class="resultBreakdownRow"><span>Travel Time</span><strong>${escapeHtml(travelDuration)}</strong></div>
+      <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
+      ${timingReasonRows ? `<div class="resultTimingReasons" aria-label="Airport timing includes"><div class="resultTimingReasonsLabel">Airport timing includes</div>${timingReasonRows}</div>` : ''}
     </div>
     ${showUberCta ? `
     <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
@@ -1333,6 +1340,40 @@ function renderTimingReasonRows(reasons) {
         </div>
       `;
   }).join('');
+}
+
+function getAirportTimingMinutes(result) {
+  const airportTime = Number(result?.airportTime);
+  const buffer = Number(result?.buffer);
+  const safeAirportTime = Number.isFinite(airportTime) && airportTime >= 0 ? airportTime : 0;
+  const safeBuffer = Number.isFinite(buffer) && buffer >= 0 ? buffer : 0;
+  return safeAirportTime + safeBuffer;
+}
+
+function formatMilestoneTime(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  return formatTime(date);
+}
+
+function getGateArrivalTarget(result, flightType) {
+  const flightDate = parseFlightDepartureDate(result);
+  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return null;
+  const leadMinutes = getGateArrivalLeadMinutes(result, flightType);
+  return new Date(flightDate.getTime() - leadMinutes * 60000);
+}
+
+function getGateArrivalLeadMinutes(result, flightType) {
+  if (normalizeFlightType(flightType || result?.flightType) !== 'International') return 30;
+  const reasons = Array.isArray(result?.timingAdjustmentReasons) ? result.timingAdjustmentReasons : [];
+  const hasExtendedAirportNeeds = reasons.some((item) => {
+    const label = String(item?.label || '').toLowerCase();
+    return (
+      label.includes('checked')
+      || label.includes('security')
+      || label.includes('peak')
+    );
+  });
+  return hasExtendedAirportNeeds ? 60 : 45;
 }
 
 function formatTimingReasonLabel(label) {
