@@ -3499,3 +3499,35 @@ body{
   letter-spacing:0 !important;
   color:#064819 !important;
 }
+
+/* Splash value proposition refresh */
+#splash .splashTagline{
+  margin-top:14px;
+  font-size:13px;
+  line-height:1.28;
+  font-weight:400;
+  letter-spacing:0.015em;
+  color:rgba(241,242,237,0.92);
+}
+
+#splash .splashFeatureList{
+  margin-top:44px;
+  gap:22px;
+}
+
+#splash .splashFeature{
+  gap:5px;
+}
+
+#splash .splashFeature svg{
+  width:22px;
+  height:22px;
+}
+
+#splash .splashFeature span{
+  max-width:17rem;
+  font-size:11px;
+  line-height:1.22;
+  font-weight:400;
+  letter-spacing:0.005em;
+}
