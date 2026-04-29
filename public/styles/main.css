@@ -463,6 +463,14 @@ button.tap{
   gap:10px;
 }
 
+.flightDetailsCard{
+  padding:18px;
+}
+
+.flightDetailsCard .fieldRow + .fieldRow{
+  margin-top:10px;
+}
+
 .flightDetailField{
   min-width:0;
 }
@@ -479,7 +487,7 @@ button.tap{
 }
 
 .flightTypeField{
-  margin-top:10px;
+  margin-top:0;
 }
 
 .flightTypeField .flightTypeSelect{
@@ -487,7 +495,7 @@ button.tap{
 }
 
 .flightNumberField{
-  margin-top:12px;
+  margin-top:0;
 }
 
 .flightNumberLabel{
@@ -503,7 +511,7 @@ button.tap{
 
 #calculate .flightNumberField .flightNumberInput{
   margin-top:0;
-  height:40px;
+  height:42px;
   font-size:12px;
   font-weight:500;
   color:rgba(6,72,25,0.82);
@@ -521,6 +529,13 @@ button.tap{
   outline:none;
   border-color:rgba(6,72,25,0.22);
   background:rgba(255,255,255,0.75);
+}
+
+#calculate .flightDetailsCard input,
+#calculate .flightDetailsCard .flightTypeSelect{
+  background-color:rgba(255,255,255,0.62);
+  border:1px solid rgba(6,72,25,0.1);
+  box-shadow:none;
 }
 
 input{
