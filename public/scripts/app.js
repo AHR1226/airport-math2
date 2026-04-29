@@ -1210,13 +1210,13 @@ function renderHtmlResult(result) {
   const provider = String(result.travelProvider || '').toLowerCase();
   const trafficTagLabel = provider === 'google' ? 'GOOGLE ROUTES' : trafficTag.toUpperCase();
   const conditionsTitle = isPlanningMode ? 'Estimated Conditions' : 'Live Conditions';
-  const conditionsTrafficTagLabel = isPlanningMode ? 'GOOGLE ROUTES ESTIMATED' : trafficTagLabel;
+  const conditionsTrafficTagLabel = isPlanningMode ? 'ROUTES EST.' : trafficTagLabel;
   const conditionsTrafficTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--traffic';
-  const conditionsSecurityTagLabel = isPlanningMode ? 'TSA ESTIMATED' : securityTag;
+  const conditionsSecurityTagLabel = isPlanningMode ? 'TSA EST.' : securityTag;
   const conditionsSecurityTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--security';
-  const conditionsAirportTagLabel = isPlanningMode ? 'FAA ESTIMATED' : (isLga ? walkTag : 'FAA');
+  const conditionsAirportTagLabel = isPlanningMode ? 'FAA EST.' : (isLga ? walkTag : 'FAA');
   const conditionsAirportTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--faa';
-  const conditionsWeatherTagLabel = isPlanningMode ? 'WEATHER ESTIMATED' : 'Clear';
+  const conditionsWeatherTagLabel = isPlanningMode ? 'WEATHER EST.' : 'Clear';
   const conditionsWeatherTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--clear';
   const timingReasonRows = renderTimingReasonRows(result.timingAdjustmentReasons);
 

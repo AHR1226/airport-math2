@@ -1261,6 +1261,7 @@ input{
   display:inline-flex;
   align-items:center;
   justify-content:center;
+  flex:0 0 auto;
   height:18px;
   padding:0 7px;
   border-radius:5px;
@@ -1268,6 +1269,7 @@ input{
   font-weight:700;
   letter-spacing:.05em;
   text-transform:uppercase;
+  white-space:nowrap;
   color:#4A5D41;
   background:#E8EBE3;
 }
@@ -2913,6 +2915,13 @@ textarea{
 #result.useHtmlResult .resultLiveTag--security{
   background:#F3ECE2;
   color:#8A5C2B;
+}
+
+#result.useHtmlResult .resultLiveTag--estimated,
+#result.useHtmlResult .resultLiveRow.primary .resultLiveTag--estimated{
+  background:#ECEDEA;
+  color:#5D655B;
+  white-space:nowrap;
 }
 
 #result.useHtmlResult .resultLiveTag--faa,
