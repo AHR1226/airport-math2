@@ -1145,7 +1145,6 @@ function renderHtmlResult(result) {
   if (!container) return;
 
   const form = window.appState?.form || {};
-  const selections = window.appState?.selections || {};
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
@@ -1189,17 +1188,17 @@ function renderHtmlResult(result) {
   const flightDateContext = formatFlightDateContext(result);
   const heroFlightSubject = flightNumber ? `${flightNumber} flight` : `${flightType.toLowerCase()} flight`;
   const heroFlightDepartLine = `Your ${heroFlightSubject} departs at ${scheduledFlightTime || '7:30 PM'}`;
-  const planningHeroFlightLine = `${flightType} flight · Departs ${scheduledFlightTime || '7:30 PM'}${flightDateContext ? ` · ${flightDateContext}` : ''}`;
+  const planningHeroDepartLine = `Departs ${scheduledFlightTime || '7:30 PM'}${flightDateContext ? ` · ${flightDateContext}` : ''}`;
   const heroFlightMetaLine = isPlanningMode
     ? `${airportLabel} · ${terminalLabel}`
     : `${airportLabel} · ${terminalLabel} · Gate`;
+  const planningHeroDetailsLine = `${flightType} flight · ${heroFlightMetaLine}`;
   const heroOriginPrefix = getTransportOriginPrefix(result.transportMode);
   const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';
   const heroMetaBlockClass = isPlanningMode
     ? 'resultHtmlMetaBlock resultHtmlMetaBlock--planning'
     : 'resultHtmlMetaBlock';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
-  const securityBreakdownLabel = formatSecurityBreakdownLabel(result.securityStatusLabel || selections.security || 'Security');
   const hasResolvedSecurity = Number.isFinite(Number(result.securityResolvedMinutes)) && Number(result.securityResolvedMinutes) >= 0;
   const hasLgaWalk = Number.isFinite(Number(result.lgaWalkToGate)) && Number(result.lgaWalkToGate) > 0;
   const securityWait = hasResolvedSecurity
@@ -1247,8 +1246,8 @@ function renderHtmlResult(result) {
       <div class="resultHtmlTime">${escapeHtml(result.leaveBy || '5:42 PM')}</div>
       <div class="${escapeHtml(heroMetaBlockClass)}">
         ${isPlanningMode ? `
-        <div class="resultHtmlMetaLine resultHtmlMetaLine--flightType">${escapeHtml(planningHeroFlightLine)}</div>
-        <div class="resultHtmlMetaLine">${escapeHtml(heroFlightMetaLine)}</div>
+        <div class="resultHtmlMetaLine resultHtmlMetaLine--departure">${escapeHtml(planningHeroDepartLine)}</div>
+        <div class="resultHtmlMetaLine resultHtmlMetaLine--flightType">${escapeHtml(planningHeroDetailsLine)}</div>
         ${heroOriginLine ? `<div class="resultHtmlMetaLine resultHtmlMetaLine--origin">${escapeHtml(heroOriginLine)}</div>` : ''}
         ` : `
         <div class="resultHtmlMetaLine">${escapeHtml(heroFlightDepartLine)}</div>
@@ -1270,11 +1269,10 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow"><span>Arrive at airport</span><strong>${escapeHtml(arriveAtAirportTime)}</strong></div>
       <div class="resultBreakdownRow resultBreakdownRow--support"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
-      <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
       <div class="resultBreakdownRow"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
+      ${timingReasonRows}
       <div class="resultBreakdownRow"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
       <div class="resultBreakdownRow"><span>Flight departs</span><strong>${escapeHtml(flightDepartureTime)}</strong></div>
-      ${timingReasonRows ? `<div class="resultTimingReasons" aria-label="Time at airport includes"><div class="resultTimingReasonsLabel">Time at airport includes</div>${timingReasonRows}</div>` : ''}
     </div>
     ${showUberCta ? `
     <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
@@ -1334,21 +1332,13 @@ function renderTimingReasonRows(reasons) {
     .filter((item) => Number(item?.minutes) > 0 && String(item?.label || '').trim())
     .map((item) => ({
       label: formatTimingReasonLabel(item.label),
-      minutes: Math.round(Number(item.minutes)),
-      category: String(item?.category || 'operational').trim().toLowerCase()
+      minutes: Math.round(Number(item.minutes))
     }));
   if (!rows.length) return '';
 
-  let hasRenderedPreferenceLabel = false;
   return rows.map((item) => {
-    const isPreference = item.category === 'preference';
-    const preferenceLabel = isPreference && !hasRenderedPreferenceLabel
-      ? '<div class="resultTimingReasonsSubLabel">Preferences</div>'
-      : '';
-    if (isPreference) hasRenderedPreferenceLabel = true;
     return `
-        ${preferenceLabel}
-        <div class="resultTimingReasonRow${isPreference ? ' resultTimingReasonRow--preference' : ''}">
+        <div class="resultBreakdownRow resultBreakdownRow--support resultBreakdownRow--timingReason">
           <span>+${escapeHtml(item.minutes)} min ${escapeHtml(item.label)}</span>
         </div>
       `;
@@ -1368,12 +1358,6 @@ function getAirportArrivalTime(result) {
   const travelMinutes = Number(result?.travel);
   if (!leaveDate || !Number.isFinite(travelMinutes) || travelMinutes < 0) return null;
   return new Date(leaveDate.getTime() + Math.round(travelMinutes) * 60000);
-}
-
-function formatSecurityBreakdownLabel(value) {
-  const label = String(value || '').trim();
-  if (!label) return 'Security';
-  return label.toLowerCase() === 'standard' ? 'Standard security' : label;
 }
 
 function formatMilestoneTime(date) {

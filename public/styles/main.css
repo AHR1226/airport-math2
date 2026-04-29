@@ -2969,39 +2969,6 @@ textarea{
   color:#2E6242;
 }
 
-#result.useHtmlResult .resultTimingReasons{
-  margin-top:8px;
-  padding-top:8px;
-  border-top:1px solid rgba(243,250,222,0.12);
-}
-
-#result.useHtmlResult .resultTimingReasonsLabel{
-  margin-bottom:3px;
-  font-family:"IBM Plex Sans", sans-serif;
-  font-size:10px;
-  line-height:1.2;
-  font-weight:500;
-  color:rgba(243,250,222,0.54);
-}
-
-#result.useHtmlResult .resultTimingReasonsSubLabel{
-  margin:6px 0 2px;
-  font-family:"IBM Plex Sans", sans-serif;
-  font-size:10px;
-  line-height:1.2;
-  font-weight:500;
-  color:rgba(243,250,222,0.48);
-}
-
-#result.useHtmlResult .resultTimingReasonRow{
-  padding:3px 0;
-  font-family:"IBM Plex Sans", sans-serif;
-  font-size:11px;
-  line-height:1.3;
-  font-weight:400;
-  color:rgba(243,250,222,0.72);
-}
-
 /* iOS mobile safe-area + viewport stability overrides */
 :root{
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
