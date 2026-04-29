@@ -557,10 +557,10 @@ function minutesForSelection(options = {}) {
   let airport = 35;
   let buffer = 15;
   const airportTimingReasons = [
-    { label: 'Airport baseline', minutes: 35 }
+    { label: 'Terminal navigation', minutes: 35 }
   ];
   const bufferTimingReasons = [
-    { label: 'Base timing cushion', minutes: 15 }
+    { label: 'Boarding buffer', minutes: 15 }
   ];
 
   if (transport === 'Transit') travel += 20;
@@ -569,7 +569,7 @@ function minutesForSelection(options = {}) {
 
   if (luggage === 'Checking bags') {
     airport += 25;
-    airportTimingReasons.push({ label: 'Checked bag processing', minutes: 25 });
+    airportTimingReasons.push({ label: 'Checked bags', minutes: 25 });
   }
   if (luggage === 'Bag drop') {
     airport += 15;
@@ -579,6 +579,9 @@ function minutesForSelection(options = {}) {
   if (security === 'Standard') {
     airport += 25;
     airportTimingReasons.push({ label: 'Standard security', minutes: 25 });
+  }
+  if (security === 'PreCheck') {
+    airportTimingReasons.push({ label: 'PreCheck', minutes: 0 });
   }
   if (security === 'CLEAR + PreCheck') {
     airport -= 10;
@@ -1351,12 +1354,7 @@ function renderHtmlResult(result) {
 
 function renderTimingReasonRows(reasons) {
   if (!Array.isArray(reasons)) return '';
-  const rows = reasons
-    .filter((item) => Number.isFinite(Number(item?.minutes)) && Number(item.minutes) !== 0 && String(item?.label || '').trim())
-    .map((item) => ({
-      label: formatTimingReasonLabel(item.label),
-      minutes: Math.round(Number(item.minutes))
-    }));
+  const rows = aggregateTimingReasonRows(reasons);
   if (!rows.length) return '';
 
   return rows.map((item) => {
@@ -1367,6 +1365,76 @@ function renderTimingReasonRows(reasons) {
         </div>
       `;
   }).join('');
+}
+
+function aggregateTimingReasonRows(reasons) {
+  const groups = new Map();
+  reasons
+    .filter((item) => Number.isFinite(Number(item?.minutes)) && String(item?.label || '').trim())
+    .forEach((item) => {
+      const group = getTimingReasonGroup(item.label);
+      const current = groups.get(group.key) || {
+        label: group.label,
+        minutes: 0,
+        order: group.order
+      };
+      current.minutes += Math.round(Number(item.minutes));
+      groups.set(group.key, current);
+    });
+
+  return Array.from(groups.values())
+    .filter((item) => item.minutes !== 0 || isZeroMinuteTimingReason(item.label))
+    .sort((a, b) => a.order - b.order);
+}
+
+function getTimingReasonGroup(label) {
+  const normalized = String(label || '').trim().toLowerCase();
+  if (normalized.includes('international check-in')) {
+    return { key: 'international-check-in', label: 'International check-in', order: 10 };
+  }
+  if (normalized.includes('checked') || normalized.includes('bag drop')) {
+    return { key: 'checked-bags', label: normalized.includes('bag drop') ? 'Bag drop' : 'Checked bags', order: 20 };
+  }
+  if (normalized.includes('standard security') || normalized.includes('security cushion')) {
+    return { key: 'standard-security', label: 'Standard security', order: 30 };
+  }
+  if (normalized.includes('clear')) {
+    return { key: 'clear-precheck', label: 'CLEAR + PreCheck', order: 30 };
+  }
+  if (normalized.includes('precheck')) {
+    return { key: 'precheck', label: 'PreCheck', order: 30 };
+  }
+  if (normalized.includes('terminal navigation') || normalized.includes('airport baseline')) {
+    return { key: 'terminal-navigation', label: 'Terminal navigation', order: 40 };
+  }
+  if (normalized.includes('boarding buffer') || normalized.includes('base timing cushion')) {
+    return { key: 'boarding-buffer', label: 'Boarding buffer', order: 50 };
+  }
+  if (normalized.includes('peak travel window')) {
+    return { key: 'peak-travel-window', label: 'Peak travel window', order: 60 };
+  }
+  if (normalized.includes('hudson') || normalized.includes('grab food')) {
+    return { key: 'hudson-news-stop', label: 'Hudson News stop', order: 70 };
+  }
+  if (normalized.includes('lounge')) {
+    return { key: 'lounge-time', label: 'Lounge time', order: 80 };
+  }
+  if (normalized.includes('relaxed')) {
+    return { key: 'relaxed-travel-style', label: 'Relaxed travel style', order: 90 };
+  }
+  if (normalized.includes('tight')) {
+    return { key: 'tight-travel-style', label: 'Tight travel style', order: 90 };
+  }
+  return {
+    key: normalized || 'airport-timing',
+    label: formatTimingReasonLabel(label),
+    order: 100
+  };
+}
+
+function isZeroMinuteTimingReason(label) {
+  const normalized = String(label || '').trim().toLowerCase();
+  return normalized === 'precheck';
 }
 
 function formatSignedMinutes(minutes) {
