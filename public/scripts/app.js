@@ -1030,6 +1030,7 @@ async function calculateETA() {
   const leave = new Date(flight.getTime() - timing.total * 60000);
 
   const etaResult = {
+    savedTripId: '',
     leaveBy: formatTime(leave),
     flightDate: flightDateValue,
     flightTime: formatTime(flight),
@@ -1174,7 +1175,7 @@ function buildTripFromCurrentResult() {
     status: getTripStatus(eta),
     form,
     selections,
-    eta: clonePlain(eta),
+    eta: { ...clonePlain(eta), savedTripId: existing?.id || '' },
     milestones: {
       leaveHome: eta.leaveBy || '',
       arriveAtAirport: formatMilestoneTime(airportArrivalTime),
@@ -1195,10 +1196,13 @@ function saveCurrentTrip(button, event) {
   } else {
     trips.unshift(trip);
   }
+  trip.eta.savedTripId = trip.id;
+  if (window.stateApi) window.stateApi.setEta({ savedTripId: trip.id });
+  localStorage.setItem('etaResult', JSON.stringify({ ...getLatestEtaResult(), savedTripId: trip.id }));
   writeSavedTrips(trips);
   renderTripsList();
   if (button) {
-    button.textContent = 'Saved';
+    button.textContent = '✓ Saved trip';
     button.classList.add('isSaved');
     button.disabled = true;
     button.setAttribute('aria-label', 'Trip saved');
@@ -1284,7 +1288,7 @@ function restoreTripState(trip) {
   if (!window.appState) return;
   window.appState.form = { ...window.appState.form, ...(trip.form || {}) };
   window.appState.selections = { ...window.appState.selections, ...(trip.selections || {}) };
-  window.appState.eta = { ...window.appState.eta, ...(trip.eta || {}) };
+  window.appState.eta = { ...window.appState.eta, ...(trip.eta || {}), savedTripId: trip.id };
   localStorage.setItem('etaResult', JSON.stringify(window.appState.eta));
   syncFormToDom(window.appState.form);
   syncSelectionChipsToState(window.appState.selections);
@@ -1332,6 +1336,12 @@ function getTripStatus(eta) {
 function formatTripDateLabel(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return 'Saved trip';
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function isResultSavedTrip(result) {
+  if (String(result?.savedTripId || '').trim()) return true;
+  const key = getTripKey({ eta: result, form: window.appState?.form || {} });
+  return readSavedTrips().some((trip) => trip.key === key);
 }
 
 /** Strip country suffix for UI only (geocoding still tolerates the trimmed string). */
@@ -1416,6 +1426,7 @@ function renderHtmlResult(result) {
     && Boolean(destinationForUber)
     && hasValidUberLink
   );
+  const isSavedTrip = isResultSavedTrip(result);
   const urgency = getUrgencyPresentation(result);
   const showUrgencyDebug = shouldShowUrgencyDebug();
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
@@ -1480,7 +1491,7 @@ function renderHtmlResult(result) {
     <div class="resultHtmlHeader">
       <h2 class="resultHtmlTitle">Your ETA</h2>
       <div class="resultHtmlActions">
-        <button type="button" class="resultHtmlEdit resultHtmlSaveTrip" onclick="saveCurrentTrip(this, event)">Save trip</button>
+        <button type="button" class="resultHtmlEdit resultHtmlSaveTrip${isSavedTrip ? ' isSaved' : ''}" ${isSavedTrip ? 'disabled aria-label="Trip saved"' : 'onclick="saveCurrentTrip(this, event)"'}>${isSavedTrip ? '✓ Saved trip' : 'Save trip'}</button>
         <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
       </div>
     </div>
