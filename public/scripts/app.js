@@ -1200,7 +1200,7 @@ function renderHtmlResult(result) {
     ? 'resultHtmlMetaBlock resultHtmlMetaBlock--planning'
     : 'resultHtmlMetaBlock';
   const isLga = String(result.airport || '').toUpperCase() === 'LGA';
-  const securityBreakdownLabel = String(result.securityStatusLabel || selections.security || 'Security').trim() || 'Security';
+  const securityBreakdownLabel = formatSecurityBreakdownLabel(result.securityStatusLabel || selections.security || 'Security');
   const hasResolvedSecurity = Number.isFinite(Number(result.securityResolvedMinutes)) && Number(result.securityResolvedMinutes) >= 0;
   const hasLgaWalk = Number.isFinite(Number(result.lgaWalkToGate)) && Number(result.lgaWalkToGate) > 0;
   const securityWait = hasResolvedSecurity
@@ -1361,6 +1361,12 @@ function getAirportTimingMinutes(result) {
   const safeAirportTime = Number.isFinite(airportTime) && airportTime >= 0 ? airportTime : 0;
   const safeBuffer = Number.isFinite(buffer) && buffer >= 0 ? buffer : 0;
   return safeAirportTime + safeBuffer;
+}
+
+function formatSecurityBreakdownLabel(value) {
+  const label = String(value || '').trim();
+  if (!label) return 'Security';
+  return label.toLowerCase() === 'standard' ? 'Standard security' : label;
 }
 
 function formatMilestoneTime(date) {

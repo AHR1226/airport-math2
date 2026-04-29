@@ -2672,21 +2672,17 @@ textarea{
 
 #result.useHtmlResult .resultHtmlMetaBlock--planning .resultHtmlMetaLine{
   margin-top:0;
-}
-
-#result.useHtmlResult .resultHtmlMetaLine--flightType{
-  font-weight:600;
-  color:#053F17;
+  font-size:inherit;
+  font-weight:inherit;
+  color:inherit;
 }
 
 #result.useHtmlResult .resultHtmlMetaLine--departure{
-  font-weight:500;
   white-space:nowrap;
 }
 
 #result.useHtmlResult .resultHtmlMetaLine--origin{
   line-height:1.3;
-  color:rgba(6,72,25,0.76);
 }
 
 #result.useHtmlResult .resultHtmlFlightFrom{
