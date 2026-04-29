@@ -177,15 +177,10 @@ function initializeCalculateProgressiveFlow() {
       node = next;
     }
     body.appendChild(bodyInner);
-    const footer = document.createElement('div');
-    footer.className = 'calcAccordionFooter';
-    footer.innerHTML = '<button type="button" class="calcDoneButton">Done</button>';
-    body.appendChild(footer);
     title.replaceWith(header);
     section.appendChild(body);
 
-    header.addEventListener('click', () => setCalculateSectionOpen(index));
-    footer.querySelector('.calcDoneButton')?.addEventListener('click', () => advanceCalculateSection(section));
+    header.addEventListener('click', () => toggleCalculateSection(index));
   });
 
   calculate.addEventListener('change', (event) => {
@@ -212,6 +207,15 @@ function initializeCalculateProgressiveFlow() {
 
   setCalculateSectionOpen(0);
   updateCalculateProgressiveUI();
+}
+
+function toggleCalculateSection(index) {
+  const section = document.querySelectorAll('#calculate .calcDecisionSection')[index];
+  if (section?.classList.contains('isOpen')) {
+    setCalculateSectionOpen(-1);
+    return;
+  }
+  setCalculateSectionOpen(index);
 }
 
 function setCalculateSectionOpen(index) {
@@ -246,22 +250,6 @@ function getCalculateSectionIcon(title) {
     return '<svg viewBox="0 0 24 24"><path d="M12 6V12L16 14"></path><path d="M12 21A9 9 0 1 0 12 3A9 9 0 0 0 12 21Z"></path></svg>';
   }
   return '<svg viewBox="0 0 24 24"><path d="M4 12H20"></path><path d="M12 4V20"></path></svg>';
-}
-
-function advanceCalculateSection(section) {
-  if (!isCalculateSectionComplete(section)) {
-    section.classList.add('needsAttention');
-    window.setTimeout(() => section.classList.remove('needsAttention'), 700);
-    return;
-  }
-  const index = Number(section.dataset.calcIndex);
-  const sections = [...document.querySelectorAll('#calculate .calcDecisionSection')];
-  if (!Number.isFinite(index)) return;
-  if (index < sections.length - 1) {
-    setCalculateSectionOpen(index + 1);
-    return;
-  }
-  updateCalculateProgressiveUI();
 }
 
 function updateCalculateProgressiveUI() {
