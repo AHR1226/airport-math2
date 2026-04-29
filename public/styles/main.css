@@ -366,15 +366,15 @@ button.tap{
   justify-content:center;
   gap:2px;
   box-sizing:border-box;
-  min-height:3.95rem;
-  padding:10px 12px;
+  min-height:3.15rem;
+  padding:8px 10px;
   text-align:left;
   border-radius:11px;
 }
 
 #calculate [data-group="transport"] .transportChipLabel{
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:13px;
+  font-size:12px;
   font-weight:500;
   letter-spacing:-0.005em;
   line-height:1.22;
@@ -382,8 +382,8 @@ button.tap{
 
 #calculate [data-group="transport"] .transportChipDesc{
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:11px;
-  line-height:1.33;
+  font-size:10px;
+  line-height:1.28;
   font-weight:400;
   color:rgba(6,72,25,0.58);
   letter-spacing:0.005em;
@@ -426,7 +426,7 @@ button.tap{
 #calculate .calcAccordionHeader{
   width:100%;
   margin:0;
-  padding:17px 22px;
+  padding:15px 21px;
   border:0;
   background:transparent;
   color:inherit;
@@ -455,7 +455,7 @@ button.tap{
   font-family:"IBM Plex Sans", sans-serif;
   font-size:16px;
   line-height:1.1;
-  font-weight:800;
+  font-weight:700;
   letter-spacing:-0.01em;
   color:#064819;
 }
@@ -514,7 +514,7 @@ button.tap{
 }
 
 #calculate .calcAccordionBodyInner{
-  padding:0 22px 18px;
+  padding:0 21px 16px;
 }
 
 #calculate .calcSectionHint{
@@ -553,29 +553,39 @@ button.tap{
   margin-right:0;
 }
 
-#calculate .chip--complexity,
-#calculate .chipGroup--stacked .chip--travelStyle{
-  width:100%;
-  margin:0;
-  display:flex;
-  flex-direction:column;
+#calculate [data-group="complexity"],
+#calculate [data-group="style"]{
+  flex-direction:row;
+  flex-wrap:wrap;
+  justify-content:flex-start;
   align-items:flex-start;
-  justify-content:center;
-  gap:2px;
-  min-height:44px;
-  padding:10px 12px;
-  text-align:left;
-  box-sizing:border-box;
-  border-radius:14px;
 }
 
-#calculate .chip--complexity:not(:has(.styleChipDesc)){
-  min-height:auto;
+#calculate .chip--complexity,
+#calculate .chipGroup--stacked .chip--travelStyle{
   width:auto;
+  margin:0;
   display:inline-flex;
+  flex-direction:row;
   align-items:center;
-  border-radius:999px;
+  justify-content:center;
+  gap:2px;
+  min-height:auto;
   padding:7px 12px;
+  text-align:center;
+  box-sizing:border-box;
+  border-radius:999px;
+}
+
+#calculate .chip--complexity:has(.styleChipDesc),
+#calculate .chipGroup--stacked .chip--travelStyle:has(.styleChipDesc){
+  width:100%;
+  min-height:40px;
+  flex-direction:column;
+  align-items:flex-start;
+  padding:9px 11px;
+  text-align:left;
+  border-radius:14px;
 }
 
 #calculate .chip--complexity .styleChipDesc{
@@ -601,34 +611,35 @@ button.tap{
 /* Travel Style: label + subtle description (Calculate + Settings) */
 #calculate [data-group="style"]{
   display:flex;
-  flex-direction:column;
-  gap:7px;
+  flex-direction:row;
+  flex-wrap:wrap;
+  gap:6px;
   margin-left:0;
   margin-right:0;
 }
 
 #calculate [data-group="style"] .chip--travelStyle{
-  width:100%;
+  width:auto;
   margin:0;
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
+  display:inline-flex;
+  flex-direction:row;
+  align-items:center;
   justify-content:center;
   gap:2px;
   box-sizing:border-box;
-  min-height:4.5rem;
-  padding:11px 12px;
-  text-align:left;
-  border-radius:14px;
+  min-height:auto;
+  padding:7px 12px;
+  text-align:center;
+  border-radius:999px;
 }
 
 #calculate [data-group="style"] .chip--travelStyle.active{
   transform:none;
-  border-radius:14px;
+  border-radius:999px;
 }
 
 #calculate [data-group="style"] .chip--travelStyle:active{
-  border-radius:14px;
+  border-radius:999px;
 }
 
 #calculate [data-group="style"] .styleChipLabel{
@@ -2563,6 +2574,7 @@ textarea{
 #calculate.calcScreen .card h2{
   font-size:15px;
   margin:0 0 8px;
+  font-weight:700;
 }
 
 #calculate.calcScreen .fieldRow{
@@ -2571,21 +2583,21 @@ textarea{
 
 #calculate.calcScreen input,
 #calculate.calcScreen .flightTypeSelect{
-  height:40px;
+  height:36px;
   font-size:12px;
 }
 
 #calculate.calcScreen .flightTypeSelect{
   padding:0 30px 0 10px;
   background-position:
-    calc(100% - 16px) 16px,
-    calc(100% - 11px) 16px;
+    calc(100% - 16px) 14px,
+    calc(100% - 11px) 14px;
 }
 
 #calculate.calcScreen .chip{
-  padding:7px 11px;
+  padding:6px 10px;
   font-size:12px;
-  margin:0 5px 6px 0;
+  margin:0 4px 5px 0;
 }
 
 #calculate.calcScreen .ctaButton{
