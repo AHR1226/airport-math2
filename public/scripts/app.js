@@ -1214,6 +1214,7 @@ function renderHtmlResult(result) {
     : 'TSA Estimated';
   const walkTag = isLga ? 'Estimated' : 'Estimated';
   const travelDuration = formatDurationMinutes(result.travel);
+  const arriveAtAirportTime = formatMilestoneTime(getAirportArrivalTime(result)) || '--';
   const airportTimingDuration = formatDurationMinutes(getAirportTimingMinutes(result));
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
     ? 'Live'
@@ -1270,6 +1271,7 @@ function renderHtmlResult(result) {
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
       <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
+      <div class="resultBreakdownRow"><span>Arrive at airport</span><strong>${escapeHtml(arriveAtAirportTime)}</strong></div>
       <div class="resultBreakdownRow"><span>${escapeHtml(securityBreakdownLabel)}</span><strong>${escapeHtml(hasResolvedSecurity ? formatDurationMinutes(securityWait) : '--')}</strong></div>
       <div class="resultBreakdownRow"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
       <div class="resultBreakdownRow"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
@@ -1361,6 +1363,13 @@ function getAirportTimingMinutes(result) {
   const safeAirportTime = Number.isFinite(airportTime) && airportTime >= 0 ? airportTime : 0;
   const safeBuffer = Number.isFinite(buffer) && buffer >= 0 ? buffer : 0;
   return safeAirportTime + safeBuffer;
+}
+
+function getAirportArrivalTime(result) {
+  const leaveDate = parseClockTimeToday(result?.leaveBy);
+  const travelMinutes = Number(result?.travel);
+  if (!leaveDate || !Number.isFinite(travelMinutes) || travelMinutes < 0) return null;
+  return new Date(leaveDate.getTime() + Math.round(travelMinutes) * 60000);
 }
 
 function formatSecurityBreakdownLabel(value) {
