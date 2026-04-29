@@ -366,15 +366,15 @@ button.tap{
   justify-content:center;
   gap:2px;
   box-sizing:border-box;
-  min-height:3.15rem;
-  padding:8px 10px;
+  min-height:2.75rem;
+  padding:7px 9px;
   text-align:left;
   border-radius:11px;
 }
 
 #calculate [data-group="transport"] .transportChipLabel{
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:12px;
+  font-size:11px;
   font-weight:500;
   letter-spacing:-0.005em;
   line-height:1.22;
@@ -382,8 +382,8 @@ button.tap{
 
 #calculate [data-group="transport"] .transportChipDesc{
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:10px;
-  line-height:1.28;
+  font-size:9.5px;
+  line-height:1.24;
   font-weight:400;
   color:rgba(6,72,25,0.58);
   letter-spacing:0.005em;
@@ -417,17 +417,16 @@ button.tap{
 
 #calculate .calcDecisionSection.isOpen{
   background:#FFFFFF;
-  border-color:rgba(207,255,78,0.95);
+  border-color:rgba(6,72,25,0.1);
   box-shadow:
     0 1px 2px rgba(0,0,0,0.025),
-    0 14px 36px rgba(6,72,25,0.075);
+    0 11px 28px rgba(6,72,25,0.055);
 }
 
 #calculate .calcAccordionHeader{
   width:100%;
   margin:0;
-  padding:15px 21px;
-  border:0;
+  padding:14px 20px;
   background:transparent;
   color:inherit;
   text-align:left;
@@ -435,8 +434,6 @@ button.tap{
   grid-template-columns:minmax(0, 1fr) auto;
   column-gap:14px;
   align-items:center;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
   transition:background-color 200ms ease;
 }
 
@@ -453,10 +450,10 @@ button.tap{
 
 #calculate .calcAccordionTitle{
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:16px;
+  font-size:13px;
   line-height:1.1;
-  font-weight:700;
-  letter-spacing:-0.01em;
+  font-weight:600;
+  letter-spacing:0;
   color:#064819;
 }
 
@@ -499,8 +496,23 @@ button.tap{
 }
 
 #calculate .calcDecisionSection.isOpen .calcAccordionChevron{
-  border-color:#8BC600;
+  border-color:rgba(6,72,25,0.58);
   transform:rotate(225deg) translate(-2px,-2px);
+}
+
+#calculate .calcAccordionToggle{
+  width:32px;
+  height:32px;
+  margin:-7px -8px -7px 0;
+  padding:0;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
 }
 
 #calculate .calcAccordionBody{
@@ -514,7 +526,7 @@ button.tap{
 }
 
 #calculate .calcAccordionBodyInner{
-  padding:0 21px 16px;
+  padding:0 20px 15px;
 }
 
 #calculate .calcSectionHint{
@@ -537,9 +549,9 @@ button.tap{
 #calculate .calcControlLabel{
   margin:0 0 7px;
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:11px;
+  font-size:10px;
   line-height:1;
-  font-weight:600;
+  font-weight:500;
   letter-spacing:0.06em;
   text-transform:uppercase;
   color:rgba(6,72,25,0.58);
@@ -571,7 +583,7 @@ button.tap{
   justify-content:center;
   gap:2px;
   min-height:auto;
-  padding:7px 12px;
+  padding:6px 10px;
   text-align:center;
   box-sizing:border-box;
   border-radius:999px;
@@ -580,22 +592,22 @@ button.tap{
 #calculate .chip--complexity:has(.styleChipDesc),
 #calculate .chipGroup--stacked .chip--travelStyle:has(.styleChipDesc){
   width:100%;
-  min-height:40px;
+  min-height:36px;
   flex-direction:column;
   align-items:flex-start;
-  padding:9px 11px;
+  padding:8px 10px;
   text-align:left;
   border-radius:14px;
 }
 
 #calculate .chip--complexity .styleChipDesc{
-  font-size:10px;
+  font-size:9.5px;
   line-height:1.25;
   color:rgba(6,72,25,0.48);
 }
 
 #calculate .chipGroup--stacked .chip--travelStyle .styleChipDesc{
-  font-size:10px;
+  font-size:9.5px;
   line-height:1.25;
   color:rgba(6,72,25,0.5);
 }
@@ -619,39 +631,39 @@ button.tap{
 }
 
 #calculate [data-group="style"] .chip--travelStyle{
-  width:auto;
+  width:100%;
   margin:0;
   display:inline-flex;
-  flex-direction:row;
-  align-items:center;
+  flex-direction:column;
+  align-items:flex-start;
   justify-content:center;
   gap:2px;
   box-sizing:border-box;
-  min-height:auto;
-  padding:7px 12px;
-  text-align:center;
-  border-radius:999px;
+  min-height:36px;
+  padding:8px 10px;
+  text-align:left;
+  border-radius:14px;
 }
 
 #calculate [data-group="style"] .chip--travelStyle.active{
   transform:none;
-  border-radius:999px;
+  border-radius:14px;
 }
 
 #calculate [data-group="style"] .chip--travelStyle:active{
-  border-radius:999px;
+  border-radius:14px;
 }
 
 #calculate [data-group="style"] .styleChipLabel{
-  font-size:13px;
+  font-size:12px;
   font-weight:600;
   letter-spacing:-0.01em;
 }
 
 #calculate [data-group="style"] .styleChipDesc{
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:11px;
-  line-height:1.35;
+  font-size:9.5px;
+  line-height:1.25;
   font-weight:400;
   color:rgba(6,72,25,0.58);
   letter-spacing:0.005em;
@@ -2568,13 +2580,13 @@ textarea{
 }
 
 #calculate.calcScreen .calcContent h1{
-  margin-bottom:7px !important;
+  margin-bottom:30px !important;
 }
 
 #calculate.calcScreen .card h2{
-  font-size:15px;
+  font-size:13px;
   margin:0 0 8px;
-  font-weight:700;
+  font-weight:600;
 }
 
 #calculate.calcScreen .fieldRow{
@@ -2583,20 +2595,20 @@ textarea{
 
 #calculate.calcScreen input,
 #calculate.calcScreen .flightTypeSelect{
-  height:36px;
-  font-size:12px;
+  height:34px;
+  font-size:11.5px;
 }
 
 #calculate.calcScreen .flightTypeSelect{
-  padding:0 30px 0 10px;
+  padding:0 28px 0 9px;
   background-position:
-    calc(100% - 16px) 14px,
-    calc(100% - 11px) 14px;
+    calc(100% - 15px) 13px,
+    calc(100% - 10px) 13px;
 }
 
 #calculate.calcScreen .chip{
-  padding:6px 10px;
-  font-size:12px;
+  padding:5px 9px;
+  font-size:11.5px;
   margin:0 4px 5px 0;
 }
 

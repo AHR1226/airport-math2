@@ -152,8 +152,7 @@ function initializeCalculateProgressiveFlow() {
     section.dataset.calcIndex = String(index);
     section.dataset.calcTitle = title.textContent.trim();
 
-    const header = document.createElement('button');
-    header.type = 'button';
+    const header = document.createElement('div');
     header.className = 'calcAccordionHeader';
     const titleText = title.textContent.trim();
     header.innerHTML = `
@@ -161,7 +160,9 @@ function initializeCalculateProgressiveFlow() {
         <span class="calcAccordionTitle">${escapeHtml(titleText)}</span>
         <span class="calcAccordionSummary" data-calc-summary></span>
       </span>
-      <span class="calcAccordionChevron" aria-hidden="true"></span>
+      <button type="button" class="calcAccordionToggle" aria-label="Toggle ${escapeHtml(titleText)} section">
+        <span class="calcAccordionChevron" aria-hidden="true"></span>
+      </button>
     `;
 
     const body = document.createElement('div');
@@ -179,7 +180,7 @@ function initializeCalculateProgressiveFlow() {
     title.replaceWith(header);
     section.appendChild(body);
 
-    header.addEventListener('click', () => toggleCalculateSection(index));
+    header.querySelector('.calcAccordionToggle')?.addEventListener('click', () => toggleCalculateSection(index));
   });
 
   calculate.addEventListener('change', (event) => {
@@ -222,9 +223,9 @@ function setCalculateSectionOpen(index) {
   sections.forEach((section, sectionIndex) => {
     const isOpen = sectionIndex === index;
     const body = section.querySelector('.calcAccordionBody');
-    const header = section.querySelector('.calcAccordionHeader');
+    const toggle = section.querySelector('.calcAccordionToggle');
     section.classList.toggle('isOpen', isOpen);
-    header?.setAttribute('aria-expanded', String(isOpen));
+    toggle?.setAttribute('aria-expanded', String(isOpen));
     if (body) {
       body.style.maxHeight = isOpen ? `${body.scrollHeight}px` : '0px';
       body.style.opacity = isOpen ? '1' : '0';
