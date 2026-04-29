@@ -340,7 +340,7 @@ function initializeCalculateProgressiveFlow() {
     title.replaceWith(header);
     section.appendChild(body);
 
-    header.querySelector('.calcAccordionToggle')?.addEventListener('click', () => toggleCalculateSection(index));
+    header.addEventListener('click', () => toggleCalculateSection(index));
   });
 
   calculate.addEventListener('change', (event) => {
