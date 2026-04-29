@@ -5,6 +5,7 @@ const HOME_ADDRESS_KEY = 'eta_home_address';
 const WORK_ADDRESS_KEY = 'eta_work_address';
 const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
 const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
+const LIVE_MODE_WINDOW_HOURS = 12;
 let etaMonitorTimerId = null;
 let etaMonitorKey = '';
 let etaMonitorInFlight = false;
@@ -748,12 +749,29 @@ function buildFlightDepartureDate(flightDateValue, flightTimeValue) {
 }
 
 function getDepartureCalculationMode(departureDate, now = new Date()) {
-  if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) return 'live';
-  if (departureDate.getTime() < now.getTime()) return 'past_flight';
-  const departureDay = formatDateInputValue(departureDate);
-  const today = formatDateInputValue(now);
-  if (departureDay > today) return 'planning';
-  return 'live';
+  if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) {
+    console.log('[mode-debug]', {
+      now: now.toISOString(),
+      departureDatetime: null,
+      hoursUntilDeparture: null,
+      mode: 'live'
+    });
+    return 'live';
+  }
+  const hoursUntilDeparture = (departureDate.getTime() - now.getTime()) / (60 * 60 * 1000);
+  let mode = 'live';
+  if (hoursUntilDeparture < 0) {
+    mode = 'past_flight';
+  } else if (hoursUntilDeparture > LIVE_MODE_WINDOW_HOURS) {
+    mode = 'planning';
+  }
+  console.log('[mode-debug]', {
+    now: now.toISOString(),
+    departureDatetime: departureDate.toISOString(),
+    hoursUntilDeparture: Math.round(hoursUntilDeparture * 100) / 100,
+    mode
+  });
+  return mode;
 }
 
 function getEstimatedSecurityForPlanning(airport, securityStatus) {
