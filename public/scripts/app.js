@@ -318,43 +318,64 @@ function isCalculateSectionComplete(section) {
 
 function updateCalculateLiveEtaPreview() {
   const timeEl = document.getElementById('calcLiveEtaTime');
+  const labelEl = document.querySelector('.calcLiveEtaLabel');
   const metaEl = document.getElementById('calcLiveEtaMeta');
   const scheduleEl = document.getElementById('calcLiveEtaSchedule');
   const reasonsEl = document.getElementById('calcLiveEtaReasons');
   if (!timeEl || !reasonsEl) return;
 
+  const airport = document.getElementById('airportInput')?.value || '';
+  const terminal = document.getElementById('terminalInput')?.value || '';
+  const flightType = normalizeFlightType(document.getElementById('flightType')?.value || '');
+  const flightDateValue = document.getElementById('flightDate')?.value || '';
+  const flightTimeValue = document.getElementById('flightTime')?.value || '';
+  const transport = getActiveSelection('transport') || '';
+  const origin = formatAddressForDisplay(document.getElementById('startingLocationInput')?.value || '').trim();
   const flight = buildFlightDepartureDate(
-    document.getElementById('flightDate')?.value,
-    document.getElementById('flightTime')?.value
+    flightDateValue,
+    flightTimeValue
   );
+
+  const metaParts = [];
+  if (flightType) metaParts.push(flightType);
+  if (airport && terminal) metaParts.push(`${airport} ${terminal}`);
+  else if (airport) metaParts.push(airport);
+  if (metaEl) {
+    metaEl.textContent = metaParts.length ? metaParts.join(' · ') : 'Share a few trip details.';
+  }
+
+  const scheduleParts = [];
+  if (flight instanceof Date && !Number.isNaN(flight.getTime()) && flightDateValue && flightTimeValue) {
+    const dateLabel = flight.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const departureTime = formatFlightTimeForDisplay(flightTimeValue) || '';
+    scheduleParts.push(`${dateLabel}${departureTime ? ` · ${departureTime} departure` : ''}`);
+  }
+  if (transport) {
+    scheduleParts.push(`${transport}${origin ? ` from ${getOriginSummaryLabel(origin)}` : ''}`);
+  }
+  if (scheduleEl) scheduleEl.textContent = scheduleParts.join(' · ');
+
   if (!(flight instanceof Date) || Number.isNaN(flight.getTime())) {
+    if (labelEl) labelEl.textContent = 'Doing the math...';
     timeEl.textContent = '--';
-    if (metaEl) metaEl.textContent = 'Flight details will appear here.';
-    if (scheduleEl) scheduleEl.textContent = 'Departure timing will appear here.';
-    reasonsEl.textContent = 'Add trip details to preview your timing.';
+    reasonsEl.innerHTML = '<div>Add flight timing to preview your recommendation.</div>';
     return;
   }
 
-  const airport = document.getElementById('airportInput')?.value || 'JFK';
-  const terminal = document.getElementById('terminalInput')?.value || 'Terminal 4';
-  const flightType = normalizeFlightType(document.getElementById('flightType')?.value || 'Domestic');
-  const dateLabel = flight.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const departureTime = formatFlightTimeForDisplay(document.getElementById('flightTime')?.value || '19:30') || '7:30 PM';
+  if (labelEl) labelEl.textContent = 'Recommended departure';
   const timing = minutesForSelection({
     flightType,
     departureDate: flight
   });
   const leave = new Date(flight.getTime() - timing.total * 60000);
   timeEl.textContent = formatTime(leave);
-  if (metaEl) metaEl.textContent = `${flightType} · ${airport} ${terminal}`;
-  if (scheduleEl) scheduleEl.textContent = `${dateLabel} · ${departureTime} departure`;
   const reasons = aggregateTimingReasonRows(timing.timingAdjustmentReasons)
     .filter((item) => item.minutes > 0)
     .slice(0, 3)
     .map((item) => `${formatSignedMinutes(item.minutes)} ${item.label}`);
   reasonsEl.innerHTML = reasons.length
     ? reasons.map((reason) => `<div>${escapeHtml(reason)}</div>`).join('')
-    : '<div>Balanced airport timing based on your choices.</div>';
+    : '<div>Timing details will sharpen as you answer.</div>';
 }
 
 function initializeAirportTerminalSelects() {
