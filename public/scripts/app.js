@@ -3,6 +3,7 @@ const USE_HTML_RESULT = true;
 const RECENT_ADDRESSES_KEY = 'eta_recent_addresses';
 const HOME_ADDRESS_KEY = 'eta_home_address';
 const WORK_ADDRESS_KEY = 'eta_work_address';
+const SAVED_TRIPS_KEY = 'eta_saved_trips';
 const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
 const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
 const LIVE_MODE_WINDOW_HOURS = 12;
@@ -113,7 +114,9 @@ if (typeof window.show === 'function') {
   const baseShow = window.show;
   window.show = (id) => {
     if (id !== 'result') stopEtaMonitoring();
-    return baseShow(id);
+    const shown = baseShow(id);
+    if (id === 'trips') renderTripsList();
+    return shown;
   };
 }
 document.addEventListener('visibilitychange', () => {
@@ -1125,6 +1128,212 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function readSavedTrips() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SAVED_TRIPS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedTrips(trips) {
+  localStorage.setItem(SAVED_TRIPS_KEY, JSON.stringify(Array.isArray(trips) ? trips : []));
+}
+
+function clonePlain(value) {
+  return JSON.parse(JSON.stringify(value || {}));
+}
+
+function getTripKey({ eta, form }) {
+  return [
+    eta?.flightDepartureAt || `${eta?.flightDate || form?.flightDate || ''}-${eta?.flightTime || form?.flightTime || ''}`,
+    eta?.airport || form?.airport || '',
+    eta?.terminal || form?.terminal || '',
+    eta?.origin || form?.startLocation || ''
+  ].join('|');
+}
+
+function buildTripFromCurrentResult() {
+  if (window.stateApi) window.stateApi.syncFormFromDom();
+  const eta = getLatestEtaResult();
+  const form = clonePlain(window.appState?.form);
+  const selections = clonePlain(window.appState?.selections);
+  const nowIso = new Date().toISOString();
+  const gateArrivalTarget = getGateArrivalTarget(eta, eta.flightType || form.flightType);
+  const airportArrivalTime = getAirportArrivalTime(eta);
+  const key = getTripKey({ eta, form });
+  const existing = readSavedTrips().find((trip) => trip.key === key);
+
+  return {
+    id: existing?.id || `trip_${Date.now()}`,
+    key,
+    createdAt: existing?.createdAt || nowIso,
+    updatedAt: nowIso,
+    mode: eta.calculationMode || 'planning',
+    status: getTripStatus(eta),
+    form,
+    selections,
+    eta: clonePlain(eta),
+    milestones: {
+      leaveHome: eta.leaveBy || '',
+      arriveAtAirport: formatMilestoneTime(airportArrivalTime),
+      getToGateBy: formatMilestoneTime(gateArrivalTarget),
+      flightDeparts: formatMilestoneTime(parseFlightDepartureDate(eta))
+    }
+  };
+}
+
+function saveCurrentTrip(button) {
+  const trip = buildTripFromCurrentResult();
+  const trips = readSavedTrips();
+  const existingIndex = trips.findIndex((item) => item.key === trip.key);
+  if (existingIndex >= 0) {
+    trips[existingIndex] = { ...trips[existingIndex], ...trip };
+  } else {
+    trips.unshift(trip);
+  }
+  writeSavedTrips(trips);
+  renderTripsList();
+  if (button) {
+    button.textContent = 'Saved';
+    button.classList.add('isSaved');
+    window.setTimeout(() => {
+      button.textContent = 'Save trip';
+      button.classList.remove('isSaved');
+    }, 1400);
+  }
+}
+
+function renderTripsList() {
+  const container = document.getElementById('tripsList');
+  if (!container) return;
+  const trips = readSavedTrips()
+    .map((trip) => ({ ...trip, status: getTripStatus(trip.eta) }))
+    .sort((a, b) => {
+      const aTime = new Date(a.eta?.flightDepartureAt || 0).getTime();
+      const bTime = new Date(b.eta?.flightDepartureAt || 0).getTime();
+      return a.status === 'completed' ? bTime - aTime : aTime - bTime;
+    });
+
+  if (!trips.length) {
+    container.innerHTML = `
+      <div class="appCard tripsEmptyCard">
+        <div class="rowTitle">No saved trips yet</div>
+        <div class="rowSub">Calculate an ETA, then save it here for later.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const upcoming = trips.filter((trip) => trip.status !== 'completed');
+  const past = trips.filter((trip) => trip.status === 'completed');
+  container.innerHTML = `
+    ${renderTripsSection('Upcoming Trips', upcoming)}
+    ${renderTripsSection('Past Trips', past)}
+  `;
+}
+
+function renderTripsSection(title, trips) {
+  if (!trips.length) return '';
+  return `
+    <div class="sectionLabel">${escapeHtml(title)}</div>
+    ${trips.map(renderTripCard).join('')}
+  `;
+}
+
+function renderTripCard(trip) {
+  const eta = trip.eta || {};
+  const form = trip.form || {};
+  const selections = trip.selections || {};
+  const airport = eta.airport || form.airport || 'JFK';
+  const flightDate = parseFlightDepartureDate(eta);
+  const dateLabel = formatTripDateLabel(flightDate);
+  const flightTime = formatMilestoneTime(flightDate) || eta.flightTime || '7:30 PM';
+  const leaveBy = eta.leaveBy || trip.milestones?.leaveHome || '--';
+  const origin = formatAddressForDisplay(eta.origin || form.startLocation || '').trim();
+  const flightType = normalizeFlightType(eta.flightType || form.flightType || 'Domestic');
+  const transport = eta.transportMode || selections.transport || 'Rideshare';
+  const pill = trip.mode === 'planning' ? 'Planned trip' : trip.status === 'active_today' ? 'Active today' : 'Saved trip';
+
+  return `
+    <button type="button" class="appCard tripsCard tripsCardSaved" onclick="openSavedTrip('${escapeHtml(trip.id)}')">
+      <div class="tripsTopRow">
+        <div>
+          <div class="tripsAirportCode">${escapeHtml(airport)} · ${escapeHtml(dateLabel)}</div>
+          <div class="tripsAirportName">Flight departs ${escapeHtml(flightTime)}</div>
+          <div class="tripsMeta">Leave home ${escapeHtml(leaveBy)}</div>
+        </div>
+        <span class="pill${trip.status === 'active_today' ? ' pillActive' : ''}">${escapeHtml(pill)}</span>
+      </div>
+      <div class="tripsDivider"></div>
+      <div class="tripsMeta">${escapeHtml(origin || 'Origin saved')} · ${escapeHtml(flightType)} flight · ${escapeHtml(transport)}</div>
+    </button>
+  `;
+}
+
+function openSavedTrip(id) {
+  const trip = readSavedTrips().find((item) => item.id === id);
+  if (!trip) return;
+  restoreTripState(trip);
+  show('result');
+  renderResult();
+}
+
+function restoreTripState(trip) {
+  if (!window.appState) return;
+  window.appState.form = { ...window.appState.form, ...(trip.form || {}) };
+  window.appState.selections = { ...window.appState.selections, ...(trip.selections || {}) };
+  window.appState.eta = { ...window.appState.eta, ...(trip.eta || {}) };
+  localStorage.setItem('etaResult', JSON.stringify(window.appState.eta));
+  syncFormToDom(window.appState.form);
+  syncSelectionChipsToState(window.appState.selections);
+}
+
+function syncFormToDom(form) {
+  const mappings = {
+    flightDate: 'flightDate',
+    flightTime: 'flightTime',
+    flightType: 'flightType',
+    flightNumber: 'flightNumberInput',
+    airport: 'airportInput',
+    terminal: 'terminalInput',
+    startLocation: 'startingLocationInput'
+  };
+  Object.entries(mappings).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el && form?.[key] != null) el.value = form[key];
+  });
+  initializeAirportTerminalSelects();
+}
+
+function syncSelectionChipsToState(selections) {
+  Object.entries(selections || {}).forEach(([groupName, value]) => {
+    const group = document.querySelector(`[data-group="${groupName}"]`);
+    if (!group) return;
+    group.querySelectorAll('.chip').forEach((chip) => {
+      const explicit = chip.getAttribute('data-selection');
+      const label = chip.querySelector('.styleChipLabel')?.textContent || chip.textContent;
+      const chipValue = String(explicit || label || '').trim();
+      chip.classList.toggle('active', chipValue === String(value || '').trim());
+    });
+  });
+}
+
+function getTripStatus(eta) {
+  const flightDate = parseFlightDepartureDate(eta);
+  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return 'upcoming';
+  const now = new Date();
+  const sameDay = flightDate.toDateString() === now.toDateString();
+  if (flightDate.getTime() < now.getTime()) return 'completed';
+  return sameDay ? 'active_today' : 'upcoming';
+}
+
+function formatTripDateLabel(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return 'Saved trip';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 /** Strip country suffix for UI only (geocoding still tolerates the trimmed string). */
 function formatAddressForDisplay(value) {
   let s = String(value ?? '').trim();
@@ -1270,7 +1479,10 @@ function renderHtmlResult(result) {
   container.innerHTML = `
     <div class="resultHtmlHeader">
       <h2 class="resultHtmlTitle">Your ETA</h2>
-      <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
+      <div class="resultHtmlActions">
+        <button class="resultHtmlEdit resultHtmlSaveTrip" onclick="saveCurrentTrip(this)">Save trip</button>
+        <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
+      </div>
     </div>
     <div class="resultHeroCard">
       <div class="resultHtmlEyebrow">${escapeHtml(urgency.leaveLabel)}</div>

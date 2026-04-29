@@ -1069,6 +1069,17 @@ input{
   cursor:pointer;
 }
 
+.resultHtmlActions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.resultHtmlSaveTrip.isSaved{
+  background:#D7F4D7;
+  color:#23573A;
+}
+
 .resultHeroCard{
   position:relative;
   background:#C7F05C;
@@ -1720,6 +1731,14 @@ input{
   margin-bottom:var(--space-3);
 }
 
+#trips .tripsCardSaved{
+  display:block;
+  width:100%;
+  text-align:left;
+  font-family:inherit;
+  cursor:pointer;
+}
+
 #trips .tripsTopRow{
   display:flex;
   justify-content:space-between;
@@ -1800,6 +1819,10 @@ input{
 
 #trips .tripsCardPast .pill{
   opacity:.75;
+}
+
+#trips .tripsEmptyCard{
+  color:#123D22;
 }
 
 /* Airports-only lime treatment for NYC AREA stats card */
