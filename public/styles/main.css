@@ -415,6 +415,12 @@ button.tap{
   background:#FFFFFF;
 }
 
+#calculate.hideCalculatePreferences .calcDecisionSection[data-calc-title="Airport flow"],
+#calculate.hideCalculatePreferences .calcDecisionSection[data-calc-title="Who’s traveling"],
+#calculate.hideCalculatePreferences .calcDecisionSection[data-calc-title="Timing style"]{
+  display:none;
+}
+
 #calculate .calcDecisionSection.isOpen{
   background:#FFFFFF;
   border-color:rgba(6,72,25,0.1);
@@ -683,6 +689,111 @@ button.tap{
   color:rgba(18,61,34,0.62);
   letter-spacing:0.01em;
   max-width:36rem;
+}
+
+#settings .settingsFormCard{
+  display:grid;
+  gap:14px;
+}
+
+#settings .settingsField{
+  display:block;
+}
+
+#settings .settingsField .rowTitle,
+#settings .settingsField .rowSub,
+#settings .settingsToggleRow .rowTitle,
+#settings .settingsToggleRow .rowSub{
+  display:block;
+}
+
+#settings .settingsInput,
+#settings .settingsSelect{
+  width:100%;
+  height:40px;
+  margin-top:9px;
+  border:1px solid rgba(6,72,25,0.1);
+  border-radius:12px;
+  background:#FFFFFF;
+  color:#123D22;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:13px;
+  line-height:1;
+  box-shadow:none;
+}
+
+#settings .settingsInput{
+  padding:0 12px;
+}
+
+#settings .settingsSelect{
+  padding:0 34px 0 12px;
+  appearance:none;
+  -webkit-appearance:none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(6,72,25,0.45) 50%),
+    linear-gradient(135deg, rgba(6,72,25,0.45) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 17px,
+    calc(100% - 13px) 17px;
+  background-size:5px 5px, 5px 5px;
+  background-repeat:no-repeat;
+}
+
+#settings .settingsToggleRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  cursor:pointer;
+}
+
+#settings .settingsToggleInput{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+
+#settings .settingsToggleVisual{
+  position:relative;
+  flex:0 0 44px;
+  width:44px;
+  height:26px;
+  border-radius:999px;
+  background:#DDE3D8;
+  box-shadow:inset 0 0 0 1px rgba(6,72,25,0.08);
+  transition:background 180ms ease;
+}
+
+#settings .settingsToggleVisual::after{
+  content:"";
+  position:absolute;
+  left:3px;
+  top:3px;
+  width:20px;
+  height:20px;
+  border-radius:999px;
+  background:#FFFFFF;
+  box-shadow:0 2px 6px rgba(6,72,25,0.16);
+  transition:transform 180ms ease;
+}
+
+#settings .settingsToggleInput:checked + .settingsToggleVisual{
+  background:#CFFF4E;
+}
+
+#settings .settingsToggleInput:checked + .settingsToggleVisual::after{
+  transform:translateX(18px);
+}
+
+#settings .settingsSaveStatus{
+  min-height:18px;
+  margin:9px 0 0;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12px;
+  line-height:1.35;
+  color:rgba(18,61,34,0.66);
+  text-align:center;
 }
 
 .fieldRow{

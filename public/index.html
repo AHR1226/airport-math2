@@ -298,85 +298,65 @@
 
     <div class="sectionLabel">Profile</div>
 
-    <div class="appCard">
-      <div class="rowTitle">Home Address</div>
-      <div class="rowSub">142 W 57th St, New York, NY</div>
-    </div>
+    <form id="settingsForm">
+      <div class="appCard settingsFormCard">
+        <label class="settingsField">
+          <span class="rowTitle">Home address</span>
+          <span class="rowSub">Used as the default Leaving from location.</span>
+          <input id="settingsHomeAddressInput" class="settingsInput" type="text" placeholder="Add your home address" autocomplete="street-address">
+        </label>
 
-    <div class="appCard">
-      <div class="rowTitle">Default Airport</div>
-      <div class="rowSub">JFK</div>
-    </div>
+        <label class="settingsField">
+          <span class="rowTitle">Default airport</span>
+          <span class="rowSub">Preselected on Calculate.</span>
+          <select id="settingsDefaultAirport" class="settingsSelect">
+            <option value="JFK">JFK</option>
+            <option value="LGA">LGA</option>
+            <option value="EWR">EWR</option>
+          </select>
+        </label>
 
-    <div class="appCard">
-      <div class="rowTitle">Transportation</div>
-      <div class="rowSub">Rideshare</div>
-    </div>
-
-    <div class="sectionLabel">Saved Locations</div>
-
-    <div class="appCard">
-      <div class="listRow savedLocationRow" id="settingsSavedHomeRow">
-        <div>
-          <div class="rowTitle">Home</div>
-          <div class="rowSub" id="settingsSavedHomeValue">Not set</div>
-        </div>
-        <span class="rowChevron">›</span>
+        <label class="settingsField">
+          <span class="rowTitle">Default travel style</span>
+          <span class="rowSub settingsTravelStyleValue" id="settingsTravelStyleValue">Balanced</span>
+          <select id="settingsDefaultTravelStyle" class="settingsSelect">
+            <option value="Tight">Cutting it close</option>
+            <option value="Balanced">Balanced</option>
+            <option value="Relaxed">Relaxed</option>
+          </select>
+          <p class="settingsTravelStyleDesc" id="settingsTravelStyleDesc">A comfortable arrival window with moderate buffer time</p>
+        </label>
       </div>
-      <div class="listRow savedLocationRow" id="settingsSavedWorkRow">
-        <div>
-          <div class="rowTitle">Work</div>
-          <div class="rowSub" id="settingsSavedWorkValue">Not set</div>
-        </div>
-        <span class="rowChevron">›</span>
+
+      <div class="sectionLabel">Preferences</div>
+
+      <div class="appCard">
+        <label class="settingsToggleRow">
+          <span>
+            <span class="rowTitle">Show preferences on Calculate</span>
+            <span class="rowSub">Show airport flow, travelers, and timing style sections.</span>
+          </span>
+          <input id="settingsShowPreferences" class="settingsToggleInput" type="checkbox" checked>
+          <span class="settingsToggleVisual" aria-hidden="true"></span>
+        </label>
       </div>
-    </div>
 
-    <div class="appCard settingsTravelStyleCard">
-      <div class="rowTitle">Travel Style</div>
-      <div class="rowSub settingsTravelStyleValue" id="settingsTravelStyleValue">Balanced</div>
-      <p class="settingsTravelStyleDesc" id="settingsTravelStyleDesc">A comfortable arrival window with moderate buffer time</p>
-    </div>
+      <div class="sectionLabel">Notifications</div>
 
-    <div class="sectionLabel">Preferences</div>
-
-    <div class="appCard">
-      <div class="listRow">
-        <div>
-          <div class="rowTitle">Default Buffer Time</div>
-          <div class="rowSub">18 minutes</div>
-        </div>
-        <span class="rowChevron">›</span>
+      <div class="appCard">
+        <label class="settingsToggleRow">
+          <span>
+            <span class="rowTitle">Notifications</span>
+            <span class="rowSub">Saved locally for now. Push alerts are not enabled yet.</span>
+          </span>
+          <input id="settingsNotifications" class="settingsToggleInput" type="checkbox" checked>
+          <span class="settingsToggleVisual" aria-hidden="true"></span>
+        </label>
       </div>
-      <div class="listRow">
-        <div>
-          <div class="rowTitle">Security Wait Time</div>
-          <div class="rowSub">Auto-detect</div>
-        </div>
-        <span class="rowChevron">›</span>
-      </div>
-    </div>
 
-    <div class="sectionLabel">Notifications</div>
-
-    <div class="appCard">
-      <div class="listRow">
-        <div>
-          <div class="rowTitle">Departure Reminders</div>
-          <div class="rowSub">Enabled</div>
-        </div>
-        <span class="rowChevron">›</span>
-      </div>
-      <div class="listRow">
-        <div>
-          <div class="rowTitle">Traffic Alerts</div>
-          <div class="rowSub">Enabled</div>
-        </div>
-        <span class="rowChevron">›</span>
-      </div>
-    </div>
-
-    <button class="primaryButton">Save Settings</button>
+      <button class="primaryButton" type="submit">Save Settings</button>
+      <p class="settingsSaveStatus" id="settingsSaveStatus" role="status" aria-live="polite"></p>
+    </form>
   </div>
 </section>
 <div class="bottomNav">

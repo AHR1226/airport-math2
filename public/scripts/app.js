@@ -4,6 +4,7 @@ const RECENT_ADDRESSES_KEY = 'eta_recent_addresses';
 const HOME_ADDRESS_KEY = 'eta_home_address';
 const WORK_ADDRESS_KEY = 'eta_work_address';
 const SAVED_TRIPS_KEY = 'eta_saved_trips';
+const SETTINGS_KEY = 'eta_user_settings';
 const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
 const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
 const LIVE_MODE_WINDOW_HOURS = 12;
@@ -17,6 +18,11 @@ const INTERNATIONAL_PEAK_BUFFER_MINUTES = 15;
 let etaMonitorTimerId = null;
 let etaMonitorKey = '';
 let etaMonitorInFlight = false;
+const calculateManualOverrides = {
+  homeAddress: false,
+  airport: false,
+  travelStyle: false
+};
 
 const TERMINAL_OPTIONS = {
   JFK: ['Terminal 1', 'Terminal 4', 'Terminal 5', 'Terminal 7', 'Terminal 8'],
@@ -72,6 +78,7 @@ const TRAVEL_STYLE_META = {
 function normalizeTravelStyleKey(raw) {
   const s = String(raw || '').trim();
   if (s === 'Cut it close') return 'Tight';
+  if (s === 'Cutting it close') return 'Tight';
   if (s === 'No rush') return 'Relaxed';
   if (TRAVEL_STYLE_META[s]) return s;
   const lower = s.toLowerCase();
@@ -81,13 +88,160 @@ function normalizeTravelStyleKey(raw) {
   return 'Balanced';
 }
 
+function defaultUserSettings() {
+  return {
+    homeAddress: getStoredAddress(HOME_ADDRESS_KEY),
+    defaultAirport: 'JFK',
+    travelStyle: 'Balanced',
+    showPreferences: true,
+    notifications: true
+  };
+}
+
+function readUserSettings() {
+  const defaults = defaultUserSettings();
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    const airport = ['JFK', 'LGA', 'EWR'].includes(parsed.defaultAirport)
+      ? parsed.defaultAirport
+      : defaults.defaultAirport;
+    return {
+      ...defaults,
+      homeAddress: formatAddressForDisplay(parsed.homeAddress || defaults.homeAddress || '').trim(),
+      defaultAirport: airport,
+      travelStyle: normalizeTravelStyleKey(parsed.travelStyle || defaults.travelStyle),
+      showPreferences: parsed.showPreferences !== false,
+      notifications: parsed.notifications !== false
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+function writeUserSettings(settings) {
+  const next = {
+    ...defaultUserSettings(),
+    ...settings,
+    homeAddress: formatAddressForDisplay(settings?.homeAddress || '').trim(),
+    defaultAirport: ['JFK', 'LGA', 'EWR'].includes(settings?.defaultAirport) ? settings.defaultAirport : 'JFK',
+    travelStyle: normalizeTravelStyleKey(settings?.travelStyle || 'Balanced'),
+    showPreferences: settings?.showPreferences !== false,
+    notifications: settings?.notifications !== false
+  };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+  setStoredAddress(HOME_ADDRESS_KEY, next.homeAddress);
+  return next;
+}
+
+function setCalculateChipSelection(groupName, value) {
+  const normalizedValue = String(value || '').trim();
+  if (!normalizedValue) return;
+  if (window.stateApi) window.stateApi.setSelection(groupName, normalizedValue);
+  syncSelectionChipsToState({ [groupName]: normalizedValue });
+}
+
+function applyPreferenceVisibility(showPreferences) {
+  const calculate = document.getElementById('calculate');
+  if (!calculate) return;
+  calculate.classList.toggle('hideCalculatePreferences', !showPreferences);
+  if (!showPreferences) {
+    const open = calculate.querySelector('.calcDecisionSection.isOpen');
+    const title = open?.dataset?.calcTitle || '';
+    if (['Airport flow', 'Who’s traveling', 'Timing style'].includes(title)) {
+      setCalculateSectionOpen(0);
+    }
+  }
+}
+
+function applySavedSettingsToCalculate({ force = false } = {}) {
+  const settings = readUserSettings();
+  const startInput = document.getElementById('startingLocationInput');
+  if (startInput && (force || !calculateManualOverrides.homeAddress)) {
+    startInput.value = settings.homeAddress || '';
+    if (window.appState?.form) window.appState.form.startLocation = settings.homeAddress || '';
+  }
+
+  const airportInput = document.getElementById('airportInput');
+  if (airportInput && settings.defaultAirport && (force || !calculateManualOverrides.airport)) {
+    airportInput.value = settings.defaultAirport;
+    const terminalInput = document.getElementById('terminalInput');
+    if (terminalInput) terminalInput.value = DEFAULT_TERMINAL_BY_AIRPORT[settings.defaultAirport] || terminalInput.value;
+    if (window.appState?.form) {
+      window.appState.form.airport = settings.defaultAirport;
+      window.appState.form.terminal = DEFAULT_TERMINAL_BY_AIRPORT[settings.defaultAirport] || window.appState.form.terminal;
+    }
+    initializeAirportTerminalSelects();
+  }
+
+  if (settings.travelStyle && (force || !calculateManualOverrides.travelStyle)) {
+    setCalculateChipSelection('style', settings.travelStyle);
+  }
+  applyPreferenceVisibility(settings.showPreferences);
+  renderSavedLocationQuickChips();
+}
+
+function refreshSettingsUI() {
+  const settings = readUserSettings();
+  const homeInput = document.getElementById('settingsHomeAddressInput');
+  const airportSelect = document.getElementById('settingsDefaultAirport');
+  const styleSelect = document.getElementById('settingsDefaultTravelStyle');
+  const prefsToggle = document.getElementById('settingsShowPreferences');
+  const notificationsToggle = document.getElementById('settingsNotifications');
+  const status = document.getElementById('settingsSaveStatus');
+  if (homeInput) homeInput.value = settings.homeAddress;
+  if (airportSelect) airportSelect.value = settings.defaultAirport;
+  if (styleSelect) styleSelect.value = settings.travelStyle;
+  if (prefsToggle) prefsToggle.checked = settings.showPreferences;
+  if (notificationsToggle) notificationsToggle.checked = settings.notifications;
+  if (status) status.textContent = '';
+  syncSettingsTravelStyleUI();
+}
+
+function previewSettingsTravelStyle(value) {
+  const valueEl = document.getElementById('settingsTravelStyleValue');
+  const descEl = document.getElementById('settingsTravelStyleDesc');
+  if (!valueEl || !descEl) return;
+  const key = normalizeTravelStyleKey(value);
+  const meta = TRAVEL_STYLE_META[key] || TRAVEL_STYLE_META.Balanced;
+  valueEl.textContent = meta.label;
+  descEl.textContent = meta.desc;
+}
+
+function initializeSettingsUI() {
+  const form = document.getElementById('settingsForm');
+  if (!form || form.dataset.settingsReady === 'true') return;
+  form.dataset.settingsReady = 'true';
+  refreshSettingsUI();
+  document.getElementById('settingsDefaultTravelStyle')?.addEventListener('change', (event) => {
+    previewSettingsTravelStyle(event.target?.value);
+  });
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const settings = writeUserSettings({
+      homeAddress: document.getElementById('settingsHomeAddressInput')?.value || '',
+      defaultAirport: document.getElementById('settingsDefaultAirport')?.value || 'JFK',
+      travelStyle: document.getElementById('settingsDefaultTravelStyle')?.value || 'Balanced',
+      showPreferences: document.getElementById('settingsShowPreferences')?.checked !== false,
+      notifications: document.getElementById('settingsNotifications')?.checked !== false
+    });
+    calculateManualOverrides.homeAddress = false;
+    calculateManualOverrides.airport = false;
+    calculateManualOverrides.travelStyle = false;
+    applySavedSettingsToCalculate({ force: true });
+    refreshSettingsUI();
+    const status = document.getElementById('settingsSaveStatus');
+    if (status) status.textContent = 'Settings saved';
+    if (window.appState) {
+      window.appState.settings = settings;
+    }
+  });
+}
+
 function syncSettingsTravelStyleUI() {
   const valueEl = document.getElementById('settingsTravelStyleValue');
   const descEl = document.getElementById('settingsTravelStyleDesc');
   if (!valueEl || !descEl) return;
-  const key = normalizeTravelStyleKey(
-    window.appState?.selections?.style ?? getActiveSelection('style')
-  );
+  const key = readUserSettings().travelStyle;
   const meta = TRAVEL_STYLE_META[key] || TRAVEL_STYLE_META.Balanced;
   valueEl.textContent = meta.label;
   descEl.textContent = meta.desc;
@@ -98,6 +252,8 @@ window.syncSettingsTravelStyleUI = syncSettingsTravelStyleUI;
 if (window.navigationApi) {
   window.navigationApi.init();
 }
+initializeSettingsUI();
+applySavedSettingsToCalculate({ force: true });
 if (window.selectionsApi) {
   window.selectionsApi.init();
 }
@@ -107,6 +263,8 @@ initializeStartingLocationAutocomplete();
 initializeUseCurrentLocationAction();
 initializeSavedLocationsUI();
 initializeCalculateProgressiveFlow();
+applyPreferenceVisibility(readUserSettings().showPreferences);
+initializeCalculateDefaultOverrideTracking();
 if (window.syncSettingsTravelStyleUI) {
   window.syncSettingsTravelStyleUI();
 }
@@ -117,7 +275,11 @@ if (typeof window.show === 'function') {
     if (id !== 'result') stopEtaMonitoring();
     const shown = baseShow(id);
     if (id === 'trips') renderTripsList();
-    if (id === 'calculate') updateCalculateProgressiveUI();
+    if (id === 'calculate') {
+      applySavedSettingsToCalculate();
+      updateCalculateProgressiveUI();
+    }
+    if (id === 'settings') refreshSettingsUI();
     return shown;
   };
 }
@@ -207,6 +369,28 @@ function initializeCalculateProgressiveFlow() {
 
   setCalculateSectionOpen(0);
   updateCalculateProgressiveUI();
+}
+
+function initializeCalculateDefaultOverrideTracking() {
+  const startInput = document.getElementById('startingLocationInput');
+  const airportInput = document.getElementById('airportInput');
+  if (startInput && startInput.dataset.overrideReady !== 'true') {
+    startInput.dataset.overrideReady = 'true';
+    startInput.addEventListener('input', () => {
+      calculateManualOverrides.homeAddress = true;
+    });
+  }
+  if (airportInput && airportInput.dataset.overrideReady !== 'true') {
+    airportInput.dataset.overrideReady = 'true';
+    airportInput.addEventListener('change', () => {
+      calculateManualOverrides.airport = true;
+    });
+  }
+  document.addEventListener('eta:selectionchange', (event) => {
+    if (event.detail?.groupName === 'style') {
+      calculateManualOverrides.travelStyle = true;
+    }
+  });
 }
 
 function toggleCalculateSection(index) {
@@ -322,6 +506,11 @@ function initializeAirportTerminalSelects() {
     }
   };
 
+  if (airportSelect.dataset.terminalReady === 'true') {
+    syncTerminalOptions();
+    return;
+  }
+  airportSelect.dataset.terminalReady = 'true';
   airportSelect.addEventListener('change', syncTerminalOptions);
   terminalSelect.addEventListener('change', () => {
     if (window.appState) {
@@ -610,30 +799,7 @@ function renderSavedLocationQuickChips() {
 }
 
 function initializeSavedLocationsUI() {
-  const homeRow = document.getElementById('settingsSavedHomeRow');
-  const workRow = document.getElementById('settingsSavedWorkRow');
-  const homeValue = document.getElementById('settingsSavedHomeValue');
-  const workValue = document.getElementById('settingsSavedWorkValue');
-
-  const refresh = () => {
-    const home = getStoredAddress(HOME_ADDRESS_KEY);
-    const work = getStoredAddress(WORK_ADDRESS_KEY);
-    if (homeValue) homeValue.textContent = home || 'Not set';
-    if (workValue) workValue.textContent = work || 'Not set';
-    renderSavedLocationQuickChips();
-  };
-
-  const promptForAddress = (key, label) => {
-    const current = getStoredAddress(key);
-    const next = window.prompt(`Set ${label} address`, current || '');
-    if (next === null) return;
-    setStoredAddress(key, next);
-    refresh();
-  };
-
-  homeRow?.addEventListener('click', () => promptForAddress(HOME_ADDRESS_KEY, 'Home'));
-  workRow?.addEventListener('click', () => promptForAddress(WORK_ADDRESS_KEY, 'Work'));
-  refresh();
+  renderSavedLocationQuickChips();
 }
 
 function getActiveSelection(groupName) {
@@ -883,7 +1049,7 @@ function airportsConfig() {
 function preferredAirportsOrigin() {
   const fromCalc = formatAddressForDisplay(window.appState?.form?.startLocation || '').trim();
   if (fromCalc && fromCalc.toLowerCase() !== 'current location') return fromCalc;
-  const fromSettings = formatAddressForDisplay(document.querySelector('#settings .appCard .rowSub')?.textContent || '').trim();
+  const fromSettings = readUserSettings().homeAddress;
   if (fromSettings) return fromSettings;
   return 'Midtown Manhattan, NY';
 }
