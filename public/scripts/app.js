@@ -9,7 +9,7 @@ const LIVE_MODE_WINDOW_HOURS = 12;
 const INTERNATIONAL_CARRY_ON_CHECK_IN_MINUTES = 25;
 const INTERNATIONAL_BAG_DROP_CHECK_IN_MINUTES = 45;
 const INTERNATIONAL_BAG_DROP_ONLY_CHECK_IN_MINUTES = 35;
-const DOMESTIC_CHECKED_BAG_DROP_MINUTES = 20;
+const DOMESTIC_CHECKED_BAG_DROP_MINUTES = 15;
 const DOMESTIC_BAG_DROP_MINUTES = 15;
 const INTERNATIONAL_STANDARD_SECURITY_BUFFER_MINUTES = 10;
 const INTERNATIONAL_PEAK_BUFFER_MINUTES = 15;
@@ -1471,7 +1471,7 @@ function formatSignedMinutes(minutes) {
   const rounded = Math.round(Number(minutes));
   if (!Number.isFinite(rounded)) return '--';
   const sign = rounded > 0 ? '+' : '';
-  return `${sign}${rounded} min`;
+  return `${sign}${formatDurationMinutes(Math.abs(rounded))}`;
 }
 
 function getAirportTimingMinutes(result) {
