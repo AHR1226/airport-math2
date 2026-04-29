@@ -13,6 +13,7 @@ window.navigationApi = (() => {
     const hideNav = ['splash', 'loading'].includes(id);
 
     document.body.classList.toggle('hideBottomNav', hideNav);
+    document.body.classList.toggle('splash-active', id === 'splash');
 
     document.querySelectorAll('.navTap').forEach(b => {
       b.style.display = hideNav ? 'none' : 'block';

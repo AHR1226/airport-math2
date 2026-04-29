@@ -207,7 +207,8 @@ button.tap{
   border-radius:14px;
 }
 
-body.hideBottomNav .bottomNav{
+body.hideBottomNav .bottomNav,
+body.splash-active .bottomNav{
   display:none;
 }
 
