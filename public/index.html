@@ -293,22 +293,17 @@
   <div class="screenContent">
     <div class="pageHeader">
       <h1 class="pageTitle">Settings</h1>
-      <p class="pageSubtitle">Manage your travel preferences</p>
     </div>
-
-    <div class="sectionLabel">Profile</div>
 
     <form id="settingsForm">
       <div class="appCard settingsFormCard">
         <label class="settingsField">
           <span class="rowTitle">Home address</span>
-          <span class="rowSub">Used as the default Leaving from location.</span>
           <input id="settingsHomeAddressInput" class="settingsInput" type="text" placeholder="Add your home address" autocomplete="street-address">
         </label>
 
         <label class="settingsField">
           <span class="rowTitle">Default airport</span>
-          <span class="rowSub">Preselected on Calculate.</span>
           <select id="settingsDefaultAirport" class="settingsSelect">
             <option value="JFK">JFK</option>
             <option value="LGA">LGA</option>
@@ -334,22 +329,8 @@
         <label class="settingsToggleRow">
           <span>
             <span class="rowTitle">Show preferences on Calculate</span>
-            <span class="rowSub">Show airport flow, travelers, and timing style sections.</span>
           </span>
           <input id="settingsShowPreferences" class="settingsToggleInput" type="checkbox" checked>
-          <span class="settingsToggleVisual" aria-hidden="true"></span>
-        </label>
-      </div>
-
-      <div class="sectionLabel">Notifications</div>
-
-      <div class="appCard">
-        <label class="settingsToggleRow">
-          <span>
-            <span class="rowTitle">Notifications</span>
-            <span class="rowSub">Saved locally for now. Push alerts are not enabled yet.</span>
-          </span>
-          <input id="settingsNotifications" class="settingsToggleInput" type="checkbox" checked>
           <span class="settingsToggleVisual" aria-hidden="true"></span>
         </label>
       </div>

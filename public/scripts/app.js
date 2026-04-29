@@ -186,13 +186,11 @@ function refreshSettingsUI() {
   const airportSelect = document.getElementById('settingsDefaultAirport');
   const styleSelect = document.getElementById('settingsDefaultTravelStyle');
   const prefsToggle = document.getElementById('settingsShowPreferences');
-  const notificationsToggle = document.getElementById('settingsNotifications');
   const status = document.getElementById('settingsSaveStatus');
   if (homeInput) homeInput.value = settings.homeAddress;
   if (airportSelect) airportSelect.value = settings.defaultAirport;
   if (styleSelect) styleSelect.value = settings.travelStyle;
   if (prefsToggle) prefsToggle.checked = settings.showPreferences;
-  if (notificationsToggle) notificationsToggle.checked = settings.notifications;
   if (status) status.textContent = '';
   syncSettingsTravelStyleUI();
 }
@@ -222,7 +220,7 @@ function initializeSettingsUI() {
       defaultAirport: document.getElementById('settingsDefaultAirport')?.value || 'JFK',
       travelStyle: document.getElementById('settingsDefaultTravelStyle')?.value || 'Balanced',
       showPreferences: document.getElementById('settingsShowPreferences')?.checked !== false,
-      notifications: document.getElementById('settingsNotifications')?.checked !== false
+      notifications: readUserSettings().notifications
     });
     calculateManualOverrides.homeAddress = false;
     calculateManualOverrides.airport = false;
