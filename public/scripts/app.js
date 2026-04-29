@@ -106,6 +106,7 @@ initializeAirportTerminalSelects();
 initializeStartingLocationAutocomplete();
 initializeUseCurrentLocationAction();
 initializeSavedLocationsUI();
+initializeCalculateProgressiveFlow();
 if (window.syncSettingsTravelStyleUI) {
   window.syncSettingsTravelStyleUI();
 }
@@ -116,6 +117,7 @@ if (typeof window.show === 'function') {
     if (id !== 'result') stopEtaMonitoring();
     const shown = baseShow(id);
     if (id === 'trips') renderTripsList();
+    if (id === 'calculate') updateCalculateProgressiveUI();
     return shown;
   };
 }
@@ -136,6 +138,200 @@ function initializeFlightDateInput() {
   const today = formatDateInputValue(new Date());
   if (!input.value) input.value = window.appState?.form?.flightDate || today;
   if (window.appState?.form) window.appState.form.flightDate = input.value;
+}
+
+function initializeCalculateProgressiveFlow() {
+  const calculate = document.getElementById('calculate');
+  if (!calculate || calculate.dataset.progressiveReady === 'true') return;
+  calculate.dataset.progressiveReady = 'true';
+
+  const sections = [...calculate.querySelectorAll('.calcDecisionSection')];
+  sections.forEach((section, index) => {
+    const title = section.querySelector('h2');
+    if (!title) return;
+    section.dataset.calcIndex = String(index);
+    section.dataset.calcTitle = title.textContent.trim();
+
+    const header = document.createElement('button');
+    header.type = 'button';
+    header.className = 'calcAccordionHeader';
+    header.innerHTML = `
+      <span class="calcAccordionTitle">${escapeHtml(title.textContent.trim())}</span>
+      <span class="calcAccordionSummary" data-calc-summary></span>
+      <span class="calcAccordionChevron" aria-hidden="true"></span>
+    `;
+
+    const body = document.createElement('div');
+    body.className = 'calcAccordionBody';
+    const bodyInner = document.createElement('div');
+    bodyInner.className = 'calcAccordionBodyInner';
+
+    let node = title.nextSibling;
+    while (node) {
+      const next = node.nextSibling;
+      bodyInner.appendChild(node);
+      node = next;
+    }
+    body.appendChild(bodyInner);
+    title.replaceWith(header);
+    section.appendChild(body);
+
+    header.addEventListener('click', () => setCalculateSectionOpen(index));
+  });
+
+  calculate.addEventListener('change', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    updateCalculateProgressiveUI();
+    const section = target.closest('.calcDecisionSection');
+    if (section && isCalculateSectionComplete(section)) {
+      scheduleCalculateAutoAdvance(section);
+    }
+  });
+
+  calculate.addEventListener('input', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    updateCalculateProgressiveUI();
+  });
+
+  calculate.addEventListener('blur', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const section = target.closest('.calcDecisionSection');
+    if (section && isCalculateSectionComplete(section)) {
+      scheduleCalculateAutoAdvance(section);
+    }
+  }, true);
+
+  document.addEventListener('eta:selectionchange', (event) => {
+    const group = document.querySelector(`[data-group="${event.detail?.groupName}"]`);
+    const section = group?.closest('.calcDecisionSection');
+    updateCalculateProgressiveUI();
+    if (section && isCalculateSectionComplete(section)) {
+      scheduleCalculateAutoAdvance(section);
+    }
+  });
+
+  setCalculateSectionOpen(0);
+  updateCalculateProgressiveUI();
+}
+
+function setCalculateSectionOpen(index) {
+  const sections = [...document.querySelectorAll('#calculate .calcDecisionSection')];
+  sections.forEach((section, sectionIndex) => {
+    const isOpen = sectionIndex === index;
+    const body = section.querySelector('.calcAccordionBody');
+    const header = section.querySelector('.calcAccordionHeader');
+    section.classList.toggle('isOpen', isOpen);
+    header?.setAttribute('aria-expanded', String(isOpen));
+    if (body) {
+      body.style.maxHeight = isOpen ? `${body.scrollHeight}px` : '0px';
+      body.style.opacity = isOpen ? '1' : '0';
+    }
+  });
+}
+
+function scheduleCalculateAutoAdvance(section) {
+  window.clearTimeout(Number(section.dataset.advanceTimer || 0));
+  section.dataset.advanceTimer = String(window.setTimeout(() => {
+    const index = Number(section.dataset.calcIndex);
+    const sections = [...document.querySelectorAll('#calculate .calcDecisionSection')];
+    if (!Number.isFinite(index) || !section.classList.contains('isOpen')) return;
+    if (index < sections.length - 1) setCalculateSectionOpen(index + 1);
+  }, 420));
+}
+
+function updateCalculateProgressiveUI() {
+  const sections = [...document.querySelectorAll('#calculate .calcDecisionSection')];
+  sections.forEach((section) => {
+    const summary = section.querySelector('[data-calc-summary]');
+    if (summary) summary.textContent = getCalculateSectionSummary(section.dataset.calcTitle || '');
+    const body = section.querySelector('.calcAccordionBody');
+    if (body && section.classList.contains('isOpen')) body.style.maxHeight = `${body.scrollHeight}px`;
+  });
+  updateCalculateLiveEtaPreview();
+}
+
+function getCalculateSectionSummary(title) {
+  const airport = document.getElementById('airportInput')?.value || 'JFK';
+  const date = buildFlightDepartureDate(
+    document.getElementById('flightDate')?.value,
+    document.getElementById('flightTime')?.value
+  );
+  const dateLabel = date instanceof Date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : 'Date';
+  const timeLabel = formatFlightTimeForDisplay(document.getElementById('flightTime')?.value || '19:30') || '7:30 PM';
+  const flightType = normalizeFlightType(document.getElementById('flightType')?.value || 'Domestic');
+  const origin = formatAddressForDisplay(document.getElementById('startingLocationInput')?.value || '').trim();
+  const originLabel = getOriginSummaryLabel(origin);
+
+  if (title === 'Flight') return `${airport} · ${dateLabel} · ${timeLabel} · ${flightType}`;
+  if (title === 'Getting there') return `${originLabel} · ${getActiveSelection('transport') || 'Rideshare'}`;
+  if (title === 'Airport flow') {
+    const security = getActiveSelection('security') || 'PreCheck';
+    return [
+      getActiveSelection('luggage') || 'Carry-on only',
+      security === 'Standard' ? 'Standard security' : security,
+      getActiveSelection('boarding') || 'Head to gate'
+    ].join(' · ');
+  }
+  if (title === 'Who’s traveling') return getActiveSelection('complexity') || 'Just me';
+  if (title === 'Timing style') return getActiveSelection('style') || 'Balanced';
+  return '';
+}
+
+function getOriginSummaryLabel(origin) {
+  if (!origin) return 'Origin';
+  const normalized = origin.toLowerCase();
+  if (normalized.includes('home')) return 'Home';
+  if (normalized.includes('work')) return 'Work';
+  return origin.split(',')[0] || origin;
+}
+
+function isCalculateSectionComplete(section) {
+  const title = section.dataset.calcTitle || '';
+  if (title === 'Flight') {
+    return Boolean(
+      document.getElementById('airportInput')?.value
+      && document.getElementById('flightDate')?.value
+      && document.getElementById('flightTime')?.value
+      && document.getElementById('flightType')?.value
+    );
+  }
+  if (title === 'Getting there') {
+    return Boolean((document.getElementById('startingLocationInput')?.value || '').trim());
+  }
+  return true;
+}
+
+function updateCalculateLiveEtaPreview() {
+  const timeEl = document.getElementById('calcLiveEtaTime');
+  const reasonsEl = document.getElementById('calcLiveEtaReasons');
+  if (!timeEl || !reasonsEl) return;
+
+  const flight = buildFlightDepartureDate(
+    document.getElementById('flightDate')?.value,
+    document.getElementById('flightTime')?.value
+  );
+  if (!(flight instanceof Date) || Number.isNaN(flight.getTime())) {
+    timeEl.textContent = '--';
+    reasonsEl.textContent = 'Add trip details to preview your timing.';
+    return;
+  }
+
+  const timing = minutesForSelection({
+    flightType: document.getElementById('flightType')?.value || 'Domestic',
+    departureDate: flight
+  });
+  const leave = new Date(flight.getTime() - timing.total * 60000);
+  timeEl.textContent = formatTime(leave);
+  const reasons = aggregateTimingReasonRows(timing.timingAdjustmentReasons)
+    .filter((item) => item.minutes > 0)
+    .slice(0, 2)
+    .map((item) => `${formatSignedMinutes(item.minutes)} for ${item.label.toLowerCase()}`);
+  reasonsEl.textContent = reasons.length ? reasons.join(' · ') : 'Balanced airport timing based on your choices.';
 }
 
 function initializeAirportTerminalSelects() {

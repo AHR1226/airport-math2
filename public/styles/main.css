@@ -309,6 +309,50 @@ button.tap{
   margin-bottom:22px;
 }
 
+.calcLiveEtaCard{
+  position:sticky;
+  top:12px;
+  z-index:4;
+  margin:0 0 16px;
+  padding:14px 15px;
+  border:1px solid rgba(6,72,25,0.1);
+  border-radius:22px;
+  background:rgba(246,246,244,0.88);
+  box-shadow:
+    0 12px 30px rgba(6,72,25,0.08),
+    0 1px 2px rgba(0,0,0,0.03);
+  backdrop-filter:blur(18px);
+}
+
+.calcLiveEtaLabel{
+  margin:0 0 4px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:10px;
+  line-height:1;
+  font-weight:700;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:rgba(6,72,25,0.54);
+}
+
+.calcLiveEtaTime{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:30px;
+  line-height:0.98;
+  font-weight:500;
+  letter-spacing:-0.055em;
+  color:#064819;
+}
+
+.calcLiveEtaReasons{
+  margin-top:7px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12px;
+  line-height:1.35;
+  font-weight:400;
+  color:rgba(6,72,25,0.58);
+}
+
 .card{
   background:#F6F6F4;
   border:1px solid rgba(6,72,25,0.08);
@@ -394,17 +438,113 @@ button.tap{
 }
 
 #calculate .calcDecisionSection{
-  padding:16px 17px;
+  overflow:hidden;
+  padding:0;
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
 }
 
-#calculate .calcDecisionSection:nth-of-type(2),
+#calculate .flightDetailsCard{
+  background:#CFFF4E;
+}
+
 #calculate .calcDecisionSection:nth-of-type(3),
-#calculate .calcDecisionSection:nth-of-type(5){
+#calculate .calcDecisionSection:nth-of-type(4),
+#calculate .calcDecisionSection:nth-of-type(6){
   background:#F6F6F4;
 }
 
-#calculate .calcDecisionSection:nth-of-type(4){
+#calculate .calcDecisionSection:nth-of-type(5){
   background:#F2F9DF;
+}
+
+#calculate .calcDecisionSection.isOpen{
+  border-color:rgba(6,72,25,0.13);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.025),
+    0 12px 34px rgba(6,72,25,0.055);
+}
+
+#calculate .calcAccordionHeader{
+  width:100%;
+  margin:0;
+  padding:16px 17px;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  display:grid;
+  grid-template-columns:1fr auto;
+  column-gap:12px;
+  row-gap:4px;
+  align-items:center;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+
+#calculate .calcAccordionTitle{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:16px;
+  line-height:1.1;
+  font-weight:800;
+  letter-spacing:-0.01em;
+  color:#064819;
+}
+
+#calculate .calcAccordionSummary{
+  grid-column:1 / -1;
+  max-width:100%;
+  min-height:15px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+  color:rgba(6,72,25,0.54);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  opacity:1;
+  transform:translateY(0);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    color 180ms ease;
+}
+
+#calculate .calcDecisionSection.isOpen .calcAccordionSummary{
+  opacity:0;
+  transform:translateY(-2px);
+  color:rgba(6,72,25,0.34);
+}
+
+#calculate .calcAccordionChevron{
+  width:9px;
+  height:9px;
+  border-right:1.5px solid rgba(6,72,25,0.5);
+  border-bottom:1.5px solid rgba(6,72,25,0.5);
+  transform:rotate(45deg);
+  transition:transform 220ms cubic-bezier(.2,.8,.2,1);
+}
+
+#calculate .calcDecisionSection.isOpen .calcAccordionChevron{
+  transform:rotate(225deg) translate(-2px,-2px);
+}
+
+#calculate .calcAccordionBody{
+  max-height:0;
+  opacity:0;
+  overflow:hidden;
+  transition:
+    max-height 320ms cubic-bezier(.2,.8,.2,1),
+    opacity 200ms ease;
+  will-change:max-height;
+}
+
+#calculate .calcAccordionBodyInner{
+  padding:0 17px 17px;
 }
 
 #calculate .calcSectionHint{

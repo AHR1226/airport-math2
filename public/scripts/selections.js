@@ -33,6 +33,9 @@ window.selectionsApi = (() => {
           if (groupName === 'style' && window.syncSettingsTravelStyleUI) {
             window.syncSettingsTravelStyleUI();
           }
+          document.dispatchEvent(new CustomEvent('eta:selectionchange', {
+            detail: { groupName, value: chipSelectionValue(chip) }
+          }));
         };
       });
     });

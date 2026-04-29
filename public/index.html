@@ -56,6 +56,12 @@
     <h1>Plan Your Trip</h1>
     <p class="subtitle">Tell us about your flight details</p>
 
+    <div class="calcLiveEtaCard" id="calcLiveEtaCard" aria-live="polite">
+      <div class="calcLiveEtaLabel">Recommended departure</div>
+      <div class="calcLiveEtaTime" id="calcLiveEtaTime">--</div>
+      <div class="calcLiveEtaReasons" id="calcLiveEtaReasons">Add trip details to preview your timing.</div>
+    </div>
+
     <div class="card lime flightDetailsCard calcDecisionSection">
       <h2>Flight</h2>
       <div class="fieldRow flightDetailsAirportRow">
@@ -168,7 +174,7 @@
     </div>
 
     <div class="card calcDecisionSection">
-      <h2>Travel complexity</h2>
+      <h2>Who’s traveling</h2>
       <p class="calcSectionHint">Extra coordination that changes airport timing.</p>
       <div class="chipGroup chipGroup--stacked" data-group="complexity">
         <button type="button" class="chip chip--complexity active" data-selection="Just me">
