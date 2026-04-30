@@ -3998,7 +3998,8 @@ body{
 
 #result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlTime,
 .etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlTime{
-  margin-top:21px;
+  margin-top:13px;
+  color:#CFFF4E;
 }
 
 #result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlEyebrow,
@@ -4029,6 +4030,9 @@ body{
 .etaResultView .resultHtmlStatus--upcoming{
   color:#2D4F8D;
   background:#E5ECFF;
+  padding:4px 9px;
+  font-size:10px;
+  line-height:1;
 }
 
 #result.useHtmlResult .resultHtmlStatus--upcoming .resultHtmlStatusDot,

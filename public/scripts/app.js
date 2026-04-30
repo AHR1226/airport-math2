@@ -2390,7 +2390,7 @@ function parseFlightDepartureDate(result) {
 }
 
 function getTripStateContextLine(urgency, result) {
-  if (urgency?.tripState === 'upcoming') return 'Using estimated traffic + airport conditions';
+  if (urgency?.tripState === 'upcoming') return '';
   if (urgency?.tripState === 'live' || urgency?.tripState === 'risk') return 'Using live traffic + airport conditions';
   const mode = String(result?.calculationMode || '').trim();
   if (mode === 'live') return 'Using live traffic + airport conditions';
