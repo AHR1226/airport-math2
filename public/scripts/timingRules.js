@@ -26,7 +26,7 @@
 
   const BASE = {
     travelTime: 45,
-    terminalNavigation: 35,
+    terminalNavigation: 20,
     boardingTime: 15,
     loungeTime: 45,
     loungeContributionCap: 60,
@@ -383,6 +383,7 @@
         blendedPreferenceLogicApplied: acc.debug.blendedPreferenceLogicApplied,
         cappedPreferenceTotals: acc.debug.cappedPreferenceTotals,
         cappedBehavioralTotals: acc.debug.cappedBehavioralTotals,
+        terminalNavigationMinutes: BASE.terminalNavigation,
         finalRecommendationMinutes
       }
     };
