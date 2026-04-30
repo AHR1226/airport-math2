@@ -493,12 +493,16 @@ function getCalculateSectionSummary(title) {
     return [
       getActiveSelection('luggage') || 'Carry-on only',
       security === 'Standard' ? 'Standard security' : security,
-      getActiveSelection('boarding') || 'Head to gate'
+      formatBoardingSelectionLabel(getActiveSelection('boarding') || 'Head to gate')
     ].join(' · ');
   }
   if (title === 'Who’s traveling') return getActiveSelection('complexity') || 'Just me';
   if (title === 'Timing style') return getActiveSelection('style') || 'Balanced';
   return '';
+}
+
+function formatBoardingSelectionLabel(value) {
+  return String(value || '').trim() === 'Grab food' ? 'Hudson News' : String(value || '').trim();
 }
 
 function getOriginSummaryLabel(origin) {
@@ -1739,13 +1743,20 @@ function syncSelectionChipsToState(selections) {
   Object.entries(selections || {}).forEach(([groupName, value]) => {
     const group = document.querySelector(`[data-group="${groupName}"]`);
     if (!group) return;
+    const normalizedValue = normalizeSelectionValueForMatching(groupName, value);
     group.querySelectorAll('.chip').forEach((chip) => {
       const explicit = chip.getAttribute('data-selection');
       const label = chip.querySelector('.styleChipLabel')?.textContent || chip.textContent;
       const chipValue = String(explicit || label || '').trim();
-      chip.classList.toggle('active', chipValue === String(value || '').trim());
+      chip.classList.toggle('active', normalizeSelectionValueForMatching(groupName, chipValue) === normalizedValue);
     });
   });
+}
+
+function normalizeSelectionValueForMatching(groupName, value) {
+  const raw = String(value || '').trim();
+  if (groupName === 'boarding' && raw === 'Grab food') return 'Hudson News';
+  return raw;
 }
 
 function getTripStatus(eta) {

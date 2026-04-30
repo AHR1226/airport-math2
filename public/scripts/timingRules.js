@@ -247,7 +247,7 @@
         layer: LAYERS.preference,
         visible: true
       }, preferenceTotal, preferenceCap);
-    } else if (inputs.boarding === 'Grab food') {
+    } else if (inputs.boarding === 'Hudson News' || inputs.boarding === 'Grab food') {
       preferenceTotal = applyCappedRule(acc, 'hudson-news-stop', 'preferenceTime', {
         label: 'Hudson News stop',
         minutes: 15,
