@@ -4063,3 +4063,64 @@ body{
 .etaResultView .resultBreakdownCard + .resultLiveCard{
   margin-top:-11px;
 }
+
+/* Planned Estimated Conditions alignment */
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming{
+  background:#AFB59A;
+  border-color:rgba(249,255,228,0.16);
+  padding:18px 18px 18px;
+}
+
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveTitle{
+  margin:0 0 11px;
+  padding:0;
+  font-size:var(--text-label);
+  font-weight:700;
+  letter-spacing:0.1em;
+  line-height:1.25;
+  color:#F9FFE4;
+}
+
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveRow{
+  align-items:baseline;
+  gap:12px;
+  padding:8px 0;
+  line-height:1.35;
+}
+
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveLabelWrap,
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveLabelWrapTraffic{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:row;
+  align-items:baseline;
+  gap:8px;
+}
+
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveLabelTopRow{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveLabel,
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveRow.primary .resultLiveLabel{
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+  color:#F9FFE4;
+}
+
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveValue,
+#result.useHtmlResult .resultLiveCard.tripStateConditions--upcoming .resultLiveValue.text{
+  flex:0 0 auto;
+  min-width:3.5rem;
+  max-width:56%;
+  text-align:right;
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+  letter-spacing:0;
+  color:#F9FFE4;
+}

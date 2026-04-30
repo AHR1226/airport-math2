@@ -2014,7 +2014,7 @@ function buildResultHtml(result, options = {}) {
       <div class="resultUberCardAction">Continue in Uber <span aria-hidden="true">→</span></div>
     </a>
     ` : ''}
-    ${embedded ? '' : `<div class="resultLiveCard">
+    ${embedded ? '' : `<div class="resultLiveCard tripStateConditions--${escapeHtml(urgency.tripState)}">
       <div class="resultLiveTitle">${escapeHtml(conditionsTitle)}</div>
       <div class="resultLiveRow primary">
         <div class="resultLiveLabelWrap resultLiveLabelWrapTraffic">
@@ -2337,7 +2337,7 @@ function getUrgencyPresentation(result) {
   const selectedCopy = copyByState[urgencyState] || copyByState.SAFE;
   const tripStateCopy = {
     upcoming: {
-      leaveLabel: 'LEAVE FOR YOUR\nFUTURE FLIGHT AT',
+      leaveLabel: 'LEAVE AT',
       pillCopy: 'Estimating typical traffic patterns',
       statusClassName: 'resultHtmlStatus--upcoming'
     },
