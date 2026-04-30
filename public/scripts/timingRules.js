@@ -28,6 +28,8 @@
     travelTime: 45,
     terminalNavigation: 35,
     boardingTime: 15,
+    loungeTime: 45,
+    loungeContributionCap: 60,
     security: {
       Standard: 25,
       PreCheck: 8,
@@ -74,6 +76,12 @@
       appliedRules: [],
       skippedRules: [],
       capsApplied: [],
+      debug: {
+        hiddenBufferReductionsApplied: [],
+        blendedPreferenceLogicApplied: [],
+        cappedPreferenceTotals: [],
+        cappedBehavioralTotals: []
+      },
       layerTotals: {
         travelTime: 0,
         airportProcessingTime: 0,
@@ -118,6 +126,14 @@
     const desired = Math.max(0, Math.round(Number(row.minutes) || 0));
     const available = Math.max(0, cap - currentTotal);
     const applied = Math.min(desired, available);
+    recordCappedTotal(acc, capName, {
+      rule: ruleName,
+      requested: desired,
+      applied,
+      previousTotal: currentTotal,
+      resultingTotal: currentTotal + applied,
+      max: cap
+    });
     if (applied <= 0) {
       skipRule(acc, ruleName, `${capName} cap already reached`);
       acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied: 0, max: cap });
@@ -130,13 +146,22 @@
     return currentTotal + applied;
   }
 
+  function recordCappedTotal(acc, capName, payload) {
+    if (capName === 'preferenceTime') {
+      acc.debug.cappedPreferenceTotals.push(payload);
+    }
+    if (capName === 'behavioralTime') {
+      acc.debug.cappedBehavioralTotals.push(payload);
+    }
+  }
+
   function getCheckInRule(inputs) {
     const luggage = inputs.luggage;
     if (inputs.flightType === 'International') {
       if (luggage === 'Checking bags' || luggage === 'Bag drop') {
-        return { label: 'International bag drop/check-in', minutes: 40 };
+        return { label: 'International bag drop/check-in', minutes: 30 };
       }
-      return { label: 'International check-in', minutes: 25 };
+      return { label: 'International check-in', minutes: 20 };
     }
     if (luggage === 'Checking bags' || luggage === 'Bag drop') {
       return { label: 'Bag drop', minutes: 15 };
@@ -146,10 +171,34 @@
 
   function getBehavioralRule(inputs) {
     const key = String(inputs.complexity || '').trim().toLowerCase();
-    if (key === 'family / children') return { label: 'Family / children', minutes: inputs.flightType === 'International' ? 40 : 25 };
+    if (key === 'family / children') return { label: 'Family / children', minutes: 20 };
     if (key === 'traveling with pets') return { label: 'Traveling with pets', minutes: inputs.flightType === 'International' ? 35 : 20 };
     if (key === 'group travel') return { label: 'Group travel', minutes: inputs.flightType === 'International' ? 30 : 15 };
     return null;
+  }
+
+  function calculateConfidenceBuffer(inputs, baseMinutes, peakWindow) {
+    const reductions = [];
+    const isLounge = inputs.boarding === 'Lounge';
+    const isFamily = String(inputs.complexity || '').trim().toLowerCase() === 'family / children';
+    const addReduction = (reason, minutes) => {
+      const amount = Math.max(0, Math.round(minutes));
+      if (amount > 0) reductions.push({ reason, minutes: amount });
+    };
+
+    if (inputs.style === 'Balanced') addReduction('balanced style uses a medium hidden confidence buffer', inputs.flightType === 'International' ? 5 : 3);
+    if (inputs.style === 'Relaxed') addReduction('relaxed traveler already adds explicit preference time', inputs.flightType === 'International' ? 12 : 8);
+    if (isLounge) addReduction('lounge selected already creates dwell cushion', inputs.flightType === 'International' ? 7 : 5);
+    if (isFamily) addReduction('family travel already adds behavioral cushion', inputs.flightType === 'International' ? 5 : 3);
+
+    const reducedBy = Math.min(baseMinutes, reductions.reduce((sum, item) => sum + item.minutes, 0));
+    return {
+      requested: baseMinutes,
+      applied: Math.max(0, baseMinutes - reducedBy),
+      reducedBy,
+      reductions,
+      peakWindow
+    };
   }
 
   function calculate(input = {}) {
@@ -241,12 +290,19 @@
     const preferenceCap = CAPS.preference[inputs.flightType];
     let preferenceTotal = 0;
     if (inputs.boarding === 'Lounge') {
+      const loungeMinutes = Math.min(BASE.loungeTime, BASE.loungeContributionCap);
       preferenceTotal = applyCappedRule(acc, 'lounge-time', 'preferenceTime', {
         label: 'Lounge time',
-        minutes: isInternational ? 90 : 60,
+        minutes: loungeMinutes,
         layer: LAYERS.preference,
         visible: true
       }, preferenceTotal, preferenceCap);
+      acc.debug.blendedPreferenceLogicApplied.push({
+        rule: 'lounge-time',
+        requested: BASE.loungeTime,
+        applied: loungeMinutes,
+        max: BASE.loungeContributionCap
+      });
     } else if (inputs.boarding === 'Hudson News' || inputs.boarding === 'Grab food') {
       preferenceTotal = applyCappedRule(acc, 'hudson-news-stop', 'preferenceTime', {
         label: 'Hudson News stop',
@@ -259,9 +315,19 @@
     }
 
     if (inputs.style === 'Relaxed') {
+      const hasLounge = inputs.boarding === 'Lounge';
+      const relaxedMinutes = hasLounge ? (isInternational ? 15 : 10) : (isInternational ? 45 : 25);
+      if (hasLounge) {
+        acc.debug.blendedPreferenceLogicApplied.push({
+          rule: 'relaxed-travel-style',
+          reason: 'Relaxed style and lounge share the same dwell-buffer mindset',
+          standaloneMinutes: isInternational ? 45 : 25,
+          blendedMinutes: relaxedMinutes
+        });
+      }
       preferenceTotal = applyCappedRule(acc, 'relaxed-travel-style', 'preferenceTime', {
         label: 'Relaxed travel style',
-        minutes: isInternational ? 45 : 25,
+        minutes: relaxedMinutes,
         layer: LAYERS.preference,
         visible: true
       }, preferenceTotal, preferenceCap);
@@ -272,38 +338,33 @@
     // 6. Confidence stabilization
     const confidenceCap = CAPS.confidenceBuffer[inputs.flightType];
     const peakWindow = isPeakDepartureWindow(inputs.departureDate);
-    if (inputs.style === 'Relaxed') {
-      skipRule(acc, 'confidence-buffer', 'Relaxed style already adds explicit preference time');
+    const confidenceBuffer = calculateConfidenceBuffer(inputs, confidenceCap, peakWindow);
+    acc.debug.hiddenBufferReductionsApplied = confidenceBuffer.reductions.map((item) => ({
+      ...item,
+      requested: confidenceBuffer.requested,
+      applied: confidenceBuffer.applied
+    }));
+    if (confidenceBuffer.applied <= 0) {
+      skipRule(acc, 'confidence-buffer', 'Cautionary selections already provide enough buffer');
     } else if (peakWindow) {
       addRule(acc, 'peak-confidence-buffer', {
         label: 'Peak travel window',
-        minutes: confidenceCap,
+        minutes: confidenceBuffer.applied,
         layer: LAYERS.confidenceBuffer,
         visible: true
       });
-      acc.capsApplied.push({ cap: 'confidenceBufferTime', rule: 'peak-confidence-buffer', requested: isInternational ? 15 : 10, applied: confidenceCap, max: confidenceCap });
+      acc.capsApplied.push({ cap: 'confidenceBufferTime', rule: 'peak-confidence-buffer', requested: confidenceBuffer.requested, applied: confidenceBuffer.applied, max: confidenceCap });
     } else {
       addRule(acc, 'base-confidence-buffer', {
         label: 'Confidence buffer',
-        minutes: confidenceCap,
+        minutes: confidenceBuffer.applied,
         layer: LAYERS.confidenceBuffer,
         visible: false
       });
     }
 
     if (inputs.style === 'Tight') {
-      const currentConfidence = acc.layerTotals.confidenceBufferTime;
-      const reduction = -Math.min(10, Math.max(0, currentConfidence));
-      if (reduction) {
-        addRule(acc, 'tight-travel-style', {
-          label: 'Tight travel style',
-          minutes: reduction,
-          layer: LAYERS.confidenceBuffer,
-          visible: true
-        });
-      } else {
-        skipRule(acc, 'tight-travel-style', 'No confidence buffer available to reduce');
-      }
+      skipRule(acc, 'tight-travel-style', 'No hidden buffer reduction; tight travelers still need confidence stabilization');
     }
 
     const finalRecommendationMinutes = Object.values(acc.layerTotals).reduce((sum, value) => sum + value, 0);
@@ -318,6 +379,10 @@
         skippedRules: acc.skippedRules,
         layerTotals: { ...acc.layerTotals },
         capsApplied: acc.capsApplied,
+        hiddenBufferReductionsApplied: acc.debug.hiddenBufferReductionsApplied,
+        blendedPreferenceLogicApplied: acc.debug.blendedPreferenceLogicApplied,
+        cappedPreferenceTotals: acc.debug.cappedPreferenceTotals,
+        cappedBehavioralTotals: acc.debug.cappedBehavioralTotals,
         finalRecommendationMinutes
       }
     };
