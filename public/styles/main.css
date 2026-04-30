@@ -4124,3 +4124,94 @@ body{
   letter-spacing:0;
   color:#F9FFE4;
 }
+
+/* Shared ETA layout rhythm for day-of/live state */
+#result.useHtmlResult .etaResultView .resultHeroCard:not(.tripStateHero--upcoming),
+.etaResultView .resultHeroCard:not(.tripStateHero--upcoming){
+  background:#CFFF4E;
+  padding:26px 20px 19px;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownCard:not(.tripStateBreakdown--upcoming),
+.etaResultView .resultBreakdownCard:not(.tripStateBreakdown--upcoming){
+  background:#1A3A1F;
+  padding:18px 18px 18px;
+}
+
+#result.useHtmlResult .etaResultView .resultHtmlEyebrow,
+.etaResultView .resultHtmlEyebrow{
+  font-size:10px;
+  line-height:1.05;
+  letter-spacing:.12em;
+}
+
+#result.useHtmlResult .etaResultView .resultHtmlStatus,
+.etaResultView .resultHtmlStatus{
+  padding:4px 9px;
+  font-size:10px;
+  line-height:1;
+}
+
+#result.useHtmlResult .etaResultView .resultHtmlMetaBlock,
+.etaResultView .resultHtmlMetaBlock{
+  margin-top:12px;
+  font-size:var(--text-body);
+  line-height:1.24;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming){
+  background:#F6F6F4;
+  border-color:rgba(6,72,25,0.08);
+  padding:18px 18px 18px;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveTitle{
+  margin:0 0 11px;
+  padding:0;
+  font-size:var(--text-label);
+  font-weight:700;
+  letter-spacing:0.1em;
+  line-height:1.25;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveRow{
+  align-items:baseline;
+  gap:12px;
+  padding:8px 0;
+  line-height:1.35;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveLabelWrap,
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveLabelWrapTraffic{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:row;
+  align-items:baseline;
+  gap:8px;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveLabelTopRow{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveLabel,
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveRow.primary .resultLiveLabel{
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveValue,
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming) .resultLiveValue.text{
+  flex:0 0 auto;
+  min-width:3.5rem;
+  max-width:56%;
+  text-align:right;
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+  letter-spacing:0;
+}
