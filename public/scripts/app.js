@@ -7,7 +7,7 @@ const SAVED_TRIPS_KEY = 'eta_saved_trips';
 const SETTINGS_KEY = 'eta_user_settings';
 const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
 const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
-const LIVE_MODE_WINDOW_HOURS = 12;
+const LIVE_MODE_WINDOW_HOURS = 24;
 const INTERNATIONAL_CARRY_ON_CHECK_IN_MINUTES = 25;
 const INTERNATIONAL_BAG_DROP_CHECK_IN_MINUTES = 45;
 const INTERNATIONAL_BAG_DROP_ONLY_CHECK_IN_MINUTES = 35;
@@ -1889,7 +1889,7 @@ function buildResultHtml(result, options = {}) {
   const urgency = getUrgencyPresentation(result);
   const showUrgencyDebug = shouldShowUrgencyDebug();
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
-  const modeContextLine = getCalculationModeContextLine(result);
+  const modeContextLine = getTripStateContextLine(urgency, result);
   const calculationMode = String(result.calculationMode || '').trim();
   const isPlanningMode = calculationMode === 'planning';
   const breakdownTitle = isPlanningMode
@@ -1957,7 +1957,7 @@ function buildResultHtml(result, options = {}) {
         ${actionsHtml}
       </div>
     </div>`}
-    <div class="resultHeroCard">
+    <div class="resultHeroCard tripStateHero--${escapeHtml(urgency.tripState)}">
       <div class="resultHtmlEyebrow">${escapeHtml(urgency.leaveLabel)}</div>
       <div class="resultHeroClock" aria-hidden="true">
         <svg viewBox="0 0 24 24">
@@ -1983,10 +1983,10 @@ function buildResultHtml(result, options = {}) {
       </div>
       ${urgency.helperCopy ? `<div class="resultUrgencyHelper">${escapeHtml(urgency.helperCopy)}</div>` : ''}
       ${modeContextLine ? `<div class="resultModeContext">${escapeHtml(modeContextLine)}</div>` : ''}
-      ${showUrgencyDebug ? `<div class="resultUrgencyDebug">DEBUG · ${escapeHtml(urgency.urgencyState)} · Cushion ${escapeHtml(formatDebugMinutes(urgency.remainingCushionMinutes))} · ${escapeHtml(String(urgency.reason || 'n/a'))}</div>` : ''}
+      ${showUrgencyDebug ? `<div class="resultUrgencyDebug">DEBUG · ${escapeHtml(urgency.tripState)} · ${escapeHtml(urgency.urgencyState)} · Cushion ${escapeHtml(formatDebugMinutes(urgency.remainingCushionMinutes))} · ${escapeHtml(String(urgency.reason || 'n/a'))}</div>` : ''}
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
     </div>
-    <div class="resultBreakdownCard">
+    <div class="resultBreakdownCard tripStateBreakdown--${escapeHtml(urgency.tripState)}">
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Arrive at airport</span><strong>${escapeHtml(arriveAtAirportTime)}</strong></div>
@@ -2254,6 +2254,14 @@ function getUrgencyPresentation(result) {
     : null;
   const flightTimePassed = Boolean(flightDate && flightDate.getTime() < now.getTime());
   const leaveTimePassed = Boolean(leaveDate && leaveDate.getTime() <= now.getTime());
+  const hoursUntilDeparture = flightDate
+    ? (flightDate.getTime() - now.getTime()) / (60 * 60 * 1000)
+    : null;
+  const hasHeavyTrafficSpike = (
+    Number.isFinite(Number(result?.travel))
+    && Number.isFinite(Number(result?.travelTypical))
+    && (Number(result.travel) - Number(result.travelTypical)) >= 15
+  );
 
   let urgencyState = 'SAFE';
   let reason = 'cushion_over_30';
@@ -2280,7 +2288,21 @@ function getUrgencyPresentation(result) {
   } else if (remainingCushionMinutes <= 30) {
     urgencyState = 'CAUTION';
     reason = 'cushion_between_10_and_30';
+  } else if (hasHeavyTrafficSpike) {
+    urgencyState = 'CAUTION';
+    reason = 'heavy_traffic_spike';
   }
+
+  const baseTripState = Number.isFinite(hoursUntilDeparture) && hoursUntilDeparture > 24
+    ? 'upcoming'
+    : 'live';
+  const tripState = (
+    baseTripState === 'live'
+    && ['CAUTION', 'CRITICAL'].includes(urgencyState)
+    && !flightTimePassed
+  )
+    ? 'risk'
+    : baseTripState;
 
   const copyByState = {
     SAFE: {
@@ -2311,15 +2333,44 @@ function getUrgencyPresentation(result) {
     }
   };
   const selectedCopy = copyByState[urgencyState] || copyByState.SAFE;
+  const tripStateCopy = {
+    upcoming: {
+      leaveLabel: 'PLANNED DEPARTURE',
+      pillCopy: 'Estimating typical traffic patterns',
+      statusClassName: 'resultHtmlStatus--upcoming'
+    },
+    live: {
+      leaveLabel: selectedCopy.leaveLabel,
+      pillCopy: 'Monitoring live traffic',
+      statusClassName: 'resultHtmlStatus--live'
+    },
+    risk: {
+      leaveLabel: selectedCopy.leaveLabel,
+      pillCopy: reason === 'heavy_traffic_spike'
+        ? 'Heavy traffic detected'
+        : urgencyState === 'CAUTION'
+          ? 'Arrival window tightening'
+          : 'Arrival window at risk',
+      statusClassName: 'resultHtmlStatus--risk'
+    }
+  };
+  const finalCopy = flightTimePassed
+    ? selectedCopy
+    : {
+      ...selectedCopy,
+      ...tripStateCopy[tripState]
+    };
 
   console.log('[urgency-debug]', {
     remainingCushionMinutes: Number.isFinite(remainingCushionMinutes) ? remainingCushionMinutes : null,
+    tripState,
     urgencyState,
     reason
   });
 
   return {
-    ...selectedCopy,
+    ...finalCopy,
+    tripState,
     urgencyState,
     remainingCushionMinutes,
     reason
@@ -2338,7 +2389,9 @@ function parseFlightDepartureDate(result) {
   return null;
 }
 
-function getCalculationModeContextLine(result) {
+function getTripStateContextLine(urgency, result) {
+  if (urgency?.tripState === 'upcoming') return 'Using estimated traffic + airport conditions';
+  if (urgency?.tripState === 'live' || urgency?.tripState === 'risk') return 'Using live traffic + airport conditions';
   const mode = String(result?.calculationMode || '').trim();
   if (mode === 'live') return 'Using live traffic + airport conditions';
   return '';
