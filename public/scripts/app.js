@@ -18,6 +18,7 @@ const INTERNATIONAL_PEAK_BUFFER_MINUTES = 15;
 let etaMonitorTimerId = null;
 let etaMonitorKey = '';
 let etaMonitorInFlight = false;
+let expandedSavedTripId = '';
 const calculateManualOverrides = {
   homeAddress: false,
   airport: false,
@@ -1677,31 +1678,48 @@ function renderTripsSection(title, trips) {
 function renderTripCard(trip) {
   const eta = trip.eta || {};
   const form = trip.form || {};
-  const selections = trip.selections || {};
   const airport = eta.airport || form.airport || 'JFK';
   const flightDate = parseFlightDepartureDate(eta);
   const dateLabel = formatTripDateLabel(flightDate);
   const flightTime = formatMilestoneTime(flightDate) || eta.flightTime || '7:30 PM';
-  const leaveBy = eta.leaveBy || trip.milestones?.leaveHome || '--';
-  const origin = formatAddressForDisplay(eta.origin || form.startLocation || '').trim();
-  const flightType = normalizeFlightType(eta.flightType || form.flightType || 'Domestic');
-  const transport = eta.transportMode || selections.transport || 'Rideshare';
-  const pill = trip.mode === 'planning' ? 'Planned trip' : trip.status === 'active_today' ? 'Active today' : 'Saved trip';
+  const isExpanded = expandedSavedTripId === trip.id;
+  const expandedResult = isExpanded
+    ? buildResultHtml(
+      {
+        ...eta,
+        savedTripId: trip.id,
+        transportMode: eta.transportMode || trip.selections?.transport || null
+      },
+      {
+        form,
+        embedded: true,
+        tripId: trip.id
+      }
+    )
+    : '';
 
   return `
-    <button type="button" class="appCard tripsCard tripsCardSaved" onclick="openSavedTrip('${escapeHtml(trip.id)}')">
-      <div class="tripsTopRow">
+    <article class="appCard tripsCard tripsCardSaved${isExpanded ? ' isExpanded' : ''}">
+      <button type="button" class="tripsCardHeader" onclick="toggleSavedTrip('${escapeHtml(trip.id)}')" aria-expanded="${escapeHtml(String(isExpanded))}">
         <div>
           <div class="tripsAirportCode">${escapeHtml(airport)} · ${escapeHtml(dateLabel)}</div>
-          <div class="tripsAirportName">Flight departs ${escapeHtml(flightTime)}</div>
-          <div class="tripsMeta">Leave home ${escapeHtml(leaveBy)}</div>
+          <div class="tripsAirportName">${escapeHtml(flightTime)} flight</div>
         </div>
-        <span class="pill${trip.status === 'active_today' ? ' pillActive' : ''}">${escapeHtml(pill)}</span>
-      </div>
-      <div class="tripsDivider"></div>
-      <div class="tripsMeta">${escapeHtml(origin || 'Origin saved')} · ${escapeHtml(flightType)} flight · ${escapeHtml(transport)}</div>
-    </button>
+        <span class="tripsCardChevron" aria-hidden="true"></span>
+      </button>
+      ${isExpanded ? `<div class="tripsExpandedResult">${expandedResult}</div>` : ''}
+    </article>
   `;
+}
+
+function toggleSavedTrip(id) {
+  expandedSavedTripId = expandedSavedTripId === id ? '' : id;
+  renderTripsList();
+  if (expandedSavedTripId) {
+    window.requestAnimationFrame(() => {
+      document.querySelector('#trips .tripsCardSaved.isExpanded')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 }
 
 function openSavedTrip(id) {
@@ -1710,6 +1728,14 @@ function openSavedTrip(id) {
   restoreTripState(trip);
   show('result');
   renderResult();
+}
+
+function editSavedTrip(id) {
+  const trip = readSavedTrips().find((item) => item.id === id);
+  if (!trip) return;
+  restoreTripState(trip);
+  show('calculate');
+  updateCalculateProgressiveUI();
 }
 
 function restoreTripState(trip) {
@@ -1835,13 +1861,19 @@ function renderHtmlResult(result) {
   const container = ensureHtmlResultContainer();
   if (!container) return;
 
-  const form = window.appState?.form || {};
+  container.innerHTML = buildResultHtml(result);
+}
+
+function buildResultHtml(result, options = {}) {
+  const form = options.form || window.appState?.form || {};
+  const embedded = Boolean(options.embedded);
+  const tripId = String(options.tripId || result.savedTripId || '').trim();
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
   const flightType = normalizeFlightType(result.flightType || form.flightType || 'Domestic');
   const flightNumber = String(result.flightNumber || form.flightNumber || '').trim().toUpperCase();
-  const startForDisplay = formatAddressForDisplay(form.startLocation || '').trim();
+  const startForDisplay = formatAddressForDisplay(result.origin || form.startLocation || '').trim();
   const transportMode = String(result.transportMode || '').trim();
   const pickupForUber = formatAddressForDisplay(result.origin || form.startLocation || '').trim();
   const destinationForUber = formatAddressForDisplay(
@@ -1921,13 +1953,18 @@ function renderHtmlResult(result) {
   const conditionsWeatherTagLabel = isPlanningMode ? 'WEATHER EST.' : 'Clear';
   const conditionsWeatherTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--clear';
   const timingReasonRows = renderTimingReasonRows(result.timingAdjustmentReasons);
-
-  container.innerHTML = `
-    <div class="resultHtmlHeader">
-      <h2 class="resultHtmlTitle">Your ETA</h2>
-      <div class="resultHtmlActions">
+  const actionsHtml = embedded
+    ? `<button class="resultHtmlEdit" onclick="editSavedTrip('${escapeHtml(tripId)}')">Edit</button>`
+    : `
         <button type="button" class="resultHtmlEdit resultHtmlSaveTrip${isSavedTrip ? ' isSaved' : ''}" ${isSavedTrip ? 'disabled aria-label="Trip saved"' : 'onclick="saveCurrentTrip(this, event)"'}>${isSavedTrip ? '✓ Saved trip' : 'Save trip'}</button>
         <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
+      `;
+
+  return `
+    <div class="resultHtmlHeader">
+      <h2 class="resultHtmlTitle">${embedded ? 'Trip detail' : 'Your ETA'}</h2>
+      <div class="resultHtmlActions">
+        ${actionsHtml}
       </div>
     </div>
     <div class="resultHeroCard">
