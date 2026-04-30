@@ -3998,8 +3998,16 @@ body{
 
 #result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlTime,
 .etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlTime{
-  margin-top:13px;
+  margin-top:11px;
   color:#CFFF4E;
+}
+
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlEyebrow,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlEyebrow{
+  white-space:pre-line;
+  line-height:1.05;
+  display:block;
+  max-width:12rem;
 }
 
 #result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlEyebrow,

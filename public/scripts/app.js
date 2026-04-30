@@ -1878,15 +1878,17 @@ function buildResultHtml(result, options = {}) {
     clientId: getUberClientId()
   });
   const hasValidUberLink = isValidUberDeepLink(uberDeepLink);
+  const urgency = getUrgencyPresentation(result);
+  const showUberCtaForState = urgency.tripState === 'live' || urgency.tripState === 'risk';
   const showUberCta = (
     !embedded
+    && showUberCtaForState
     && isRideshareTransportMode(transportMode)
     && Boolean(pickupForUber)
     && Boolean(destinationForUber)
     && hasValidUberLink
   );
   const isSavedTrip = isResultSavedTrip(result);
-  const urgency = getUrgencyPresentation(result);
   const showUrgencyDebug = shouldShowUrgencyDebug();
   const monitorUpdatedLabel = formatMonitorUpdatedLabel(result.monitorUpdatedAt);
   const modeContextLine = getTripStateContextLine(urgency, result);
@@ -2335,7 +2337,7 @@ function getUrgencyPresentation(result) {
   const selectedCopy = copyByState[urgencyState] || copyByState.SAFE;
   const tripStateCopy = {
     upcoming: {
-      leaveLabel: 'PLANNED DEPARTURE',
+      leaveLabel: 'LEAVE FOR YOUR\nFUTURE FLIGHT AT',
       pillCopy: 'Estimating typical traffic patterns',
       statusClassName: 'resultHtmlStatus--upcoming'
     },
