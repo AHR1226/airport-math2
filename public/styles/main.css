@@ -3982,3 +3982,57 @@ body{
   background:rgba(199,125,0,0.85);
   box-shadow:0 0 0 2px rgba(199,125,0,0.14);
 }
+
+/* Planned ETA visual calibration */
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming,
+.etaResultView .resultHeroCard.tripStateHero--upcoming,
+#result.useHtmlResult .resultBreakdownCard.tripStateBreakdown--upcoming,
+.etaResultView .resultBreakdownCard.tripStateBreakdown--upcoming{
+  background:#AFB59A;
+}
+
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming + .resultBreakdownCard.tripStateBreakdown--upcoming,
+.etaResultView .resultHeroCard.tripStateHero--upcoming + .resultBreakdownCard.tripStateBreakdown--upcoming{
+  margin-top:-11px;
+}
+
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlTime,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlTime{
+  margin-top:21px;
+}
+
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlEyebrow,
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlMetaBlock,
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlMetaBlock--planning,
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlMetaLine,
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultModeContext,
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultUrgencyHelper,
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultMonitorUpdated,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlEyebrow,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlMetaBlock,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlMetaBlock--planning,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlMetaLine,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultModeContext,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultUrgencyHelper,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultMonitorUpdated,
+#result.useHtmlResult .resultBreakdownCard.tripStateBreakdown--upcoming .resultBreakdownTitle,
+#result.useHtmlResult .resultBreakdownCard.tripStateBreakdown--upcoming .resultBreakdownRow span,
+#result.useHtmlResult .resultBreakdownCard.tripStateBreakdown--upcoming .resultBreakdownRow strong,
+.etaResultView .resultBreakdownCard.tripStateBreakdown--upcoming .resultBreakdownTitle,
+.etaResultView .resultBreakdownCard.tripStateBreakdown--upcoming .resultBreakdownRow span,
+.etaResultView .resultBreakdownCard.tripStateBreakdown--upcoming .resultBreakdownRow strong{
+  color:#F9FFE4;
+  opacity:1;
+}
+
+#result.useHtmlResult .resultHtmlStatus--upcoming,
+.etaResultView .resultHtmlStatus--upcoming{
+  color:#2D4F8D;
+  background:#E5ECFF;
+}
+
+#result.useHtmlResult .resultHtmlStatus--upcoming .resultHtmlStatusDot,
+.etaResultView .resultHtmlStatus--upcoming .resultHtmlStatusDot{
+  background:rgba(45,79,141,0.78);
+  box-shadow:0 0 0 2px rgba(45,79,141,0.12);
+}
