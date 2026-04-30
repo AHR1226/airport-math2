@@ -430,6 +430,10 @@ button.tap{
     0 11px 28px rgba(6,72,25,0.055);
 }
 
+#calculate .calcDecisionSection.hasValidationError{
+  border-color:rgba(148,60,38,0.3);
+}
+
 #calculate .calcAccordionHeader{
   width:100%;
   margin:0;
@@ -495,6 +499,18 @@ button.tap{
   opacity:0;
   transform:translateY(-2px);
   color:rgba(6,72,25,0.34);
+}
+
+#calculate .calcAccordionErrorHint{
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11px;
+  line-height:1.25;
+  font-weight:500;
+  color:rgba(148,60,38,0.9);
+}
+
+#calculate .calcDecisionSection.isOpen .calcAccordionErrorHint{
+  display:none;
 }
 
 #calculate .calcAccordionChevron{

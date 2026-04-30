@@ -319,6 +319,7 @@ function initializeCalculateProgressiveFlow() {
       <span class="calcAccordionText">
         <span class="calcAccordionTitle">${escapeHtml(titleText)}</span>
         <span class="calcAccordionSummary" data-calc-summary></span>
+        <span class="calcAccordionErrorHint" data-calc-error-hint hidden></span>
       </span>
       <button type="button" class="calcAccordionToggle" aria-label="Toggle ${escapeHtml(titleText)} section">
         <span class="calcAccordionChevron" aria-hidden="true"></span>
@@ -412,6 +413,52 @@ function setCalculateSectionOpen(index) {
       body.style.maxHeight = isOpen ? `${body.scrollHeight}px` : '0px';
       body.style.opacity = isOpen ? '1' : '0';
     }
+  });
+}
+
+function getCalculateSectionByTitle(title) {
+  return [...document.querySelectorAll('#calculate .calcDecisionSection')]
+    .find((section) => section.dataset.calcTitle === title) || null;
+}
+
+function setCalculateSectionValidationError(title, message = '') {
+  const section = getCalculateSectionByTitle(title);
+  if (!section) return;
+  const hint = section.querySelector('[data-calc-error-hint]');
+  const nextMessage = String(message || '').trim();
+  section.classList.toggle('hasValidationError', Boolean(nextMessage));
+  section.dataset.validationError = nextMessage;
+  if (hint) {
+    hint.textContent = nextMessage;
+    hint.hidden = !nextMessage;
+  }
+}
+
+function clearCalculateSectionValidationError(title) {
+  setCalculateSectionValidationError(title, '');
+}
+
+function revealCalculateValidationTarget({
+  missingField,
+  targetCardTitle,
+  message,
+  focusTarget
+}) {
+  const section = getCalculateSectionByTitle(targetCardTitle);
+  if (!section) return;
+  const sectionIndex = Number(section.dataset.calcIndex);
+  setCalculateSectionValidationError(targetCardTitle, message);
+  if (Number.isFinite(sectionIndex)) setCalculateSectionOpen(sectionIndex);
+  window.requestAnimationFrame(() => {
+    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      setTimeout(() => focusTarget.focus({ preventScroll: true }), 260);
+    }
+  });
+  console.log('[calculate-validation-error]', {
+    missingField,
+    targetCard: targetCardTitle,
+    actionTaken: 'expanded + scrolled'
   });
 }
 
@@ -713,16 +760,30 @@ function initializeUseCurrentLocationAction() {
 
 function clearStartingLocationValidation() {
   const el = document.getElementById('startingLocationValidation');
-  if (!el) return;
-  el.textContent = '';
-  el.hidden = true;
+  const input = document.getElementById('startingLocationInput');
+  if (el) {
+    el.textContent = '';
+    el.hidden = true;
+  }
+  if (input) {
+    input.removeAttribute('aria-invalid');
+    input.removeAttribute('aria-describedby');
+  }
+  clearCalculateSectionValidationError('Getting there');
 }
 
 function showStartingLocationValidation(message) {
   const el = document.getElementById('startingLocationValidation');
-  if (!el) return;
-  el.textContent = message;
-  el.hidden = false;
+  const input = document.getElementById('startingLocationInput');
+  if (el) {
+    el.textContent = message;
+    el.hidden = false;
+  }
+  if (input) {
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', 'startingLocationValidation');
+  }
+  setCalculateSectionValidationError('Getting there', 'Address required');
 }
 
 function getStoredAddress(key) {
@@ -1287,7 +1348,15 @@ async function calculateETA() {
     ?? ''
   ).trim();
   if (!startLocationRaw) {
-    showStartingLocationValidation('Add where you are leaving from to calculate your ETA.');
+    const input = document.getElementById('startingLocationInput');
+    const message = 'Add where you are leaving from to calculate your ETA.';
+    showStartingLocationValidation(message);
+    revealCalculateValidationTarget({
+      missingField: 'origin address',
+      targetCardTitle: 'Getting there',
+      message: 'Address required',
+      focusTarget: input
+    });
     return;
   }
   clearStartingLocationValidation();
