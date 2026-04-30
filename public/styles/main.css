@@ -4155,7 +4155,7 @@ body{
 #result.useHtmlResult .etaResultView .resultHtmlMetaBlock,
 .etaResultView .resultHtmlMetaBlock{
   margin-top:12px;
-  font-size:var(--text-body);
+  font-size:12px;
   line-height:1.24;
 }
 
@@ -4214,4 +4214,265 @@ body{
   line-height:1.25;
   font-weight:400;
   letter-spacing:0;
+}
+
+/* ETA card system consolidation: layout is shared, colors are state-specific */
+#result.useHtmlResult .etaResultView,
+.etaResultView{
+  gap:15px;
+}
+
+#result.useHtmlResult .etaResultView .resultHeroCard,
+#result.useHtmlResult .etaResultView .resultBreakdownCard,
+#result.useHtmlResult .etaResultView .resultUberCard,
+#result.useHtmlResult .etaResultView .resultLiveCard,
+.etaResultView .resultHeroCard,
+.etaResultView .resultBreakdownCard,
+.etaResultView .resultUberCard,
+.etaResultView .resultLiveCard{
+  border-radius:var(--radius-card);
+  margin-bottom:0;
+}
+
+#result.useHtmlResult .etaResultView .resultHeroCard,
+.etaResultView .resultHeroCard{
+  padding:26px 20px 19px;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownCard,
+#result.useHtmlResult .etaResultView .resultLiveCard,
+.etaResultView .resultBreakdownCard,
+.etaResultView .resultLiveCard{
+  padding:18px;
+}
+
+#result.useHtmlResult .etaResultView .resultUberCard,
+.etaResultView .resultUberCard{
+  padding:12px 14px;
+}
+
+#result.useHtmlResult .etaResultView .resultHeroCard + .resultBreakdownCard,
+#result.useHtmlResult .etaResultView .resultBreakdownCard + .resultUberCard,
+#result.useHtmlResult .etaResultView .resultBreakdownCard + .resultLiveCard,
+#result.useHtmlResult .etaResultView .resultUberCard + .resultLiveCard,
+.etaResultView .resultHeroCard + .resultBreakdownCard,
+.etaResultView .resultBreakdownCard + .resultUberCard,
+.etaResultView .resultBreakdownCard + .resultLiveCard,
+.etaResultView .resultUberCard + .resultLiveCard{
+  margin-top:-11px;
+}
+
+#result.useHtmlResult .etaResultView .resultHtmlEyebrow,
+.etaResultView .resultHtmlEyebrow{
+  font-size:10px;
+  line-height:1.05;
+  letter-spacing:.12em;
+}
+
+#result.useHtmlResult .etaResultView .resultHtmlTime,
+.etaResultView .resultHtmlTime{
+  font-size:65px;
+  margin-top:11px;
+  margin-bottom:48px;
+  letter-spacing:-0.04em;
+}
+
+#result.useHtmlResult .etaResultView .resultHtmlMetaBlock,
+.etaResultView .resultHtmlMetaBlock{
+  margin-top:12px;
+  font-size:var(--text-body);
+  line-height:1.24;
+}
+
+#result.useHtmlResult .etaResultView .resultHtmlStatus,
+.etaResultView .resultHtmlStatus{
+  margin-top:16px;
+  padding:4px 9px;
+  font-size:10px;
+  line-height:1;
+}
+
+#result.useHtmlResult .etaResultView .resultMonitorUpdated,
+.etaResultView .resultMonitorUpdated{
+  margin-top:6px;
+  font-size:11px;
+  line-height:1.25;
+  font-weight:400;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownTitle,
+#result.useHtmlResult .etaResultView .resultLiveTitle,
+.etaResultView .resultBreakdownTitle,
+.etaResultView .resultLiveTitle{
+  margin:0 0 11px;
+  padding:0;
+  font-size:var(--text-label);
+  font-weight:700;
+  letter-spacing:0.1em;
+  line-height:1.25;
+  text-transform:uppercase;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownRow,
+#result.useHtmlResult .etaResultView .resultLiveRow,
+.etaResultView .resultBreakdownRow,
+.etaResultView .resultLiveRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:12px;
+  padding:8px 0;
+  line-height:1.35;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownRow span,
+.etaResultView .resultBreakdownRow span{
+  flex:1;
+  min-width:0;
+  text-align:left;
+  font-size:14px;
+  line-height:1.2;
+  font-weight:500;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownRow strong,
+.etaResultView .resultBreakdownRow strong{
+  flex:0 0 auto;
+  min-width:4rem;
+  text-align:right;
+  font-size:15px;
+  line-height:1.35;
+  font-weight:600;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownRow--milestone,
+#result.useHtmlResult .etaResultView .resultBreakdownRow--milestone span,
+#result.useHtmlResult .etaResultView .resultBreakdownRow--milestone strong,
+.etaResultView .resultBreakdownRow--milestone,
+.etaResultView .resultBreakdownRow--milestone span,
+.etaResultView .resultBreakdownRow--milestone strong{
+  font-weight:600;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownRow--support,
+.etaResultView .resultBreakdownRow--support{
+  margin-top:-4px;
+  padding:0 0 5px 14px;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownRow--support,
+#result.useHtmlResult .etaResultView .resultBreakdownRow--support span,
+#result.useHtmlResult .etaResultView .resultBreakdownRow--support strong,
+.etaResultView .resultBreakdownRow--support,
+.etaResultView .resultBreakdownRow--support span,
+.etaResultView .resultBreakdownRow--support strong{
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveLabelWrap,
+#result.useHtmlResult .etaResultView .resultLiveLabelWrapTraffic,
+.etaResultView .resultLiveLabelWrap,
+.etaResultView .resultLiveLabelWrapTraffic{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:row;
+  align-items:baseline;
+  gap:8px;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveLabelTopRow,
+.etaResultView .resultLiveLabelTopRow{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveLabel,
+#result.useHtmlResult .etaResultView .resultLiveRow.primary .resultLiveLabel,
+.etaResultView .resultLiveLabel,
+.etaResultView .resultLiveRow.primary .resultLiveLabel{
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveValue,
+#result.useHtmlResult .etaResultView .resultLiveValue.text,
+.etaResultView .resultLiveValue,
+.etaResultView .resultLiveValue.text{
+  flex:0 0 auto;
+  min-width:3.5rem;
+  max-width:56%;
+  text-align:right;
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+  letter-spacing:0;
+}
+
+#result.useHtmlResult .etaResultView .tripStateHero--upcoming,
+.etaResultView .tripStateHero--upcoming,
+#result.useHtmlResult .etaResultView .tripStateBreakdown--upcoming,
+.etaResultView .tripStateBreakdown--upcoming,
+#result.useHtmlResult .etaResultView .tripStateConditions--upcoming,
+.etaResultView .tripStateConditions--upcoming{
+  background:#AFB59A;
+}
+
+#result.useHtmlResult .etaResultView .tripStateHero--upcoming .resultHtmlTime,
+.etaResultView .tripStateHero--upcoming .resultHtmlTime{
+  color:#CFFF4E;
+}
+
+#result.useHtmlResult .etaResultView .tripStateHero--upcoming .resultHtmlEyebrow,
+#result.useHtmlResult .etaResultView .tripStateHero--upcoming .resultHtmlMetaBlock,
+#result.useHtmlResult .etaResultView .tripStateHero--upcoming .resultHtmlMetaLine,
+#result.useHtmlResult .etaResultView .tripStateHero--upcoming .resultModeContext,
+#result.useHtmlResult .etaResultView .tripStateHero--upcoming .resultUrgencyHelper,
+#result.useHtmlResult .etaResultView .tripStateHero--upcoming .resultMonitorUpdated,
+#result.useHtmlResult .etaResultView .tripStateBreakdown--upcoming .resultBreakdownTitle,
+#result.useHtmlResult .etaResultView .tripStateBreakdown--upcoming .resultBreakdownRow span,
+#result.useHtmlResult .etaResultView .tripStateBreakdown--upcoming .resultBreakdownRow strong,
+#result.useHtmlResult .etaResultView .tripStateConditions--upcoming .resultLiveTitle,
+#result.useHtmlResult .etaResultView .tripStateConditions--upcoming .resultLiveLabel,
+#result.useHtmlResult .etaResultView .tripStateConditions--upcoming .resultLiveValue,
+.etaResultView .tripStateHero--upcoming .resultHtmlEyebrow,
+.etaResultView .tripStateHero--upcoming .resultHtmlMetaBlock,
+.etaResultView .tripStateHero--upcoming .resultHtmlMetaLine,
+.etaResultView .tripStateHero--upcoming .resultModeContext,
+.etaResultView .tripStateHero--upcoming .resultUrgencyHelper,
+.etaResultView .tripStateHero--upcoming .resultMonitorUpdated,
+.etaResultView .tripStateBreakdown--upcoming .resultBreakdownTitle,
+.etaResultView .tripStateBreakdown--upcoming .resultBreakdownRow span,
+.etaResultView .tripStateBreakdown--upcoming .resultBreakdownRow strong,
+.etaResultView .tripStateConditions--upcoming .resultLiveTitle,
+.etaResultView .tripStateConditions--upcoming .resultLiveLabel,
+.etaResultView .tripStateConditions--upcoming .resultLiveValue{
+  color:#F9FFE4;
+  opacity:1;
+}
+
+#result.useHtmlResult .etaResultView .tripStateBreakdown--upcoming .resultBreakdownRow--support span,
+#result.useHtmlResult .etaResultView .tripStateBreakdown--upcoming .resultBreakdownRow--support strong,
+.etaResultView .tripStateBreakdown--upcoming .resultBreakdownRow--support span,
+.etaResultView .tripStateBreakdown--upcoming .resultBreakdownRow--support strong{
+  color:rgba(249,255,228,0.68);
+}
+
+#result.useHtmlResult .etaResultView .resultHeroCard:not(.tripStateHero--upcoming),
+.etaResultView .resultHeroCard:not(.tripStateHero--upcoming){
+  background:#CFFF4E;
+}
+
+#result.useHtmlResult .etaResultView .resultBreakdownCard:not(.tripStateBreakdown--upcoming),
+.etaResultView .resultBreakdownCard:not(.tripStateBreakdown--upcoming){
+  background:#1A3A1F;
+}
+
+#result.useHtmlResult .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming),
+.etaResultView .resultLiveCard:not(.tripStateConditions--upcoming){
+  background:#F6F6F4;
 }
