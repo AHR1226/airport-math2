@@ -4040,3 +4040,18 @@ body{
   background:rgba(45,79,141,0.78);
   box-shadow:0 0 0 2px rgba(45,79,141,0.12);
 }
+
+/* Final ETA spacing rhythm */
+#result.useHtmlResult .resultHtmlTime,
+.etaResultView .resultHtmlTime,
+#result.useHtmlResult .resultHeroCard.tripStateHero--upcoming .resultHtmlTime,
+.etaResultView .resultHeroCard.tripStateHero--upcoming .resultHtmlTime{
+  margin-bottom:48px;
+}
+
+#result.useHtmlResult .resultHeroCard + .resultBreakdownCard,
+#result.useHtmlResult .resultBreakdownCard + .resultLiveCard,
+.etaResultView .resultHeroCard + .resultBreakdownCard,
+.etaResultView .resultBreakdownCard + .resultLiveCard{
+  margin-top:-11px;
+}
