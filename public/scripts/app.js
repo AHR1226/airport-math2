@@ -1888,7 +1888,8 @@ function buildResultHtml(result, options = {}) {
   });
   const hasValidUberLink = isValidUberDeepLink(uberDeepLink);
   const showUberCta = (
-    isRideshareTransportMode(transportMode)
+    !embedded
+    && isRideshareTransportMode(transportMode)
     && Boolean(pickupForUber)
     && Boolean(destinationForUber)
     && hasValidUberLink
@@ -1961,12 +1962,12 @@ function buildResultHtml(result, options = {}) {
       `;
 
   return `
-    <div class="resultHtmlHeader">
+    ${embedded ? '' : `<div class="resultHtmlHeader">
       <h2 class="resultHtmlTitle">${embedded ? 'Trip detail' : 'Your ETA'}</h2>
       <div class="resultHtmlActions">
         ${actionsHtml}
       </div>
-    </div>
+    </div>`}
     <div class="resultHeroCard">
       <div class="resultHtmlEyebrow">${escapeHtml(urgency.leaveLabel)}</div>
       <div class="resultHeroClock" aria-hidden="true">
@@ -1998,13 +1999,13 @@ function buildResultHtml(result, options = {}) {
     </div>
     <div class="resultBreakdownCard">
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
-      <div class="resultBreakdownRow"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
-      <div class="resultBreakdownRow"><span>Arrive at airport</span><strong>${escapeHtml(arriveAtAirportTime)}</strong></div>
+      <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
+      <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Arrive at airport</span><strong>${escapeHtml(arriveAtAirportTime)}</strong></div>
       <div class="resultBreakdownRow resultBreakdownRow--support"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
-      <div class="resultBreakdownRow"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
+      <div class="resultBreakdownRow resultBreakdownRow--support"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
       ${timingReasonRows}
-      <div class="resultBreakdownRow"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
-      <div class="resultBreakdownRow"><span>Flight departs</span><strong>${escapeHtml(flightDepartureTime)}</strong></div>
+      <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
+      <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Flight departs</span><strong>${escapeHtml(flightDepartureTime)}</strong></div>
     </div>
     ${showUberCta ? `
     <a class="resultUberCard" href="${escapeHtml(uberDeepLink)}" target="_blank" rel="noopener noreferrer" onclick="onUberLinkClick(this.href)">
@@ -2022,7 +2023,7 @@ function buildResultHtml(result, options = {}) {
       <div class="resultUberCardAction">Continue in Uber <span aria-hidden="true">→</span></div>
     </a>
     ` : ''}
-    <div class="resultLiveCard">
+    ${embedded ? '' : `<div class="resultLiveCard">
       <div class="resultLiveTitle">${escapeHtml(conditionsTitle)}</div>
       <div class="resultLiveRow primary">
         <div class="resultLiveLabelWrap resultLiveLabelWrapTraffic">
@@ -2054,7 +2055,7 @@ function buildResultHtml(result, options = {}) {
         </div>
         <strong class="resultLiveValue text">${escapeHtml('No delays')}</strong>
       </div>
-    </div>
+    </div>`}
   `;
 }
 

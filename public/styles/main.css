@@ -2242,19 +2242,22 @@ input{
 }
 
 #trips .tripsAirportCode{
-  font-size:22px;
-  line-height:1;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:19px;
+  line-height:1.08;
   letter-spacing:-0.02em;
-  font-weight:700;
+  font-weight:500;
   color:#0E3F1E;
 }
 
 #trips .tripsAirportName{
-  margin-top:var(--space-1);
-  font-size:13px;
+  margin-top:5px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:14px;
   line-height:1.2;
-  font-weight:600;
-  color:#264F35;
+  font-weight:400;
+  letter-spacing:-0.01em;
+  color:rgba(38,79,53,0.78);
 }
 
 #trips .tripsExpandedResult{
@@ -2326,7 +2329,7 @@ input{
 }
 
 #trips .tripsExpandedResult .resultHtmlEyebrow{
-  font-size:var(--text-section);
+  font-size:10px;
   letter-spacing:.12em;
 }
 
@@ -2337,10 +2340,30 @@ input{
   letter-spacing:-0.04em;
 }
 
-#trips .tripsExpandedResult .resultHtmlStatus{
+#trips .tripsExpandedResult .resultHtmlMetaLine{
   font-size:11px;
-  padding:5px 10px;
+  line-height:1.25;
+  font-weight:400;
+  color:rgba(6,72,25,0.7);
+}
+
+#trips .tripsExpandedResult .resultHtmlMetaLine + .resultHtmlMetaLine{
+  margin-top:2px;
+}
+
+#trips .tripsExpandedResult .resultHtmlStatus{
+  font-size:10px;
+  padding:4px 9px;
   margin-left:-6px;
+}
+
+#trips .tripsExpandedResult .resultUrgencyHelper,
+#trips .tripsExpandedResult .resultModeContext,
+#trips .tripsExpandedResult .resultMonitorUpdated{
+  font-size:9px;
+  line-height:1.25;
+  font-weight:400;
+  color:rgba(6,72,25,0.62);
 }
 
 #trips .tripsExpandedResult .resultBreakdownCard{
@@ -2351,13 +2374,28 @@ input{
 #trips .tripsExpandedResult .resultBreakdownTitle,
 #trips .tripsExpandedResult .resultLiveTitle{
   font-size:var(--text-label);
-  margin-bottom:var(--space-2);
+  margin-bottom:14px;
 }
 
-#trips .tripsExpandedResult .resultBreakdownRow,
-#trips .tripsExpandedResult .resultLiveRow{
+#trips .tripsExpandedResult .resultBreakdownRow{
   font-size:var(--text-body);
   padding:var(--space-2) 0;
+}
+
+#trips .tripsExpandedResult .resultBreakdownRow--milestone,
+#trips .tripsExpandedResult .resultBreakdownRow--milestone span,
+#trips .tripsExpandedResult .resultBreakdownRow--milestone strong{
+  font-weight:600;
+  color:#F3FADE;
+}
+
+#trips .tripsExpandedResult .resultBreakdownRow--support,
+#trips .tripsExpandedResult .resultBreakdownRow--support span,
+#trips .tripsExpandedResult .resultBreakdownRow--support strong{
+  font-size:12px;
+  line-height:1.25;
+  font-weight:400;
+  color:rgba(243,250,222,0.68);
 }
 
 #trips .tripsExpandedResult .resultBreakdownRow strong{
