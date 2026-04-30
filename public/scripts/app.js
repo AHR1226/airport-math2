@@ -1699,15 +1699,15 @@ function renderTripCard(trip) {
     : '';
 
   return `
-    <article class="appCard tripsCard tripsCardSaved${isExpanded ? ' isExpanded' : ''}">
-      <button type="button" class="tripsCardHeader" onclick="toggleSavedTrip('${escapeHtml(trip.id)}')" aria-expanded="${escapeHtml(String(isExpanded))}">
+    <article class="tripsTripRow${isExpanded ? ' isExpanded' : ''}">
+      <button type="button" class="tripsTripHeader" onclick="toggleSavedTrip('${escapeHtml(trip.id)}')" aria-expanded="${escapeHtml(String(isExpanded))}">
         <div>
           <div class="tripsAirportCode">${escapeHtml(airport)} · ${escapeHtml(dateLabel)}</div>
           <div class="tripsAirportName">${escapeHtml(flightTime)} flight</div>
         </div>
-        <span class="tripsCardChevron" aria-hidden="true"></span>
+        <span class="tripsTripChevron" aria-hidden="true"></span>
       </button>
-      ${isExpanded ? `<div class="tripsExpandedResult">${expandedResult}</div>` : ''}
+      ${isExpanded ? `<div class="tripsExpandedResult etaResultView">${expandedResult}</div>` : ''}
     </article>
   `;
 }
@@ -1717,7 +1717,7 @@ function toggleSavedTrip(id) {
   renderTripsList();
   if (expandedSavedTripId) {
     window.requestAnimationFrame(() => {
-      document.querySelector('#trips .tripsCardSaved.isExpanded')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.querySelector('#trips .tripsTripRow.isExpanded')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 }
@@ -1728,14 +1728,6 @@ function openSavedTrip(id) {
   restoreTripState(trip);
   show('result');
   renderResult();
-}
-
-function editSavedTrip(id) {
-  const trip = readSavedTrips().find((item) => item.id === id);
-  if (!trip) return;
-  restoreTripState(trip);
-  show('calculate');
-  updateCalculateProgressiveUI();
 }
 
 function restoreTripState(trip) {
@@ -1844,9 +1836,9 @@ function ensureHtmlResultContainer() {
   let container = resultSection.querySelector('.resultHtmlContainer');
   if (!container) {
     container = document.createElement('div');
-    container.className = 'resultHtmlContainer';
     resultSection.appendChild(container);
   }
+  container.className = 'resultHtmlContainer etaResultView';
 
   return container;
 }
@@ -1867,7 +1859,6 @@ function renderHtmlResult(result) {
 function buildResultHtml(result, options = {}) {
   const form = options.form || window.appState?.form || {};
   const embedded = Boolean(options.embedded);
-  const tripId = String(options.tripId || result.savedTripId || '').trim();
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
@@ -1954,16 +1945,14 @@ function buildResultHtml(result, options = {}) {
   const conditionsWeatherTagLabel = isPlanningMode ? 'WEATHER EST.' : 'Clear';
   const conditionsWeatherTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--clear';
   const timingReasonRows = renderTimingReasonRows(result.timingAdjustmentReasons);
-  const actionsHtml = embedded
-    ? `<button class="resultHtmlEdit" onclick="editSavedTrip('${escapeHtml(tripId)}')">Edit</button>`
-    : `
-        <button type="button" class="resultHtmlEdit resultHtmlSaveTrip${isSavedTrip ? ' isSaved' : ''}" ${isSavedTrip ? 'disabled aria-label="Trip saved"' : 'onclick="saveCurrentTrip(this, event)"'}>${isSavedTrip ? '✓ Saved trip' : 'Save trip'}</button>
-        <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
-      `;
+  const actionsHtml = `
+    <button type="button" class="resultHtmlEdit resultHtmlSaveTrip${isSavedTrip ? ' isSaved' : ''}" ${isSavedTrip ? 'disabled aria-label="Trip saved"' : 'onclick="saveCurrentTrip(this, event)"'}>${isSavedTrip ? '✓ Saved trip' : 'Save trip'}</button>
+    <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
+  `;
 
   return `
     ${embedded ? '' : `<div class="resultHtmlHeader">
-      <h2 class="resultHtmlTitle">${embedded ? 'Trip detail' : 'Your ETA'}</h2>
+      <h2 class="resultHtmlTitle">Your ETA</h2>
       <div class="resultHtmlActions">
         ${actionsHtml}
       </div>
