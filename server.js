@@ -94,7 +94,7 @@ function parseDuration(value) {
   return Number(value.slice(0, -1)) || 0;
 }
 
-async function routeWithGoogle({ origin, destination }) {
+async function routeWithGoogle({ origin, destination, mode }) {
   const apiKey = requireEnv('GOOGLE_MAPS_API_KEY');
   const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
   const body = {
@@ -121,11 +121,18 @@ async function routeWithGoogle({ origin, destination }) {
   const data = await res.json();
   const route = data.routes?.[0];
   if (!route) throw new Error('No route returned from Google');
-  const travelMinutes = Math.round(parseDuration(route.duration) / 60);
-  const staticMinutes = route.staticDuration ? Math.round(parseDuration(route.staticDuration) / 60) : null;
+  const travelSeconds = parseDuration(route.duration);
+  const staticSeconds = route.staticDuration ? parseDuration(route.staticDuration) : null;
+  const travelMinutes = Math.round(travelSeconds / 60);
+  const staticMinutes = staticSeconds ? Math.round(staticSeconds / 60) : null;
   console.log('[travel-debug] provider=google', {
+    mode,
     origin,
     destination,
+    duration: route.duration || null,
+    staticDurationRaw: route.staticDuration || null,
+    travelSeconds,
+    staticSeconds,
     travelMinutes,
     staticDuration: staticMinutes
   });
@@ -133,19 +140,37 @@ async function routeWithGoogle({ origin, destination }) {
 }
 
 async function routeAuto(params) {
-  try { return await routeWithGoogle(params); } catch {}
+  try {
+    return await routeWithGoogle(params);
+  } catch (error) {
+    console.log('[travel-debug] provider=google-error', {
+      mode: params.mode,
+      origin: params.origin,
+      destination: params.destination,
+      message: error?.message || String(error)
+    });
+  }
   try {
     const mapbox = await routeWithMapbox(params);
     console.log('[travel-debug] provider=mapbox', {
+      mode: params.mode,
       origin: params.origin,
       destination: params.destination,
       travelMinutes: mapbox.travelMinutes,
       staticDuration: null
     });
     return mapbox;
-  } catch {}
+  } catch (error) {
+    console.log('[travel-debug] provider=mapbox-error', {
+      mode: params.mode,
+      origin: params.origin,
+      destination: params.destination,
+      message: error?.message || String(error)
+    });
+  }
   const fallback = mockTravel(params);
   console.log('[travel-debug] provider=mock', {
+    mode: params.mode,
     origin: params.origin,
     destination: params.destination,
     travelMinutes: fallback.travelMinutes,

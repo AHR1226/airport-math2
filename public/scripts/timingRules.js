@@ -197,7 +197,7 @@
     if (inputs.transport === 'Transit') {
       addRule(acc, 'transport-transit', { label: 'Transit travel adjustment', minutes: 20, layer: LAYERS.travelTime, visible: false });
     } else if (inputs.transport === 'Drive & park') {
-      addRule(acc, 'transport-drive-park', { label: 'Parking travel adjustment', minutes: 15, layer: LAYERS.travelTime, visible: false });
+      addRule(acc, 'transport-drive-park', { label: 'Parking buffer', minutes: 15, layer: LAYERS.airportProcessing, visible: true });
     } else if (inputs.transport === 'Drop-off') {
       addRule(acc, 'transport-drop-off', { label: 'Drop-off travel adjustment', minutes: -5, layer: LAYERS.travelTime, visible: false });
     } else {

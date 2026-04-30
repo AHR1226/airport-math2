@@ -998,11 +998,9 @@ function fallbackTravelEstimateMinutes({ airport, transportMode, timingTravel })
   const apiMode = normalizeTravelApiMode(transportMode);
   const modeAdjustment = apiMode === 'public'
     ? 15
-    : apiMode === 'driving'
-      ? 5
-      : apiMode === 'dropoff'
-        ? -5
-        : 0;
+    : apiMode === 'dropoff'
+      ? -5
+      : 0;
 
   return Math.max(20, (airportFallbacks[airportCode] || airportFallbacks.OTHER) + modeAdjustment);
 }
@@ -1330,6 +1328,9 @@ async function calculateETA() {
     };
   const liveTravel = Number(travelApi?.travelMinutes);
   const routeApiDuration = Number.isFinite(liveTravel) && liveTravel > 0 ? Math.round(liveTravel) : null;
+  const routeApiStaticDuration = Number.isFinite(Number(travelApi?.typicalMinutes))
+    ? Math.round(Number(travelApi.typicalMinutes))
+    : null;
   const fallbackDuration = fallbackTravelEstimateMinutes({
     airport: selectedAirport,
     transportMode: selectedTransport,
@@ -1337,6 +1338,9 @@ async function calculateETA() {
   });
   const finalTravelTime = routeApiDuration || fallbackDuration;
   const usedTravelFallback = !routeApiDuration;
+  const travelTimeSource = routeApiDuration
+    ? `${travelApi?.provider || 'route'} ${travelApi?.status || 'duration'} duration`
+    : 'fallback duration';
   if (Number.isFinite(finalTravelTime) && finalTravelTime > 0) {
     timing.travel = Math.round(finalTravelTime);
     timing.total = timing.travel + timing.airport + timing.buffer;
@@ -1350,8 +1354,13 @@ async function calculateETA() {
     selectedTransportMode: selectedTransport || 'Rideshare',
     originAddress: startLocationRaw,
     destinationAirportTerminal: selectedDestination,
+    routeApiProvider: travelApi?.provider || null,
+    routeApiStatus: travelApi?.status || null,
+    routeApiSource: travelApi?.source || null,
     routeApiDuration,
+    routeApiStaticDuration,
     fallbackDuration,
+    travelTimeSource,
     finalTravelTimeMinutes: timing.travel
   });
   console.log('[eta-rules-debug]', timing.timingRulesDebug);
@@ -1399,6 +1408,7 @@ async function calculateETA() {
     travelProvider: usedTravelFallback ? 'estimated' : (travelApi?.provider || 'mock'),
     travelStatus: usedTravelFallback ? 'estimated' : (travelApi?.status || 'fallback'),
     travelSource: usedTravelFallback ? 'Estimated travel fallback' : (travelApi?.source || 'Backup estimate'),
+    travelTimeSource,
     travelTypical: Number.isFinite(Number(travelApi?.typicalMinutes)) ? Number(travelApi.typicalMinutes) : (usedTravelFallback ? timing.travel : null),
     securityResolvedMinutes: Number.isFinite(resolvedSecurityMinutes) ? Math.round(resolvedSecurityMinutes) : null,
     securityResolvedStatus: String(resolvedSecurity?.status || 'estimated'),
