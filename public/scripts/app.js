@@ -890,83 +890,46 @@ function minutesForSelection(options = {}) {
   const isInternational = flightType === 'International';
   const departureDate = options.departureDate || null;
 
-  let travel = 45;
-  let airport = 35;
-  let buffer = 15;
-  const airportTimingReasons = [
-    { label: 'Terminal navigation', minutes: 35 }
-  ];
-  const bufferTimingReasons = [
-    { label: 'Boarding time', minutes: 15 }
-  ];
-
-  if (transport === 'Transit') travel += 20;
-  if (transport === 'Drive & park') travel += 15;
-  if (transport === 'Drop-off') travel -= 5;
-
-  if (!isInternational && luggage === 'Checking bags') {
-    airport += DOMESTIC_CHECKED_BAG_DROP_MINUTES;
-    airportTimingReasons.push({ label: 'Bag drop', minutes: DOMESTIC_CHECKED_BAG_DROP_MINUTES });
-  }
-  if (!isInternational && luggage === 'Bag drop') {
-    airport += DOMESTIC_BAG_DROP_MINUTES;
-    airportTimingReasons.push({ label: 'Bag drop', minutes: DOMESTIC_BAG_DROP_MINUTES });
-  }
-
-  if (security === 'Standard') {
-    airport += 25;
-    airportTimingReasons.push({ label: 'Standard security', minutes: 25 });
-  }
-  if (security === 'PreCheck') {
-    airportTimingReasons.push({ label: 'PreCheck', minutes: 0 });
-  }
-  if (security === 'CLEAR + PreCheck') {
-    airport -= 10;
-    airportTimingReasons.push({ label: 'CLEAR + PreCheck', minutes: -10 });
-  }
-
-  const preferenceReasons = [];
-  if (boarding === 'Lounge') {
-    const loungeMinutes = isInternational ? 90 : 60;
-    airport += loungeMinutes;
-    preferenceReasons.push({ label: 'Lounge time', minutes: loungeMinutes, category: 'preference' });
-  }
-  if (boarding === 'Grab food') {
-    const hudsonNewsMinutes = 15;
-    airport += hudsonNewsMinutes;
-    preferenceReasons.push({ label: 'Hudson News stop', minutes: hudsonNewsMinutes, category: 'preference' });
-  }
-
-  const complexityMinutes = getTravelComplexityMinutes(complexity, isInternational);
-  if (complexityMinutes > 0) {
-    airport += complexityMinutes;
-    preferenceReasons.push({ label: complexity, minutes: complexityMinutes, category: 'complexity' });
-  }
-
-  if (style === 'Tight') {
-    buffer -= 10;
-    bufferTimingReasons.push({ label: 'Tight travel style', minutes: -10 });
-  }
-  if (style === 'Relaxed') {
-    const relaxedMinutes = isInternational ? 45 : 25;
-    buffer += relaxedMinutes;
-    preferenceReasons.push({ label: 'Relaxed travel style', minutes: relaxedMinutes, category: 'preference' });
-  }
-
-  const baseAirportBuffer = airport;
-  const baseBuffer = buffer;
-  const internationalAdjustments = buildInternationalTimingAdjustments({
-    isInternational,
+  const rulesResult = window.AirportMathTimingRules?.calculate({
+    transport,
     luggage,
     security,
+    boarding,
+    complexity,
+    style,
+    flightType,
     departureDate
   });
-  buffer += (
-    internationalAdjustments.internationalBuffer
-    + internationalAdjustments.luggageBuffer
-    + internationalAdjustments.securityBuffer
-    + internationalAdjustments.peakBuffer
-  );
+  if (!rulesResult) {
+    throw new Error('AirportMath timing rules engine is not loaded.');
+  }
+
+  const layers = rulesResult.layers || {};
+  const travel = Math.max(0, Math.round(Number(layers.travelTime) || 0));
+  const airport = Math.max(0, Math.round(
+    (Number(layers.airportProcessingTime) || 0)
+    + (Number(layers.securityTime) || 0)
+    + (Number(layers.terminalFlowTime) || 0)
+    + (Number(layers.behavioralTime) || 0)
+    + (Number(layers.preferenceTime) || 0)
+  ));
+  const buffer = Math.round(Number(layers.confidenceBufferTime) || 0);
+  const timingAdjustmentReasons = (rulesResult.rows || []).map((row) => ({
+    label: row.label,
+    minutes: row.minutes,
+    layer: row.layer,
+    visible: row.visible !== false
+  }));
+  const internationalBuffer = timingAdjustmentReasons
+    .filter((row) => String(row.label || '').toLowerCase().includes('international'))
+    .reduce((sum, row) => sum + Math.max(0, Math.round(Number(row.minutes) || 0)), 0);
+  const luggageBuffer = timingAdjustmentReasons
+    .filter((row) => String(row.label || '').toLowerCase().includes('bag drop'))
+    .reduce((sum, row) => sum + Math.max(0, Math.round(Number(row.minutes) || 0)), 0);
+  const securityBuffer = Math.max(0, Math.round(Number(layers.securityTime) || 0));
+  const peakBuffer = timingAdjustmentReasons
+    .filter((row) => String(row.label || '').toLowerCase().includes('peak travel window'))
+    .reduce((sum, row) => sum + Math.max(0, Math.round(Number(row.minutes) || 0)), 0);
 
   return {
     travel,
@@ -975,23 +938,20 @@ function minutesForSelection(options = {}) {
     total: travel + airport + buffer,
     flightType,
     isInternational,
-    baseAirportBuffer,
-    baseBuffer,
+    baseAirportBuffer: airport,
+    baseBuffer: buffer,
     luggageSelection: luggage,
     securityStatus: security,
     travelStyle: style,
     travelComplexity: complexity,
-    peakWindow: internationalAdjustments.peakWindow,
-    internationalBuffer: internationalAdjustments.internationalBuffer,
-    luggageBuffer: internationalAdjustments.luggageBuffer,
-    securityBuffer: internationalAdjustments.securityBuffer,
-    peakBuffer: internationalAdjustments.peakBuffer,
-    timingAdjustmentReasons: [
-      ...airportTimingReasons,
-      ...bufferTimingReasons,
-      ...internationalAdjustments.reasons,
-      ...preferenceReasons
-    ]
+    peakWindow: isPeakDepartureWindow(departureDate),
+    internationalBuffer,
+    luggageBuffer,
+    securityBuffer,
+    peakBuffer,
+    timingAdjustmentReasons,
+    timingLayers: layers,
+    timingRulesDebug: rulesResult.debug
   };
 }
 
@@ -1338,22 +1298,13 @@ async function calculateETA() {
   if (Number.isFinite(liveTravel) && liveTravel > 0) {
     timing.travel = Math.round(liveTravel);
     timing.total = timing.travel + timing.airport + timing.buffer;
+    if (timing.timingLayers) timing.timingLayers.travelTime = timing.travel;
+    if (timing.timingRulesDebug?.layerTotals) {
+      timing.timingRulesDebug.layerTotals.travelTime = timing.travel;
+      timing.timingRulesDebug.finalRecommendationMinutes = timing.total;
+    }
   }
-  console.log('[international-debug]', {
-    flightType: selectedFlightType,
-    isInternational: selectedFlightType === 'International',
-    luggageSelection: timing.luggageSelection,
-    securityStatus: timing.securityStatus,
-    travelStyle: timing.travelStyle,
-    peakWindow: timing.peakWindow,
-    baseBuffer: timing.baseBuffer,
-    internationalBuffer: timing.internationalBuffer,
-    luggageBuffer: timing.luggageBuffer,
-    securityBuffer: timing.securityBuffer,
-    peakBuffer: timing.peakBuffer,
-    finalBuffer: timing.buffer,
-    totalRecommendedMinutes: timing.total
-  });
+  console.log('[eta-rules-debug]', timing.timingRulesDebug);
   let lgaConditions = null;
   if (isLiveMode && selectedAirport === 'LGA') {
     lgaConditions = await fetchLgaConditions();
@@ -1389,6 +1340,8 @@ async function calculateETA() {
     buffer: timing.buffer,
     total: timing.total,
     timingAdjustmentReasons: timing.timingAdjustmentReasons,
+    timingLayers: timing.timingLayers,
+    timingRulesDebug: timing.timingRulesDebug,
     style: getActiveSelection('style'),
     complexity: getActiveSelection('complexity') || 'Just me',
     transportMode: selectedTransport || null,
@@ -1946,7 +1899,7 @@ function renderTimingReasonRows(reasons) {
 function aggregateTimingReasonRows(reasons) {
   const groups = new Map();
   reasons
-    .filter((item) => Number.isFinite(Number(item?.minutes)) && String(item?.label || '').trim())
+    .filter((item) => item?.visible !== false && Number.isFinite(Number(item?.minutes)) && String(item?.label || '').trim())
     .forEach((item) => {
       const group = getTimingReasonGroup(item.label);
       const current = groups.get(group.key) || {
