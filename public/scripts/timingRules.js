@@ -104,6 +104,10 @@
   }
 
   function addToLayer(layerTotals, layer, minutes) {
+    if (Object.prototype.hasOwnProperty.call(layerTotals, layer)) {
+      layerTotals[layer] += minutes;
+      return;
+    }
     const key = `${layer}Time`;
     if (Object.prototype.hasOwnProperty.call(layerTotals, key)) {
       layerTotals[key] += minutes;

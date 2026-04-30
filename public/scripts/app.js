@@ -976,13 +976,45 @@ function destinationForSelection(airport, terminal) {
   return `${airportCode} Airport Departures`;
 }
 
-async function fetchTravelEstimate({ airport, terminal, origin, departAt }) {
+function normalizeTravelApiMode(transportMode) {
+  const key = String(transportMode || '').trim().toLowerCase();
+  if (key.includes('transit') || key.includes('public')) return 'public';
+  if (key.includes('drive') || key.includes('park')) return 'driving';
+  if (key.includes('drop-off') || key.includes('dropoff')) return 'dropoff';
+  return 'rideshare';
+}
+
+function fallbackTravelEstimateMinutes({ airport, transportMode, timingTravel }) {
+  const timingMinutes = Math.round(Number(timingTravel) || 0);
+  if (timingMinutes > 0) return timingMinutes;
+
+  const airportCode = String(airport || 'OTHER').trim().toUpperCase();
+  const airportFallbacks = {
+    JFK: 55,
+    LGA: 35,
+    EWR: 45,
+    OTHER: 45
+  };
+  const apiMode = normalizeTravelApiMode(transportMode);
+  const modeAdjustment = apiMode === 'public'
+    ? 15
+    : apiMode === 'driving'
+      ? 5
+      : apiMode === 'dropoff'
+        ? -5
+        : 0;
+
+  return Math.max(20, (airportFallbacks[airportCode] || airportFallbacks.OTHER) + modeAdjustment);
+}
+
+async function fetchTravelEstimate({ airport, terminal, origin, departAt, transportMode }) {
+  const destination = destinationForSelection(airport, terminal);
   const params = new URLSearchParams({
     airport: String(airport || 'JFK'),
     terminal: String(terminal || ''),
-    mode: 'rideshare',
+    mode: normalizeTravelApiMode(transportMode),
     origin: String(origin || ''),
-    destination: destinationForSelection(airport, terminal),
+    destination,
     departAt: departAt || ''
   });
   try {
@@ -1280,12 +1312,14 @@ async function calculateETA() {
     departureDate: flight
   });
   const selectedTransport = getActiveSelection('transport');
+  const selectedDestination = destinationForSelection(selectedAirport, selectedTerminal);
   const travelApi = isLiveMode
     ? await fetchTravelEstimate({
       airport: selectedAirport,
       terminal: selectedTerminal,
       origin: startLocationRaw,
-      departAt: flight.toISOString()
+      departAt: flight.toISOString(),
+      transportMode: selectedTransport
     })
     : {
       travelMinutes: timing.travel,
@@ -1295,8 +1329,16 @@ async function calculateETA() {
       typicalMinutes: timing.travel
     };
   const liveTravel = Number(travelApi?.travelMinutes);
-  if (Number.isFinite(liveTravel) && liveTravel > 0) {
-    timing.travel = Math.round(liveTravel);
+  const routeApiDuration = Number.isFinite(liveTravel) && liveTravel > 0 ? Math.round(liveTravel) : null;
+  const fallbackDuration = fallbackTravelEstimateMinutes({
+    airport: selectedAirport,
+    transportMode: selectedTransport,
+    timingTravel: timing.travel
+  });
+  const finalTravelTime = routeApiDuration || fallbackDuration;
+  const usedTravelFallback = !routeApiDuration;
+  if (Number.isFinite(finalTravelTime) && finalTravelTime > 0) {
+    timing.travel = Math.round(finalTravelTime);
     timing.total = timing.travel + timing.airport + timing.buffer;
     if (timing.timingLayers) timing.timingLayers.travelTime = timing.travel;
     if (timing.timingRulesDebug?.layerTotals) {
@@ -1304,6 +1346,14 @@ async function calculateETA() {
       timing.timingRulesDebug.finalRecommendationMinutes = timing.total;
     }
   }
+  console.log('[travel-time-debug]', {
+    selectedTransportMode: selectedTransport || 'Rideshare',
+    originAddress: startLocationRaw,
+    destinationAirportTerminal: selectedDestination,
+    routeApiDuration,
+    fallbackDuration,
+    finalTravelTimeMinutes: timing.travel
+  });
   console.log('[eta-rules-debug]', timing.timingRulesDebug);
   let lgaConditions = null;
   if (isLiveMode && selectedAirport === 'LGA') {
@@ -1334,7 +1384,7 @@ async function calculateETA() {
     airport: selectedAirport,
     terminal: selectedTerminal,
     origin: startLocationRaw,
-    destination: destinationForSelection(selectedAirport, selectedTerminal),
+    destination: selectedDestination,
     travel: timing.travel,
     airportTime: timing.airport,
     buffer: timing.buffer,
@@ -1346,10 +1396,10 @@ async function calculateETA() {
     complexity: getActiveSelection('complexity') || 'Just me',
     transportMode: selectedTransport || null,
     securityStatusLabel: selectedSecurityStatus,
-    travelProvider: travelApi?.provider || 'mock',
-    travelStatus: travelApi?.status || 'fallback',
-    travelSource: travelApi?.source || 'Backup estimate',
-    travelTypical: Number.isFinite(Number(travelApi?.typicalMinutes)) ? Number(travelApi.typicalMinutes) : null,
+    travelProvider: usedTravelFallback ? 'estimated' : (travelApi?.provider || 'mock'),
+    travelStatus: usedTravelFallback ? 'estimated' : (travelApi?.status || 'fallback'),
+    travelSource: usedTravelFallback ? 'Estimated travel fallback' : (travelApi?.source || 'Backup estimate'),
+    travelTypical: Number.isFinite(Number(travelApi?.typicalMinutes)) ? Number(travelApi.typicalMinutes) : (usedTravelFallback ? timing.travel : null),
     securityResolvedMinutes: Number.isFinite(resolvedSecurityMinutes) ? Math.round(resolvedSecurityMinutes) : null,
     securityResolvedStatus: String(resolvedSecurity?.status || 'estimated'),
     securityResolvedSource: String(resolvedSecurity?.source || 'Security fallback'),
