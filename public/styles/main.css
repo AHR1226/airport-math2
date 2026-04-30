@@ -2191,20 +2191,20 @@ input{
 
 /* Trips screen polish */
 #trips .tripsTripRow{
-  padding:16px 0;
-  border-bottom:1px solid rgba(6,72,25,0.08);
+  margin-bottom:var(--space-3);
 }
 
 #trips .tripsTripRow:last-child{
-  border-bottom:0;
+  margin-bottom:0;
 }
 
 #trips .tripsTripHeader{
   width:100%;
   margin:0;
-  padding:0;
-  border:0;
-  background:transparent;
+  padding:18px 20px;
+  border:1px solid rgba(6,72,25,0.08);
+  border-radius:var(--radius-card);
+  background:#FFFFFF;
   color:inherit;
   font:inherit;
   text-align:left;
@@ -2213,6 +2213,9 @@ input{
   align-items:center;
   gap:var(--space-3);
   cursor:pointer;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.02),
+    0 8px 24px rgba(0,0,0,0.03);
   -webkit-tap-highlight-color:transparent;
 }
 
@@ -2259,10 +2262,10 @@ input{
 
 #trips .tripsExpandedResult{
   width:100%;
-  margin-top:18px;
+  margin-top:var(--space-3);
   display:flex;
   flex-direction:column;
-  gap:18px;
+  gap:15px;
 }
 
 .etaResultView .resultHeroCard,
@@ -2277,7 +2280,7 @@ input{
   box-shadow:
     0 1px 2px rgba(0,0,0,0.02),
     0 8px 24px rgba(0,0,0,0.03);
-  padding:30px 24px 24px;
+  padding:26px 20px 19px;
 }
 
 .etaResultView .resultHeroClock{
@@ -2285,26 +2288,87 @@ input{
 }
 
 .etaResultView .resultHtmlTime{
-  font-size:64px;
-  margin-top:22px;
-  margin-bottom:22px;
+  font-size:65px;
+  margin-top:32px;
+  margin-bottom:24px;
   letter-spacing:-0.04em;
 }
 
 .etaResultView .resultBreakdownCard{
   background:#1A3A1F;
-  padding:22px 24px 20px;
+  padding:18px 18px 18px;
 }
 
 .etaResultView .resultBreakdownTitle{
   font-size:var(--text-label);
-  margin-bottom:14px;
+  margin:0 0 11px;
+  padding:0;
+  font-weight:700;
+  letter-spacing:0.1em;
+  line-height:1.25;
+  text-transform:uppercase;
 }
 
 .etaResultView .resultBreakdownRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:12px;
   font-size:var(--text-body);
-  padding:var(--space-2) 0;
-  line-height:1.28;
+  padding:8px 0;
+  line-height:1.35;
+}
+
+.etaResultView .resultHtmlMetaBlock{
+  margin-top:12px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:var(--text-body);
+  line-height:1.24;
+  font-weight:400;
+  color:#063D18;
+  opacity:0.92;
+}
+
+.etaResultView .resultHtmlMetaLine + .resultHtmlMetaLine{
+  margin-top:3px;
+}
+
+.etaResultView .resultHtmlMetaBlock--planning{
+  margin-top:13px;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  font-size:12px;
+  line-height:1.24;
+  font-weight:400;
+  color:rgba(6,72,25,0.66);
+  opacity:1;
+}
+
+.etaResultView .resultHtmlMetaBlock--planning .resultHtmlMetaLine{
+  margin-top:0;
+  font-size:inherit;
+  font-weight:inherit;
+  color:inherit;
+}
+
+.etaResultView .resultBreakdownRow span{
+  flex:1;
+  min-width:0;
+  text-align:left;
+  font-size:14px;
+  line-height:1.2;
+  font-weight:500;
+  color:#F3FADE;
+}
+
+.etaResultView .resultBreakdownRow strong{
+  flex:0 0 auto;
+  min-width:4rem;
+  text-align:right;
+  font-size:15px;
+  font-weight:600;
+  line-height:1.35;
 }
 
 .etaResultView .resultBreakdownRow--milestone,
@@ -2321,6 +2385,15 @@ input{
   line-height:1.25;
   font-weight:400;
   color:rgba(243,250,222,0.68);
+}
+
+.etaResultView .resultBreakdownRow--support{
+  margin-top:-4px;
+  padding:0 0 5px 14px;
+}
+
+.etaResultView .resultBreakdownRow--support strong{
+  min-width:3.5rem;
 }
 
 #trips .tripsMeta{
