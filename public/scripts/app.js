@@ -1441,6 +1441,7 @@ async function calculateETA() {
   });
   console.log('[eta-rules-debug]', timing.timingRulesDebug);
   console.log('[eta-rules-debug] terminalNavigationMinutes:', timing.timingRulesDebug?.terminalNavigationMinutes);
+  console.log('[eta-rules-debug] boardingWindowMinutes:', timing.timingRulesDebug?.boardingWindowMinutes);
   let lgaConditions = null;
   if (isLiveMode && selectedAirport === 'LGA') {
     lgaConditions = await fetchLgaConditions();
@@ -2184,8 +2185,8 @@ function getTimingReasonGroup(label) {
   if (normalized.includes('terminal navigation') || normalized.includes('airport navigation') || normalized.includes('airport baseline')) {
     return { key: 'terminal-navigation', label: 'Terminal navigation', order: 40 };
   }
-  if (normalized.includes('boarding time') || normalized.includes('boarding buffer') || normalized.includes('base timing cushion')) {
-    return { key: 'boarding-buffer', label: 'Boarding buffer', order: 50 };
+  if (normalized.includes('boarding window') || normalized.includes('boarding time') || normalized.includes('boarding buffer') || normalized.includes('base timing cushion')) {
+    return { key: 'boarding-window', label: 'Boarding window', order: 50 };
   }
   if (normalized.includes('peak travel window')) {
     return { key: 'peak-travel-window', label: 'Peak travel window', order: 60 };
@@ -2264,17 +2265,10 @@ function getGateArrivalTarget(result, flightType) {
 }
 
 function getGateArrivalLeadMinutes(result, flightType) {
-  if (normalizeFlightType(flightType || result?.flightType) !== 'International') return 30;
-  const reasons = Array.isArray(result?.timingAdjustmentReasons) ? result.timingAdjustmentReasons : [];
-  const hasExtendedAirportNeeds = reasons.some((item) => {
-    const label = String(item?.label || '').toLowerCase();
-    return (
-      label.includes('checked')
-      || label.includes('security')
-      || label.includes('peak')
-    );
-  });
-  return hasExtendedAirportNeeds ? 60 : 45;
+  const ft = normalizeFlightType(flightType || result?.flightType);
+  const bw = window.AirportMathTimingRules?.BASE?.boardingWindow;
+  if (bw && Number.isFinite(Number(bw[ft]))) return Math.round(Number(bw[ft]));
+  return ft === 'International' ? 25 : 15;
 }
 
 function formatTimingReasonLabel(label) {

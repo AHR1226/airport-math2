@@ -34,9 +34,10 @@
   const BASE = {
     travelTime: 45,
     terminalNavigationMinutes: TERMINAL_NAVIGATION_MINUTES,
-    boardingBuffer: {
-      Domestic: 30,
-      International: 45
+    /** Single source for gate/boarding window (breakdown: "Boarding window"). */
+    boardingWindow: {
+      Domestic: 15,
+      International: 25
     },
     checkIn: {
       Domestic: {
@@ -344,9 +345,9 @@
       visible: true
     });
 
-    addRule(acc, 'boarding-buffer', {
-      label: 'Boarding buffer',
-      minutes: BASE.boardingBuffer[inputs.flightType],
+    addRule(acc, 'boarding-window', {
+      label: 'Boarding window',
+      minutes: BASE.boardingWindow[inputs.flightType],
       layer: LAYERS.terminalFlow,
       visible: true
     });
@@ -445,7 +446,7 @@
         cappedBehavioralTotals: acc.debug.cappedBehavioralTotals,
         terminalNavigationMinutes: TERMINAL_NAVIGATION_MINUTES,
         airportComplexityProfile: inputs.airportComplexity,
-        boardingBufferMinutes: BASE.boardingBuffer[inputs.flightType],
+        boardingWindowMinutes: BASE.boardingWindow[inputs.flightType],
         securityBaseWaitMinutes: inputs.securityWaitMinutes,
         finalRecommendationMinutes
       }
