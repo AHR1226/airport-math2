@@ -4919,9 +4919,13 @@ body{
   margin-top:0;
 }
 
-/* Trips expanded spacing system — source of truth: --trips-expanded-* tokens (:root above); Trips-only .etaCards--embedded opts out of page .etaResultView gaps / stack margins. */
+/* Trips expanded spacing system — source of truth: --trips-expanded-* tokens (:root above); Trips-only .etaCards--embedded opts out of page .etaResultView gaps / stack margins. Collapsed trip rows use tighter list rhythm (25% of expanded-row gap). */
 
-#trips .tripsTripRow{
+#trips .tripsTripRow:not(.isExpanded){
+  margin-bottom:calc(var(--trips-expanded-to-next-trip-row) * 0.25) !important;
+}
+
+#trips .tripsTripRow.isExpanded{
   margin-bottom:var(--trips-expanded-to-next-trip-row) !important;
 }
 
