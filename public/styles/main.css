@@ -4864,3 +4864,64 @@ body{
 .flightDetailsCard .fieldRow + .fieldRow{
   margin-top:var(--mobile-minor-gap);
 }
+
+/* ETA-canonical spacing: apply result-page cadence to expanded trips and card stacks */
+:root{
+  --eta-card-gap:16px;
+  --eta-hero-padding:26px 20px 19px;
+  --eta-card-padding:22px 18px 18px;
+  --eta-bottom-clearance:calc(148px + var(--safe-area-bottom));
+}
+
+.calcContent,
+.screenContent,
+#result.useHtmlResult .resultHtmlContainer{
+  padding-left:24px !important;
+  padding-right:24px !important;
+  padding-bottom:var(--eta-bottom-clearance) !important;
+}
+
+#result.useHtmlResult .resultHtmlContainer,
+.etaResultView,
+#trips .tripsExpandedResult{
+  gap:var(--eta-card-gap);
+}
+
+#trips .tripsExpandedResult{
+  margin-top:var(--eta-card-gap);
+}
+
+#trips .tripsTripRow.isExpanded{
+  margin-bottom:var(--eta-card-gap);
+}
+
+#result.useHtmlResult .resultHeroCard,
+.etaResultView .resultHeroCard{
+  padding:var(--eta-hero-padding);
+}
+
+#result.useHtmlResult .resultBreakdownCard,
+.etaResultView .resultBreakdownCard{
+  padding:var(--eta-card-padding);
+}
+
+#result.useHtmlResult .resultLiveCard,
+.etaResultView .resultLiveCard{
+  padding:var(--eta-card-padding);
+}
+
+#result.useHtmlResult .resultUberCard,
+.etaResultView .resultUberCard{
+  padding:12px 14px;
+}
+
+#result.useHtmlResult .resultHeroCard + .resultBreakdownCard,
+#result.useHtmlResult .resultBreakdownCard + .resultUberCard,
+#result.useHtmlResult .resultBreakdownCard + .resultLiveCard,
+#result.useHtmlResult .resultUberCard + .resultLiveCard,
+.etaResultView .resultHeroCard + .resultBreakdownCard,
+.etaResultView .resultBreakdownCard + .resultUberCard,
+.etaResultView .resultBreakdownCard + .resultLiveCard,
+.etaResultView .resultUberCard + .resultLiveCard{
+  margin-top:0;
+}
