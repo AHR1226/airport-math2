@@ -1440,6 +1440,7 @@ async function calculateETA() {
     finalTravelTimeMinutes: timing.travel
   });
   console.log('[eta-rules-debug]', timing.timingRulesDebug);
+  console.log('[eta-rules-debug] terminalNavigationMinutes:', timing.timingRulesDebug?.terminalNavigationMinutes);
   let lgaConditions = null;
   if (isLiveMode && selectedAirport === 'LGA') {
     lgaConditions = await fetchLgaConditions();
@@ -2181,7 +2182,7 @@ function getTimingReasonGroup(label) {
     return { key: 'precheck', label: 'PreCheck', order: 30 };
   }
   if (normalized.includes('terminal navigation') || normalized.includes('airport navigation') || normalized.includes('airport baseline')) {
-    return { key: 'airport-navigation', label: 'Airport navigation', order: 40 };
+    return { key: 'terminal-navigation', label: 'Terminal navigation', order: 40 };
   }
   if (normalized.includes('boarding time') || normalized.includes('boarding buffer') || normalized.includes('base timing cushion')) {
     return { key: 'boarding-buffer', label: 'Boarding buffer', order: 50 };

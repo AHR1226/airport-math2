@@ -28,14 +28,12 @@
     }
   };
 
+  /** Single source for in-airport walking / terminal navigation (breakdown label: "Terminal navigation"). */
+  const TERMINAL_NAVIGATION_MINUTES = 15;
+
   const BASE = {
     travelTime: 45,
-    airportComplexity: {
-      simple: 8,
-      standard: 12,
-      complex: 20,
-      'very complex': 25
-    },
+    terminalNavigationMinutes: TERMINAL_NAVIGATION_MINUTES,
     boardingBuffer: {
       Domestic: 30,
       International: 45
@@ -339,9 +337,9 @@
       visible: true
     });
 
-    addRule(acc, 'airport-complexity', {
-      label: 'Airport navigation',
-      minutes: BASE.airportComplexity[inputs.airportComplexity],
+    addRule(acc, 'terminal-navigation', {
+      label: 'Terminal navigation',
+      minutes: TERMINAL_NAVIGATION_MINUTES,
       layer: LAYERS.terminalFlow,
       visible: true
     });
@@ -445,7 +443,8 @@
         blendedPreferenceLogicApplied: acc.debug.blendedPreferenceLogicApplied,
         cappedPreferenceTotals: acc.debug.cappedPreferenceTotals,
         cappedBehavioralTotals: acc.debug.cappedBehavioralTotals,
-        airportComplexityMinutes: BASE.airportComplexity[inputs.airportComplexity],
+        terminalNavigationMinutes: TERMINAL_NAVIGATION_MINUTES,
+        airportComplexityProfile: inputs.airportComplexity,
         boardingBufferMinutes: BASE.boardingBuffer[inputs.flightType],
         securityBaseWaitMinutes: inputs.securityWaitMinutes,
         finalRecommendationMinutes
