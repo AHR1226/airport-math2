@@ -4691,3 +4691,116 @@ body{
 #trips .tripsTripHeader{
   border-radius:var(--radius-card);
 }
+
+/* Shared mobile UI spacing/card/nav system */
+:root{
+  --mobile-page-x:24px;
+  --mobile-page-top:84px;
+  --mobile-page-bottom:calc(128px + var(--safe-area-bottom));
+  --mobile-card-gap:10px;
+  --mobile-header-gap:52px;
+  --radius-card:26px;
+  --radius-eta-card:28px;
+  --bottom-nav-height:88px;
+}
+
+.calcContent,
+.screenContent,
+#result.useHtmlResult .resultHtmlContainer{
+  padding-left:var(--mobile-page-x) !important;
+  padding-right:var(--mobile-page-x) !important;
+  padding-top:var(--mobile-page-top) !important;
+  padding-bottom:var(--mobile-page-bottom) !important;
+}
+
+.pageHeader{
+  margin-bottom:var(--mobile-header-gap) !important;
+}
+
+#result.useHtmlResult .resultHtmlHeader{
+  margin-bottom:var(--mobile-header-gap) !important;
+}
+
+#calculate.calcScreen .calcContent .calcHeroTitle{
+  margin-bottom:var(--mobile-header-gap);
+}
+
+.card,
+.appCard,
+.appCardDark,
+#settings .appCard,
+#trips .tripsTripHeader{
+  border-radius:var(--radius-card);
+}
+
+.card,
+.appCard,
+.appCardDark{
+  margin-bottom:var(--mobile-card-gap);
+}
+
+#calculate.calcScreen .calcDecisionSection,
+#trips .tripsTripRow{
+  margin-bottom:var(--mobile-card-gap);
+}
+
+#calculate.calcScreen .ctaButton,
+#settings .primaryButton{
+  margin-top:var(--mobile-card-gap);
+}
+
+#result.useHtmlResult .resultHtmlContainer,
+.etaResultView,
+#trips .tripsExpandedResult{
+  gap:var(--mobile-card-gap);
+}
+
+#result.useHtmlResult .resultHeroCard,
+.etaResultView .resultHeroCard{
+  border-radius:var(--radius-eta-card);
+}
+
+#result.useHtmlResult .resultBreakdownCard,
+.etaResultView .resultBreakdownCard{
+  border-radius:var(--radius-eta-card);
+}
+
+#result.useHtmlResult .resultLiveCard,
+.etaResultView .resultLiveCard,
+#result.useHtmlResult .resultUberCard,
+.etaResultView .resultUberCard{
+  border-radius:var(--radius-card);
+}
+
+.bottomNav{
+  left:24px;
+  right:24px;
+  bottom:calc(18px + var(--safe-area-bottom));
+  height:var(--bottom-nav-height);
+  padding:12px 12px;
+  border-radius:26px;
+  align-items:center;
+}
+
+.bottomNav button{
+  height:100%;
+  padding:8px 0;
+  gap:6px;
+  border-radius:18px;
+  justify-content:center;
+}
+
+.bottomNav svg{
+  width:20px;
+  height:20px;
+}
+
+.bottomNav span{
+  font-size:10px;
+}
+
+.bottomNav button.active{
+  background:transparent;
+  color:#032A10;
+  transform:none;
+}
