@@ -3850,10 +3850,11 @@ body{
 }
 
 .loadingSymbol span svg{
-  width:102px;
-  height:102px;
+  width:51px;
+  height:51px;
   flex-shrink:0;
   display:block;
+  transform:rotate(-45deg);
   stroke:#CFFF4E;
   fill:none;
   stroke-width:1.57473;
@@ -4665,12 +4666,11 @@ body{
   width:172px;
   height:172px;
   margin-bottom:0;
-  transform:rotate(45deg);
 }
 
 .loadingSymbol span svg{
-  width:133px;
-  height:133px;
+  width:66.5px;
+  height:66.5px;
 }
 
 .loadingTitle{
