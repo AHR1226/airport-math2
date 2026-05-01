@@ -264,6 +264,7 @@ initializeSavedLocationsUI();
 initializeCalculateProgressiveFlow();
 applyPreferenceVisibility(readUserSettings().showPreferences);
 initializeCalculateDefaultOverrideTracking();
+initializeFlightLookup();
 if (window.syncSettingsTravelStyleUI) {
   window.syncSettingsTravelStyleUI();
 }
@@ -1738,6 +1739,137 @@ function restoreTripState(trip) {
   syncSelectionChipsToState(window.appState.selections);
 }
 
+function padDepartureTimeForInput(value) {
+  const raw = String(value || '').trim();
+  const m = raw.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return '';
+  const h = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+  const min = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
+function formatFlightStatusForDisplay(status) {
+  const key = String(status || '').trim().toLowerCase();
+  const map = {
+    scheduled: 'Scheduled',
+    delayed: 'Delayed',
+    cancelled: 'Cancelled',
+    boarding: 'Boarding',
+    departed: 'Departed',
+    unknown: 'Unknown'
+  };
+  return map[key] || (key ? key.charAt(0).toUpperCase() + key.slice(1) : '');
+}
+
+function setFlightLookupMessage(text, visible) {
+  const el = document.getElementById('flightLookupMessage');
+  if (!el) return;
+  const t = String(text || '').trim();
+  el.textContent = t;
+  el.hidden = visible === false ? true : !t;
+}
+
+function applyNormalizedFlightToForm(flight) {
+  if (!flight || typeof flight !== 'object') return;
+  if (!window.appState?.form) return;
+
+  const form = window.appState.form;
+  const dep = String(flight.departureAirport || '').trim().toUpperCase();
+  if (['JFK', 'LGA', 'EWR'].includes(dep)) {
+    form.airport = dep;
+    const airportEl = document.getElementById('airportInput');
+    if (airportEl) airportEl.value = dep;
+  }
+
+  const paddedTime = padDepartureTimeForInput(flight.departureTime);
+  if (paddedTime) {
+    form.flightTime = paddedTime;
+    const timeEl = document.getElementById('flightTime');
+    if (timeEl) timeEl.value = paddedTime;
+  }
+
+  const fd = String(flight.flightDate || '').trim();
+  if (fd) {
+    form.flightDate = fd;
+    const dateEl = document.getElementById('flightDate');
+    if (dateEl) dateEl.value = fd;
+  }
+
+  if (flight.terminal) {
+    form.terminal = String(flight.terminal);
+    const termEl = document.getElementById('terminalInput');
+    if (termEl) termEl.value = form.terminal;
+  }
+
+  if (flight.flightNumber) {
+    form.flightNumber = String(flight.flightNumber);
+    const fnEl = document.getElementById('flightNumberInput');
+    if (fnEl) fnEl.value = form.flightNumber;
+  }
+
+  if (flight.flightType === 'domestic' || flight.flightType === 'international') {
+    form.flightType = flight.flightType === 'international' ? 'International' : 'Domestic';
+    const ftEl = document.getElementById('flightType');
+    if (ftEl) ftEl.value = form.flightType;
+  }
+
+  form.arrivalAirport = flight.arrivalAirport ? String(flight.arrivalAirport) : '';
+  form.airline = flight.airline ? String(flight.airline) : '';
+  form.gate = flight.gate ? String(flight.gate) : '';
+  form.flightStatus = formatFlightStatusForDisplay(flight.status);
+
+  const arrEl = document.getElementById('flightArrivalInput');
+  const alEl = document.getElementById('flightAirlineInput');
+  const gateEl = document.getElementById('flightGateInput');
+  const statEl = document.getElementById('flightStatusInput');
+  if (arrEl) arrEl.value = form.arrivalAirport;
+  if (alEl) alEl.value = form.airline;
+  if (gateEl) gateEl.value = form.gate;
+  if (statEl) statEl.value = form.flightStatus;
+
+  initializeAirportTerminalSelects();
+}
+
+async function handleFindFlightClick() {
+  if (window.stateApi) window.stateApi.syncFormFromDom();
+  const fn = document.getElementById('flightNumberInput')?.value?.trim();
+  const fd = document.getElementById('flightDate')?.value?.trim();
+  const svc = typeof window.FlightLookup?.lookupFlight === 'function' ? window.FlightLookup : null;
+  if (!svc) {
+    setFlightLookupMessage('Flight lookup is unavailable.', true);
+    return;
+  }
+  if (!fn || !fd) {
+    setFlightLookupMessage('Enter a flight number and departure date first.', true);
+    return;
+  }
+
+  const btn = document.getElementById('findFlightButton');
+  if (btn) btn.disabled = true;
+  setFlightLookupMessage('Looking up flight…', true);
+
+  try {
+    const result = await svc.lookupFlight({ flightNumber: fn, flightDate: fd });
+    if (!result?.ok) {
+      setFlightLookupMessage(result?.message || "We couldn't find that flight. You can still enter details manually.", true);
+      return;
+    }
+    applyNormalizedFlightToForm(result.flight);
+    setFlightLookupMessage('Flight found', true);
+  } catch {
+    setFlightLookupMessage("We couldn't find that flight. You can still enter details manually.", true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function initializeFlightLookup() {
+  const btn = document.getElementById('findFlightButton');
+  if (!btn || btn.dataset.flightLookupBound === 'true') return;
+  btn.dataset.flightLookupBound = 'true';
+  btn.addEventListener('click', handleFindFlightClick);
+}
+
 function syncFormToDom(form) {
   const mappings = {
     flightDate: 'flightDate',
@@ -1746,7 +1878,11 @@ function syncFormToDom(form) {
     flightNumber: 'flightNumberInput',
     airport: 'airportInput',
     terminal: 'terminalInput',
-    startLocation: 'startingLocationInput'
+    startLocation: 'startingLocationInput',
+    arrivalAirport: 'flightArrivalInput',
+    airline: 'flightAirlineInput',
+    gate: 'flightGateInput',
+    flightStatus: 'flightStatusInput'
   };
   Object.entries(mappings).forEach(([key, id]) => {
     const el = document.getElementById(id);

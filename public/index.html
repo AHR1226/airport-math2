@@ -14,6 +14,7 @@
   <script src="/scripts/navigation.js" defer></script>
   <script src="/scripts/selections.js" defer></script>
   <script src="/scripts/timingRules.js" defer></script>
+  <script src="/scripts/services/flightLookup.js" defer></script>
   <script src="/scripts/app.js" defer></script>
 </head>
 <body class="hideBottomNav splash-active">
@@ -98,6 +99,33 @@
         <div class="flightDetailField flightNumberField">
           <label for="flightNumberInput" class="flightNumberLabel">Flight number (optional)</label>
           <input id="flightNumberInput" class="full flightNumberInput" type="text" value="" placeholder="DL 1234" autocomplete="off">
+        </div>
+      </div>
+      <div class="fieldRow flightDetailsFindRow">
+        <div class="flightDetailField">
+          <label for="findFlightButton" class="flightDetailLabel">Lookup</label>
+          <button type="button" id="findFlightButton" class="chip">Find flight</button>
+        </div>
+      </div>
+      <p class="startingLocationValidation" id="flightLookupMessage" role="status" aria-live="polite" hidden></p>
+      <div class="fieldRow flightDetailsExtraRow">
+        <div class="flightDetailField">
+          <label for="flightArrivalInput" class="flightDetailLabel">Arrival airport</label>
+          <input id="flightArrivalInput" class="full" type="text" value="" placeholder="e.g. LAX" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="flightDetailField">
+          <label for="flightAirlineInput" class="flightDetailLabel">Airline</label>
+          <input id="flightAirlineInput" class="full" type="text" value="" placeholder="e.g. Delta" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="fieldRow flightDetailsExtraRow">
+        <div class="flightDetailField">
+          <label for="flightGateInput" class="flightDetailLabel">Gate</label>
+          <input id="flightGateInput" class="full" type="text" value="" placeholder="—" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="flightDetailField">
+          <label for="flightStatusInput" class="flightDetailLabel">Flight status</label>
+          <input id="flightStatusInput" class="full" type="text" value="" placeholder="—" autocomplete="off" spellcheck="false">
         </div>
       </div>
     </div>
