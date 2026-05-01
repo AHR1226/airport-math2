@@ -4804,3 +4804,63 @@ body{
   color:#032A10;
   transform:none;
 }
+
+/* Final spacing normalization pass */
+:root{
+  --mobile-page-x:24px;
+  --mobile-page-bottom:calc(136px + var(--safe-area-bottom));
+  --mobile-card-gap:16px;
+  --mobile-minor-gap:8px;
+}
+
+.calcContent,
+.screenContent,
+#result.useHtmlResult .resultHtmlContainer{
+  padding-left:var(--mobile-page-x) !important;
+  padding-right:var(--mobile-page-x) !important;
+  padding-bottom:var(--mobile-page-bottom) !important;
+}
+
+.card,
+.appCard,
+.appCardDark,
+#calculate.calcScreen .calcDecisionSection,
+#trips .tripsTripRow{
+  margin-bottom:var(--mobile-card-gap);
+}
+
+#calculate.calcScreen .ctaButton,
+#settings .primaryButton{
+  margin-top:var(--mobile-card-gap);
+}
+
+#result.useHtmlResult .resultHtmlContainer,
+.etaResultView,
+#trips .tripsExpandedResult{
+  gap:var(--mobile-card-gap);
+}
+
+#result.useHtmlResult .resultHeroCard + .resultBreakdownCard,
+#result.useHtmlResult .resultBreakdownCard + .resultUberCard,
+#result.useHtmlResult .resultBreakdownCard + .resultLiveCard,
+#result.useHtmlResult .resultUberCard + .resultLiveCard,
+.etaResultView .resultHeroCard + .resultBreakdownCard,
+.etaResultView .resultBreakdownCard + .resultUberCard,
+.etaResultView .resultBreakdownCard + .resultLiveCard,
+.etaResultView .resultUberCard + .resultLiveCard{
+  margin-top:0;
+}
+
+#calculate .calcAccordionText,
+#settings .settingsFormCard,
+#calculate .chipGroup--stacked{
+  gap:var(--mobile-minor-gap);
+}
+
+#calculate .calcControlGroup + .calcControlGroup{
+  margin-top:var(--mobile-minor-gap);
+}
+
+.flightDetailsCard .fieldRow + .fieldRow{
+  margin-top:var(--mobile-minor-gap);
+}

@@ -12,28 +12,43 @@
   const CAPS = {
     behavioral: {
       Domestic: 20,
-      International: 35
+      International: 30
     },
     preference: {
-      Domestic: 60,
-      International: 90
+      Domestic: 45,
+      International: 45
     },
     confidenceBuffer: {
-      Domestic: 10,
-      International: 15
+      Domestic: 20,
+      International: 30
+    },
+    style: {
+      Domestic: 20,
+      International: 30
     }
   };
 
   const BASE = {
     travelTime: 45,
-    terminalNavigation: 20,
-    boardingTime: 15,
-    loungeTime: 45,
-    loungeContributionCap: 60,
-    security: {
-      Standard: 25,
-      PreCheck: 8,
-      'CLEAR + PreCheck': 3
+    airportComplexity: {
+      simple: 8,
+      standard: 12,
+      complex: 20,
+      'very complex': 25
+    },
+    boardingBuffer: {
+      Domestic: 30,
+      International: 45
+    },
+    checkIn: {
+      Domestic: {
+        carryOn: 0,
+        checked: 15
+      },
+      International: {
+        carryOn: 25,
+        checked: 40
+      }
     }
   };
 
@@ -54,6 +69,7 @@
   function normalizeSecurity(value) {
     const raw = String(value || '').trim();
     if (raw === 'CLEAR + PreCheck') return raw;
+    if (raw === 'CLEAR') return raw;
     if (raw === 'Standard') return raw;
     return 'PreCheck';
   }
@@ -67,6 +83,58 @@
       || (day === 0 && hour >= 12 && hour <= 21)
       || (day >= 1 && day <= 5 && hour >= 6 && hour < 9)
     );
+  }
+
+  function normalizeAirportComplexity(value) {
+    const key = String(value || '').trim().toLowerCase();
+    if (key.includes('very')) return 'very complex';
+    if (key.includes('complex')) return 'complex';
+    if (key.includes('simple')) return 'simple';
+    return 'standard';
+  }
+
+  function getLuggageType(value) {
+    const key = String(value || '').trim().toLowerCase();
+    return key.includes('checking') || key.includes('checked') || key.includes('bag drop')
+      ? 'checked'
+      : 'carryOn';
+  }
+
+  function getSecurityMinutes(securityMode, baseWait) {
+    const base = Math.max(0, Math.round(Number(baseWait) || 25));
+    if (securityMode === 'Standard') return base;
+    if (securityMode === 'CLEAR + PreCheck') return Math.max(Math.round(base * 0.35), 3);
+    if (securityMode === 'CLEAR') return Math.max(Math.round(base * 0.5), 4);
+    return Math.max(Math.round(base * 0.6), 5);
+  }
+
+  function getSecurityLabel(securityMode) {
+    if (securityMode === 'Standard') return 'Standard security';
+    return securityMode;
+  }
+
+  function getAirportProcessingNavigationTotal(acc) {
+    return Math.max(0, Math.round(
+      (Number(acc.layerTotals.airportProcessingTime) || 0)
+      + (Number(acc.layerTotals.securityTime) || 0)
+      + (Number(acc.layerTotals.terminalFlowTime) || 0)
+    ));
+  }
+
+  function addCappedLayerTotal(acc, capName, layer, ruleName, label, desiredMinutes, currentTotal, cap, visible = true) {
+    const desired = Math.max(0, Math.round(Number(desiredMinutes) || 0));
+    const available = Math.max(0, cap - currentTotal);
+    const applied = Math.min(desired, available);
+    if (applied <= 0) {
+      skipRule(acc, ruleName, `${capName} cap already reached`);
+      acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied: 0, max: cap });
+      return currentTotal;
+    }
+    addRule(acc, ruleName, { label, minutes: applied, layer, visible });
+    if (applied < desired) {
+      acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied, max: cap });
+    }
+    return currentTotal + applied;
   }
 
   function createAccumulator(inputs) {
@@ -156,47 +224,62 @@
   }
 
   function getCheckInRule(inputs) {
-    const luggage = inputs.luggage;
+    const luggageType = getLuggageType(inputs.luggage);
     if (inputs.flightType === 'International') {
-      if (luggage === 'Checking bags' || luggage === 'Bag drop') {
-        return { label: 'International bag drop/check-in', minutes: 30 };
+      if (luggageType === 'checked') {
+        return { label: 'International bag drop/check-in', minutes: BASE.checkIn.International.checked };
       }
-      return { label: 'International check-in', minutes: 20 };
+      return { label: 'International check-in', minutes: BASE.checkIn.International.carryOn };
     }
-    if (luggage === 'Checking bags' || luggage === 'Bag drop') {
-      return { label: 'Bag drop', minutes: 15 };
+    if (luggageType === 'checked') {
+      return { label: 'Bag drop', minutes: BASE.checkIn.Domestic.checked };
     }
     return null;
   }
 
-  function getBehavioralRule(inputs) {
+  function getBehavioralRule(inputs, baseMinutes) {
     const key = String(inputs.complexity || '').trim().toLowerCase();
-    if (key === 'family / children') return { label: 'Family / children', minutes: 20 };
-    if (key === 'traveling with pets') return { label: 'Traveling with pets', minutes: inputs.flightType === 'International' ? 35 : 20 };
-    if (key === 'group travel') return { label: 'Group travel', minutes: inputs.flightType === 'International' ? 30 : 15 };
+    if (key === 'family / children' || key.includes('kid')) return { label: 'Family / children', minutes: Math.round(baseMinutes * 0.15) };
+    if (key === 'traveling with pets' || key.includes('pet')) return { label: 'Traveling with pets', minutes: Math.round(baseMinutes * 0.1) };
+    if (key === 'group travel' || key.includes('group')) return { label: 'Group travel', minutes: Math.round(baseMinutes * 0.1) };
+    if (key.includes('accessibility') || key.includes('mobility')) return { label: 'Accessibility / mobility', minutes: Math.round(baseMinutes * 0.2) };
     return null;
   }
 
-  function calculateConfidenceBuffer(inputs, baseMinutes, peakWindow) {
-    const reductions = [];
-    const isLounge = inputs.boarding === 'Lounge';
-    const isFamily = String(inputs.complexity || '').trim().toLowerCase() === 'family / children';
-    const addReduction = (reason, minutes) => {
-      const amount = Math.max(0, Math.round(minutes));
-      if (amount > 0) reductions.push({ reason, minutes: amount });
-    };
+  function getPreferenceDwellRule(inputs) {
+    const key = String(inputs.boarding || '').trim().toLowerCase();
+    const hasLounge = key.includes('lounge');
+    const hasFood = key.includes('hudson') || key.includes('grab food') || key.includes('food');
+    if (hasLounge && hasFood) return { label: 'Lounge + food stop', minutes: 45 };
+    if (hasLounge) return { label: 'Lounge time', minutes: 35 };
+    if (hasFood) return { label: 'Hudson News stop', minutes: 15 };
+    return null;
+  }
 
-    if (inputs.style === 'Balanced') addReduction('balanced style uses a medium hidden confidence buffer', inputs.flightType === 'International' ? 5 : 3);
-    if (inputs.style === 'Relaxed') addReduction('relaxed traveler already adds explicit preference time', inputs.flightType === 'International' ? 12 : 8);
-    if (isLounge) addReduction('lounge selected already creates dwell cushion', inputs.flightType === 'International' ? 7 : 5);
-    if (isFamily) addReduction('family travel already adds behavioral cushion', inputs.flightType === 'International' ? 5 : 3);
+  function getStyleRule(inputs, baseMinutes) {
+    if (inputs.style === 'Tight') return { label: 'Cutting it close', minutes: -Math.round(baseMinutes * 0.1) };
+    if (inputs.style === 'Relaxed') return { label: 'Avoid panic buffer', minutes: Math.round(baseMinutes * 0.15) };
+    return null;
+  }
 
-    const reducedBy = Math.min(baseMinutes, reductions.reduce((sum, item) => sum + item.minutes, 0));
+  function calculateConfidenceBuffer(inputs, peakWindow) {
+    const cap = CAPS.confidenceBuffer[inputs.flightType];
+    const requestedRows = [{ label: 'Normal confidence buffer', minutes: 5, reason: 'normal' }];
+    if (inputs.highTrafficVolatility) requestedRows.push({ label: 'Traffic volatility buffer', minutes: 10, reason: 'high traffic volatility' });
+    if (inputs.airportAdvisory) requestedRows.push({ label: 'Airport advisory buffer', minutes: 15, reason: 'airport advisory' });
+    if (peakWindow) {
+      requestedRows.push({
+        label: 'Peak travel window',
+        minutes: inputs.flightType === 'International' ? 15 : 10,
+        reason: 'holiday/peak travel window'
+      });
+    }
+    const requested = requestedRows.reduce((sum, row) => sum + row.minutes, 0);
     return {
-      requested: baseMinutes,
-      applied: Math.max(0, baseMinutes - reducedBy),
-      reducedBy,
-      reductions,
+      requestedRows,
+      requested,
+      applied: Math.min(requested, cap),
+      cap,
       peakWindow
     };
   }
@@ -210,10 +293,13 @@
       complexity: String(input.complexity || 'Just me').trim(),
       style: normalizeTravelStyle(input.style),
       flightType: normalizeFlightType(input.flightType),
-      departureDate: input.departureDate instanceof Date ? input.departureDate : null
+      departureDate: input.departureDate instanceof Date ? input.departureDate : null,
+      securityWaitMinutes: Number.isFinite(Number(input.securityWaitMinutes)) ? Number(input.securityWaitMinutes) : 25,
+      airportComplexity: normalizeAirportComplexity(input.airportComplexity),
+      highTrafficVolatility: Boolean(input.highTrafficVolatility),
+      airportAdvisory: Boolean(input.airportAdvisory)
     };
     const acc = createAccumulator(inputs);
-    const isInternational = inputs.flightType === 'International';
 
     // 1. Base operational timing
     addRule(acc, 'base-travel-time', {
@@ -222,27 +308,8 @@
       layer: LAYERS.travelTime,
       visible: false
     });
-    addRule(acc, 'terminal-navigation', {
-      label: 'Terminal navigation',
-      minutes: BASE.terminalNavigation,
-      layer: LAYERS.terminalFlow,
-      visible: true
-    });
-    addRule(acc, 'boarding-time', {
-      label: 'Boarding time',
-      minutes: BASE.boardingTime,
-      layer: LAYERS.terminalFlow,
-      visible: true
-    });
 
-    // 2. Reduction logic
-    if (inputs.style === 'Tight') {
-      skipRule(acc, 'tight-travel-style', 'Applied during confidence stabilization');
-    } else {
-      skipRule(acc, 'tight-travel-style', 'Travel style is not tight');
-    }
-
-    // 3. Structural modifiers
+    // 2. Structural modifiers
     if (inputs.transport === 'Transit') {
       addRule(acc, 'transport-transit', { label: 'Transit travel adjustment', minutes: 20, layer: LAYERS.travelTime, visible: false });
     } else if (inputs.transport === 'Drive & park') {
@@ -264,18 +331,33 @@
       skipRule(acc, 'check-in-bag-logic', 'Domestic carry-on has no bag/check-in time');
     }
 
-    const securityMinutes = BASE.security[inputs.security];
+    const securityMinutes = getSecurityMinutes(inputs.security, inputs.securityWaitMinutes);
     addRule(acc, 'security-replacement', {
-      label: inputs.security === 'Standard' ? 'Standard security' : inputs.security,
+      label: getSecurityLabel(inputs.security),
       minutes: securityMinutes,
       layer: LAYERS.security,
       visible: true
     });
 
-    // 4. Behavioral modifiers
+    addRule(acc, 'airport-complexity', {
+      label: 'Airport navigation',
+      minutes: BASE.airportComplexity[inputs.airportComplexity],
+      layer: LAYERS.terminalFlow,
+      visible: true
+    });
+
+    addRule(acc, 'boarding-buffer', {
+      label: 'Boarding buffer',
+      minutes: BASE.boardingBuffer[inputs.flightType],
+      layer: LAYERS.terminalFlow,
+      visible: true
+    });
+
+    // 3. Behavioral modifiers
     const behavioralCap = CAPS.behavioral[inputs.flightType];
     let behavioralTotal = 0;
-    const behavioralRule = getBehavioralRule(inputs);
+    const processingNavigationTotal = getAirportProcessingNavigationTotal(acc);
+    const behavioralRule = getBehavioralRule(inputs, processingNavigationTotal);
     if (behavioralRule) {
       behavioralTotal = applyCappedRule(acc, 'travel-complexity', 'behavioralTime', {
         ...behavioralRule,
@@ -286,85 +368,65 @@
       skipRule(acc, 'travel-complexity', 'Just me selected');
     }
 
-    // 5. Preference modifiers
+    // 4. Preference dwell
     const preferenceCap = CAPS.preference[inputs.flightType];
     let preferenceTotal = 0;
-    if (inputs.boarding === 'Lounge') {
-      const loungeMinutes = Math.min(BASE.loungeTime, BASE.loungeContributionCap);
-      preferenceTotal = applyCappedRule(acc, 'lounge-time', 'preferenceTime', {
-        label: 'Lounge time',
-        minutes: loungeMinutes,
-        layer: LAYERS.preference,
-        visible: true
-      }, preferenceTotal, preferenceCap);
-      acc.debug.blendedPreferenceLogicApplied.push({
-        rule: 'lounge-time',
-        requested: BASE.loungeTime,
-        applied: loungeMinutes,
-        max: BASE.loungeContributionCap
-      });
-    } else if (inputs.boarding === 'Hudson News' || inputs.boarding === 'Grab food') {
-      preferenceTotal = applyCappedRule(acc, 'hudson-news-stop', 'preferenceTime', {
-        label: 'Hudson News stop',
-        minutes: 15,
+    const dwellRule = getPreferenceDwellRule(inputs);
+    if (dwellRule) {
+      preferenceTotal = applyCappedRule(acc, 'preference-dwell', 'preferenceTime', {
+        ...dwellRule,
         layer: LAYERS.preference,
         visible: true
       }, preferenceTotal, preferenceCap);
     } else {
-      skipRule(acc, 'boarding-preference', 'Head to gate selected');
+      skipRule(acc, 'preference-dwell', 'Straight to gate selected');
     }
 
-    if (inputs.style === 'Relaxed') {
-      const hasLounge = inputs.boarding === 'Lounge';
-      const relaxedMinutes = hasLounge ? (isInternational ? 15 : 10) : (isInternational ? 45 : 25);
-      if (hasLounge) {
-        acc.debug.blendedPreferenceLogicApplied.push({
-          rule: 'relaxed-travel-style',
-          reason: 'Relaxed style and lounge share the same dwell-buffer mindset',
-          standaloneMinutes: isInternational ? 45 : 25,
-          blendedMinutes: relaxedMinutes
-        });
+    // 5. Timing style / comfort buffer
+    const styleCap = CAPS.style[inputs.flightType];
+    const styleRule = getStyleRule(inputs, processingNavigationTotal);
+    if (styleRule) {
+      const isReduction = styleRule.minutes < 0;
+      const requested = Math.abs(styleRule.minutes);
+      const applied = isReduction ? -requested : Math.min(requested, styleCap);
+      addRule(acc, 'timing-style', {
+        label: styleRule.label,
+        minutes: applied,
+        layer: LAYERS.preference,
+        visible: true
+      });
+      if (!isReduction && applied < requested) {
+        acc.capsApplied.push({ cap: 'styleTime', rule: 'timing-style', requested, applied, max: styleCap });
       }
-      preferenceTotal = applyCappedRule(acc, 'relaxed-travel-style', 'preferenceTime', {
-        label: 'Relaxed travel style',
-        minutes: relaxedMinutes,
-        layer: LAYERS.preference,
-        visible: true
-      }, preferenceTotal, preferenceCap);
     } else {
-      skipRule(acc, 'relaxed-travel-style', 'Travel style is not relaxed');
+      skipRule(acc, 'timing-style', 'Balanced style selected');
     }
 
-    // 6. Confidence stabilization
-    const confidenceCap = CAPS.confidenceBuffer[inputs.flightType];
+    // 6. Confidence buffers
     const peakWindow = isPeakDepartureWindow(inputs.departureDate);
-    const confidenceBuffer = calculateConfidenceBuffer(inputs, confidenceCap, peakWindow);
-    acc.debug.hiddenBufferReductionsApplied = confidenceBuffer.reductions.map((item) => ({
-      ...item,
-      requested: confidenceBuffer.requested,
-      applied: confidenceBuffer.applied
-    }));
-    if (confidenceBuffer.applied <= 0) {
-      skipRule(acc, 'confidence-buffer', 'Cautionary selections already provide enough buffer');
-    } else if (peakWindow) {
-      addRule(acc, 'peak-confidence-buffer', {
-        label: 'Peak travel window',
-        minutes: confidenceBuffer.applied,
-        layer: LAYERS.confidenceBuffer,
-        visible: true
+    const confidenceBuffer = calculateConfidenceBuffer(inputs, peakWindow);
+    let confidenceTotal = 0;
+    confidenceBuffer.requestedRows.forEach((row) => {
+      confidenceTotal = addCappedLayerTotal(
+        acc,
+        'confidenceBufferTime',
+        LAYERS.confidenceBuffer,
+        `confidence-${row.reason}`,
+        row.label === 'Normal confidence buffer' ? 'Confidence buffer' : row.label,
+        row.minutes,
+        confidenceTotal,
+        confidenceBuffer.cap,
+        row.label !== 'Normal confidence buffer' || confidenceBuffer.requestedRows.length === 1
+      );
+    });
+    if (confidenceBuffer.requested > confidenceTotal) {
+      acc.capsApplied.push({
+        cap: 'confidenceBufferTime',
+        rule: 'confidence-buffer',
+        requested: confidenceBuffer.requested,
+        applied: confidenceTotal,
+        max: confidenceBuffer.cap
       });
-      acc.capsApplied.push({ cap: 'confidenceBufferTime', rule: 'peak-confidence-buffer', requested: confidenceBuffer.requested, applied: confidenceBuffer.applied, max: confidenceCap });
-    } else {
-      addRule(acc, 'base-confidence-buffer', {
-        label: 'Confidence buffer',
-        minutes: confidenceBuffer.applied,
-        layer: LAYERS.confidenceBuffer,
-        visible: false
-      });
-    }
-
-    if (inputs.style === 'Tight') {
-      skipRule(acc, 'tight-travel-style', 'No hidden buffer reduction; tight travelers still need confidence stabilization');
     }
 
     const finalRecommendationMinutes = Object.values(acc.layerTotals).reduce((sum, value) => sum + value, 0);
@@ -383,7 +445,9 @@
         blendedPreferenceLogicApplied: acc.debug.blendedPreferenceLogicApplied,
         cappedPreferenceTotals: acc.debug.cappedPreferenceTotals,
         cappedBehavioralTotals: acc.debug.cappedBehavioralTotals,
-        terminalNavigationMinutes: BASE.terminalNavigation,
+        airportComplexityMinutes: BASE.airportComplexity[inputs.airportComplexity],
+        boardingBufferMinutes: BASE.boardingBuffer[inputs.flightType],
+        securityBaseWaitMinutes: inputs.securityWaitMinutes,
         finalRecommendationMinutes
       }
     };

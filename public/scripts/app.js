@@ -8,13 +8,6 @@ const SETTINGS_KEY = 'eta_user_settings';
 const ETA_MONITOR_INTERVAL_MS = 2 * 60 * 1000;
 const ETA_MONITOR_SIGNIFICANT_MINUTES = 5;
 const LIVE_MODE_WINDOW_HOURS = 24;
-const INTERNATIONAL_CARRY_ON_CHECK_IN_MINUTES = 25;
-const INTERNATIONAL_BAG_DROP_CHECK_IN_MINUTES = 45;
-const INTERNATIONAL_BAG_DROP_ONLY_CHECK_IN_MINUTES = 35;
-const DOMESTIC_CHECKED_BAG_DROP_MINUTES = 15;
-const DOMESTIC_BAG_DROP_MINUTES = 15;
-const INTERNATIONAL_STANDARD_SECURITY_BUFFER_MINUTES = 10;
-const INTERNATIONAL_PEAK_BUFFER_MINUTES = 15;
 let etaMonitorTimerId = null;
 let etaMonitorKey = '';
 let etaMonitorInFlight = false;
@@ -906,47 +899,6 @@ function isPeakDepartureWindow(departureDate) {
   return isFridayAfterThree || isSundayAfternoonEvening || isWeekdayMorning;
 }
 
-function buildInternationalTimingAdjustments({ isInternational, luggage, security, departureDate }) {
-  const peakWindow = isPeakDepartureWindow(departureDate);
-  if (!isInternational) {
-    return {
-      peakWindow,
-      internationalBuffer: 0,
-      luggageBuffer: 0,
-      securityBuffer: 0,
-      peakBuffer: 0,
-      reasons: []
-    };
-  }
-
-  const checkInMinutes = luggage === 'Checking bags'
-    ? INTERNATIONAL_BAG_DROP_CHECK_IN_MINUTES
-    : luggage === 'Bag drop'
-      ? INTERNATIONAL_BAG_DROP_ONLY_CHECK_IN_MINUTES
-      : INTERNATIONAL_CARRY_ON_CHECK_IN_MINUTES;
-  const securityBuffer = security === 'Standard' ? INTERNATIONAL_STANDARD_SECURITY_BUFFER_MINUTES : 0;
-  const peakBuffer = peakWindow ? INTERNATIONAL_PEAK_BUFFER_MINUTES : 0;
-  const reasons = [
-    {
-      label: luggage === 'Checking bags' || luggage === 'Bag drop'
-        ? 'International bag drop/check-in'
-        : 'International check-in',
-      minutes: checkInMinutes
-    }
-  ];
-  if (securityBuffer) reasons.push({ label: 'Security cushion', minutes: securityBuffer });
-  if (peakBuffer) reasons.push({ label: 'Peak travel window', minutes: peakBuffer });
-
-  return {
-    peakWindow,
-    internationalBuffer: checkInMinutes,
-    luggageBuffer: 0,
-    securityBuffer,
-    peakBuffer,
-    reasons
-  };
-}
-
 function minutesForSelection(options = {}) {
   const transport = getActiveSelection('transport');
   const luggage = getActiveSelection('luggage');
@@ -971,7 +923,11 @@ function minutesForSelection(options = {}) {
     complexity,
     style,
     flightType,
-    departureDate
+    departureDate,
+    securityWaitMinutes: options.securityWaitMinutes,
+    airportComplexity: options.airportComplexity,
+    highTrafficVolatility: options.highTrafficVolatility,
+    airportAdvisory: options.airportAdvisory
   });
   if (!rulesResult) {
     throw new Error('AirportMath timing rules engine is not loaded.');
@@ -1026,16 +982,6 @@ function minutesForSelection(options = {}) {
     timingLayers: layers,
     timingRulesDebug: rulesResult.debug
   };
-}
-
-function getTravelComplexityMinutes(complexity, isInternational) {
-  const key = String(complexity || 'Just me').trim().toLowerCase();
-  const values = {
-    'family / children': isInternational ? 40 : 25,
-    'traveling with pets': isInternational ? 35 : 20,
-    'group travel': isInternational ? 30 : 15
-  };
-  return values[key] || 0;
 }
 
 function destinationForSelection(airport, terminal) {
@@ -1331,22 +1277,49 @@ function getEstimatedSecurityForPlanning(airport, securityStatus) {
   const airportCode = String(airport || '').toUpperCase();
   const selected = String(securityStatus || '').toLowerCase();
   const regularByAirport = { JFK: 31, LGA: 21, EWR: 27 };
-  const precheckByAirport = { JFK: 12, LGA: 8, EWR: 10 };
   const regular = regularByAirport[airportCode] ?? 35;
-  const precheck = precheckByAirport[airportCode] ?? 16;
-  const minutes = selected.includes('clear')
-    ? Math.max(3, Math.round(precheck * 0.6))
-    : selected.includes('pre')
-      ? precheck
-      : regular;
+  const precheck = Math.max(Math.round(regular * 0.6), 5);
+  const clear = Math.max(Math.round(regular * 0.5), 4);
+  const clearPrecheck = Math.max(Math.round(regular * 0.35), 3);
+  const minutes = selected.includes('clear') && selected.includes('pre')
+    ? clearPrecheck
+    : selected.includes('clear')
+      ? clear
+      : selected.includes('pre')
+        ? precheck
+        : regular;
   return {
     minutes,
     status: 'estimated',
     source: 'Planning estimate',
     terminal: '',
     airport: airportCode,
-    securityStatus: securityStatus || ''
+    securityStatus: securityStatus || '',
+    regularMinutes: regular,
+    precheckMinutes: precheck
   };
+}
+
+function getSecurityBaseWaitMinutes(resolvedSecurity, airport) {
+  const regular = Number(resolvedSecurity?.regularMinutes);
+  if (Number.isFinite(regular) && regular > 0) return Math.round(regular);
+  const selected = String(resolvedSecurity?.securityStatus || '').toLowerCase();
+  const selectedMinutes = Number(resolvedSecurity?.minutes);
+  if (selected.includes('standard') && Number.isFinite(selectedMinutes) && selectedMinutes > 0) {
+    return Math.round(selectedMinutes);
+  }
+  const fallback = getEstimatedSecurityForPlanning(airport, 'Standard');
+  const fallbackMinutes = Number(fallback?.regularMinutes || fallback?.minutes);
+  return Number.isFinite(fallbackMinutes) && fallbackMinutes > 0 ? Math.round(fallbackMinutes) : 25;
+}
+
+function getAirportComplexityForTiming(airport, terminal) {
+  const code = String(airport || '').trim().toUpperCase();
+  const terminalLabel = String(terminal || '').trim().toLowerCase();
+  if (code === 'LGA') return 'simple';
+  if (code === 'JFK' && (terminalLabel.includes('terminal 1') || terminalLabel.includes('terminal 4'))) return 'complex';
+  if (code === 'EWR' && terminalLabel.includes('terminal b')) return 'complex';
+  return 'standard';
 }
 
 async function calculateETA() {
@@ -1385,11 +1358,21 @@ async function calculateETA() {
   const calculationMode = getDepartureCalculationMode(flight);
   const isLiveMode = calculationMode === 'live';
   const isPlanningMode = calculationMode === 'planning';
+  const selectedSecurityStatus = getActiveSelection('security') || window.appState?.selections?.security || 'Security';
+  const resolvedSecurity = isLiveMode
+    ? await fetchAirportSecurityEstimate(selectedAirport, selectedTerminal, selectedSecurityStatus)
+    : {
+      ...getEstimatedSecurityForPlanning(selectedAirport, selectedSecurityStatus),
+      terminal: selectedTerminal
+    };
 
-  const timing = minutesForSelection({
+  const timingOptions = {
     flightType: selectedFlightType,
-    departureDate: flight
-  });
+    departureDate: flight,
+    securityWaitMinutes: getSecurityBaseWaitMinutes(resolvedSecurity, selectedAirport),
+    airportComplexity: getAirportComplexityForTiming(selectedAirport, selectedTerminal)
+  };
+  let timing = minutesForSelection(timingOptions);
   const selectedTransport = getActiveSelection('transport');
   const selectedDestination = destinationForSelection(selectedAirport, selectedTerminal);
   const travelApi = isLiveMode
@@ -1412,6 +1395,18 @@ async function calculateETA() {
   const routeApiStaticDuration = Number.isFinite(Number(travelApi?.typicalMinutes))
     ? Math.round(Number(travelApi.typicalMinutes))
     : null;
+  const hasHighTrafficVolatility = (
+    Number.isFinite(routeApiDuration)
+    && Number.isFinite(routeApiStaticDuration)
+    && routeApiStaticDuration > 0
+    && (routeApiDuration - routeApiStaticDuration >= 15 || routeApiDuration / routeApiStaticDuration >= 1.25)
+  );
+  if (hasHighTrafficVolatility) {
+    timing = minutesForSelection({
+      ...timingOptions,
+      highTrafficVolatility: true
+    });
+  }
   const fallbackDuration = fallbackTravelEstimateMinutes({
     airport: selectedAirport,
     transportMode: selectedTransport,
@@ -1449,13 +1444,6 @@ async function calculateETA() {
   if (isLiveMode && selectedAirport === 'LGA') {
     lgaConditions = await fetchLgaConditions();
   }
-  const selectedSecurityStatus = getActiveSelection('security') || window.appState?.selections?.security || 'Security';
-  const resolvedSecurity = isLiveMode
-    ? await fetchAirportSecurityEstimate(selectedAirport, selectedTerminal, selectedSecurityStatus)
-    : {
-      ...getEstimatedSecurityForPlanning(selectedAirport, selectedSecurityStatus),
-      terminal: selectedTerminal
-    };
   const resolvedSecurityMinutes = Number(resolvedSecurity?.minutes);
   const lgaWalkMinutes = selectedAirport === 'LGA' ? Number(lgaConditions?.walkToGateMinutes) : null;
   const leave = new Date(flight.getTime() - timing.total * 60000);
@@ -2182,17 +2170,20 @@ function getTimingReasonGroup(label) {
   if (normalized.includes('standard security') || normalized.includes('security cushion')) {
     return { key: 'standard-security', label: 'Standard security', order: 30 };
   }
-  if (normalized.includes('clear')) {
+  if (normalized.includes('clear') && normalized.includes('precheck')) {
     return { key: 'clear-precheck', label: 'CLEAR + PreCheck', order: 30 };
+  }
+  if (normalized.includes('clear')) {
+    return { key: 'clear', label: 'CLEAR', order: 30 };
   }
   if (normalized.includes('precheck')) {
     return { key: 'precheck', label: 'PreCheck', order: 30 };
   }
-  if (normalized.includes('terminal navigation') || normalized.includes('airport baseline')) {
-    return { key: 'terminal-navigation', label: 'Terminal navigation', order: 40 };
+  if (normalized.includes('terminal navigation') || normalized.includes('airport navigation') || normalized.includes('airport baseline')) {
+    return { key: 'airport-navigation', label: 'Airport navigation', order: 40 };
   }
   if (normalized.includes('boarding time') || normalized.includes('boarding buffer') || normalized.includes('base timing cushion')) {
-    return { key: 'boarding-time', label: 'Boarding time', order: 50 };
+    return { key: 'boarding-buffer', label: 'Boarding buffer', order: 50 };
   }
   if (normalized.includes('peak travel window')) {
     return { key: 'peak-travel-window', label: 'Peak travel window', order: 60 };
@@ -2215,11 +2206,14 @@ function getTimingReasonGroup(label) {
   if (normalized.includes('lounge')) {
     return { key: 'lounge-time', label: 'Lounge time', order: 80 };
   }
-  if (normalized.includes('relaxed')) {
-    return { key: 'relaxed-travel-style', label: 'Relaxed travel style', order: 90 };
+  if (normalized.includes('avoid panic') || normalized.includes('relaxed')) {
+    return { key: 'avoid-panic-buffer', label: 'Avoid panic buffer', order: 90 };
   }
-  if (normalized.includes('tight')) {
-    return { key: 'tight-travel-style', label: 'Tight travel style', order: 90 };
+  if (normalized.includes('cutting') || normalized.includes('tight')) {
+    return { key: 'cutting-it-close', label: 'Cutting it close', order: 90 };
+  }
+  if (normalized.includes('accessibility') || normalized.includes('mobility')) {
+    return { key: 'accessibility-mobility', label: 'Accessibility / mobility', order: 75 };
   }
   return {
     key: normalized || 'airport-timing',
