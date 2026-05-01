@@ -4503,7 +4503,7 @@ body{
   font-family:"Instrument Serif", serif !important;
   font-size:52px !important;
   line-height:46px !important;
-  letter-spacing:-1px !important;
+  letter-spacing:-1.5px !important;
   font-weight:400 !important;
   color:#064819;
   -webkit-font-smoothing:antialiased;
@@ -4519,7 +4519,7 @@ body{
 }
 
 #calculate.calcScreen .calcDecisionSection{
-  margin-bottom:2.5px;
+  margin-bottom:3.75px;
 }
 
 #calculate.calcScreen .ctaButton{
