@@ -3842,14 +3842,23 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  font-family:"IBM Plex Sans", sans-serif;
-  font-size:102px;
-  line-height:1;
-  font-weight:500;
-  color:#CFFF4E;
+  font-size:0;
+  line-height:0;
   opacity:0;
   transform:translateY(7px) scale(.94);
   animation:loadingSymbolCycle 7500ms cubic-bezier(.2,.8,.2,1) infinite;
+}
+
+.loadingSymbol span svg{
+  width:102px;
+  height:102px;
+  flex-shrink:0;
+  display:block;
+  stroke:#CFFF4E;
+  fill:none;
+  stroke-width:1.57473;
+  stroke-linecap:round;
+  stroke-linejoin:round;
 }
 
 .loadingSymbol span:nth-child(2){ animation-delay:1500ms; }
@@ -4659,8 +4668,9 @@ body{
   transform:rotate(45deg);
 }
 
-.loadingSymbol span{
-  font-size:133px;
+.loadingSymbol span svg{
+  width:133px;
+  height:133px;
 }
 
 .loadingTitle{
