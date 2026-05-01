@@ -4494,12 +4494,16 @@ body{
 }
 
 /* Calculate hero header + CTA refresh */
+#calculate.calcScreen .calcContent{
+  padding-top:96px !important;
+}
+
 #calculate.calcScreen .calcContent .calcHeroTitle{
-  margin:0 0 28px;
+  margin:0 0 15px;
   font-family:"Instrument Serif", serif !important;
-  font-size:57px !important;
-  line-height:55px !important;
-  letter-spacing:normal !important;
+  font-size:40px !important;
+  line-height:39px !important;
+  letter-spacing:-3px !important;
   font-weight:400 !important;
   color:#064819;
   -webkit-font-smoothing:antialiased;
@@ -4514,10 +4518,15 @@ body{
   color:#6CFF48;
 }
 
+#calculate.calcScreen .calcDecisionSection{
+  margin-bottom:5px;
+}
+
 #calculate.calcScreen .ctaButton{
   width:100%;
   min-height:56px;
   height:56px;
+  margin-top:11px;
   border:2px solid #064819;
   border-radius:999px;
   background:transparent;
