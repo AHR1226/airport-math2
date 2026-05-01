@@ -4607,3 +4607,87 @@ body{
 .bottomNav button.active .icon::after{
   display:none;
 }
+
+/* Global UI refinement pass */
+:root{
+  --radius-card: 19.2px;
+}
+
+#calculate.calcScreen .calcContent .calcHeroTitle{
+  line-height:47px !important;
+  margin-bottom:220px;
+}
+
+.bottomNav{
+  height:65px;
+  padding:8px 9px;
+  border-radius:19.2px;
+}
+
+.bottomNav button{
+  padding:5px 0;
+  gap:5px;
+  border-radius:14px;
+}
+
+.bottomNav svg{
+  width:20px;
+  height:20px;
+}
+
+.bottomNav span{
+  font-size:10px;
+}
+
+.bottomNav button.active{
+  background:transparent;
+  color:#032A10;
+  font-weight:600;
+}
+
+#result.useHtmlResult .resultHtmlActions{
+  margin-bottom:5px;
+}
+
+#result.useHtmlResult .resultBreakdownCard,
+.etaResultView .resultBreakdownCard{
+  padding-top:22px;
+}
+
+.loadingSymbol{
+  width:172px;
+  height:172px;
+  margin-bottom:0;
+  transform:rotate(45deg);
+}
+
+.loadingSymbol span{
+  font-size:133px;
+}
+
+.loadingTitle{
+  display:none;
+}
+
+.pageHeader{
+  margin-bottom:44px !important;
+}
+
+#settings .pageHeader{
+  margin-bottom:44px !important;
+}
+
+#result.useHtmlResult .resultHtmlHeader{
+  margin-bottom:20px !important;
+}
+
+.card,
+.appCard,
+.appCardDark,
+.resultHeroCard,
+.resultBreakdownCard,
+#result.useHtmlResult .resultLiveCard,
+.etaResultView .resultLiveCard,
+#trips .tripsTripHeader{
+  border-radius:var(--radius-card);
+}
