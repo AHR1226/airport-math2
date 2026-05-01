@@ -4476,3 +4476,19 @@ body{
 .etaResultView .resultLiveCard:not(.tripStateConditions--upcoming){
   background:#F6F6F4;
 }
+
+/* Trips collapsed row type refinement */
+#trips .tripsAirportCode{
+  font-size:13px;
+  line-height:1.12;
+  letter-spacing:-0.01em;
+  font-weight:500;
+}
+
+#trips .tripsAirportName{
+  margin-top:4px;
+  font-size:10.5px;
+  line-height:1.2;
+  font-weight:400;
+  color:rgba(38,79,53,0.66);
+}

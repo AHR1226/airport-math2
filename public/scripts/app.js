@@ -1946,6 +1946,8 @@ function buildResultHtml(result, options = {}) {
   const conditionsAirportTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--faa';
   const conditionsWeatherTagLabel = isPlanningMode ? 'WEATHER EST.' : 'Clear';
   const conditionsWeatherTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--clear';
+  const airportTimingAudit = getAirportTimingAudit(result);
+  logTimeAtAirportDebug(airportTimingAudit);
   const timingReasonRows = renderTimingReasonRows(result.timingAdjustmentReasons);
   const actionsHtml = `
     <button type="button" class="resultHtmlEdit resultHtmlSaveTrip${isSavedTrip ? ' isSaved' : ''}" ${isSavedTrip ? 'disabled aria-label="Trip saved"' : 'onclick="saveCurrentTrip(this, event)"'}>${isSavedTrip ? '✓ Saved trip' : 'Save trip'}</button>
@@ -2065,10 +2067,64 @@ function renderTimingReasonRows(reasons) {
   }).join('');
 }
 
+function getRenderableTimingReasonRows(reasons) {
+  if (!Array.isArray(reasons)) return [];
+  return reasons.filter((item) => {
+    if (!Number.isFinite(Number(item?.minutes)) || !String(item?.label || '').trim()) return false;
+    if (item?.visible !== false) return true;
+    return isHiddenAirportTimingRowIncluded(item);
+  });
+}
+
+function isHiddenAirportTimingRowIncluded(item) {
+  if (!item || item.visible !== false) return false;
+  const layer = String(item.layer || '').trim();
+  const label = String(item.label || '').trim().toLowerCase();
+  if (layer === 'confidenceBuffer') return true;
+  return label.includes('confidence buffer') || label.includes('peak travel window');
+}
+
+function getAirportTimingAudit(result) {
+  const rows = aggregateTimingReasonRows(result?.timingAdjustmentReasons);
+  const visibleRows = rows.map((row) => ({
+    label: row.label,
+    minutes: Math.round(Number(row.minutes) || 0)
+  }));
+  const visibleRowsTotal = visibleRows.reduce((sum, row) => sum + row.minutes, 0);
+  const displayedTimeAtAirport = getAirportTimingMinutes(result);
+  const hiddenRowsIncluded = getRenderableTimingReasonRows(result?.timingAdjustmentReasons)
+    .filter((row) => row?.visible === false)
+    .map((row) => ({
+      label: formatTimingReasonLabel(row.label),
+      minutes: Math.round(Number(row.minutes) || 0),
+      layer: row.layer || null
+    }));
+  const difference = displayedTimeAtAirport - visibleRowsTotal;
+  return {
+    visibleRows,
+    visibleRowsTotal,
+    displayedTimeAtAirport,
+    hiddenRowsIncluded,
+    difference
+  };
+}
+
+function logTimeAtAirportDebug(audit) {
+  if (!audit) return;
+  console.log('[time-at-airport-debug]', audit);
+  if (audit.difference !== 0) {
+    console.warn('[time-at-airport-debug] Time at airport mismatch', {
+      ...audit,
+      missingOrExtraComponent: audit.difference > 0
+        ? `${audit.difference} min included in displayed total but missing from visible rows`
+        : `${Math.abs(audit.difference)} min visible in rows but missing from displayed total`
+    });
+  }
+}
+
 function aggregateTimingReasonRows(reasons) {
   const groups = new Map();
-  reasons
-    .filter((item) => item?.visible !== false && Number.isFinite(Number(item?.minutes)) && String(item?.label || '').trim())
+  getRenderableTimingReasonRows(reasons)
     .forEach((item) => {
       const group = getTimingReasonGroup(item.label);
       const current = groups.get(group.key) || {
@@ -2129,6 +2185,9 @@ function getTimingReasonGroup(label) {
   }
   if (normalized.includes('peak travel window')) {
     return { key: 'peak-travel-window', label: 'Peak travel window', order: 60 };
+  }
+  if (normalized.includes('confidence buffer')) {
+    return { key: 'confidence-buffer', label: 'Confidence buffer', order: 65 };
   }
   if (normalized.includes('hudson') || normalized.includes('grab food')) {
     return { key: 'hudson-news-stop', label: 'Hudson News stop', order: 70 };
@@ -2343,7 +2402,7 @@ function getUrgencyPresentation(result) {
     },
     live: {
       leaveLabel: selectedCopy.leaveLabel,
-      pillCopy: 'Monitoring live traffic',
+      pillCopy: 'Monitoring live traffic & airport conditions',
       statusClassName: 'resultHtmlStatus--live'
     },
     risk: {
@@ -2393,9 +2452,9 @@ function parseFlightDepartureDate(result) {
 
 function getTripStateContextLine(urgency, result) {
   if (urgency?.tripState === 'upcoming') return '';
-  if (urgency?.tripState === 'live' || urgency?.tripState === 'risk') return 'Using live traffic + airport conditions';
+  if (urgency?.tripState === 'live' || urgency?.tripState === 'risk') return '';
   const mode = String(result?.calculationMode || '').trim();
-  if (mode === 'live') return 'Using live traffic + airport conditions';
+  if (mode === 'live') return '';
   return '';
 }
 
