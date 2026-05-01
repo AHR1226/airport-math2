@@ -4530,3 +4530,80 @@ body{
   transform:scale(0.98);
   box-shadow:none;
 }
+
+/* Multi-page refinement pass */
+#result.useHtmlResult .resultHtmlHeader{
+  margin-bottom:10px !important;
+}
+
+#result.useHtmlResult .resultHtmlActions{
+  justify-content:flex-start;
+  align-items:center;
+  margin:0 0 10px;
+}
+
+#settings .primaryButton{
+  width:100%;
+  min-height:42px;
+  height:42px;
+  margin-top:16.5px;
+  border:2px solid #064819;
+  border-radius:999px;
+  background:transparent;
+  color:#064819;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:11.9px;
+  font-weight:700;
+  box-shadow:none;
+}
+
+#settings .primaryButton:active{
+  transform:scale(0.98);
+  box-shadow:none;
+}
+
+#calculate.calcScreen .calcContent .calcHeroTitle{
+  margin-bottom:110px;
+}
+
+#calculate.calcScreen .ctaButton{
+  margin-top:24px;
+}
+
+.bottomNav{
+  left:16px;
+  right:16px;
+  bottom:calc(10px + var(--safe-area-bottom));
+  height:72px;
+  padding:9px 10px;
+  align-items:center;
+  border:1px solid rgba(6,72,25,0.08);
+  border-top:1px solid rgba(6,72,25,0.08);
+  border-radius:24px;
+  background:rgba(255,255,255,0.9);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.03),
+    0 18px 42px rgba(6,72,25,0.12);
+  backdrop-filter:blur(20px);
+}
+
+.bottomNav button{
+  height:100%;
+  padding:6px 0;
+  border-radius:18px;
+  justify-content:center;
+}
+
+.bottomNav button.active{
+  color:#032A10;
+  background:rgba(207,255,78,0.22);
+  transform:none;
+}
+
+.bottomNav button.active .icon{
+  transform:none;
+}
+
+.bottomNav button.active .icon::after{
+  display:none;
+}

@@ -92,6 +92,7 @@ function normalizeTravelStyleKey(raw) {
 function defaultUserSettings() {
   return {
     homeAddress: getStoredAddress(HOME_ADDRESS_KEY),
+    workAddress: getStoredAddress(WORK_ADDRESS_KEY),
     defaultAirport: 'JFK',
     travelStyle: 'Balanced',
     showPreferences: true,
@@ -109,6 +110,7 @@ function readUserSettings() {
     return {
       ...defaults,
       homeAddress: formatAddressForDisplay(parsed.homeAddress || defaults.homeAddress || '').trim(),
+      workAddress: formatAddressForDisplay(parsed.workAddress || defaults.workAddress || '').trim(),
       defaultAirport: airport,
       travelStyle: normalizeTravelStyleKey(parsed.travelStyle || defaults.travelStyle),
       showPreferences: parsed.showPreferences !== false,
@@ -124,6 +126,7 @@ function writeUserSettings(settings) {
     ...defaultUserSettings(),
     ...settings,
     homeAddress: formatAddressForDisplay(settings?.homeAddress || '').trim(),
+    workAddress: formatAddressForDisplay(settings?.workAddress || '').trim(),
     defaultAirport: ['JFK', 'LGA', 'EWR'].includes(settings?.defaultAirport) ? settings.defaultAirport : 'JFK',
     travelStyle: normalizeTravelStyleKey(settings?.travelStyle || 'Balanced'),
     showPreferences: settings?.showPreferences !== false,
@@ -131,6 +134,7 @@ function writeUserSettings(settings) {
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
   setStoredAddress(HOME_ADDRESS_KEY, next.homeAddress);
+  setStoredAddress(WORK_ADDRESS_KEY, next.workAddress);
   return next;
 }
 
@@ -184,11 +188,13 @@ function applySavedSettingsToCalculate({ force = false } = {}) {
 function refreshSettingsUI() {
   const settings = readUserSettings();
   const homeInput = document.getElementById('settingsHomeAddressInput');
+  const workInput = document.getElementById('settingsWorkAddressInput');
   const airportSelect = document.getElementById('settingsDefaultAirport');
   const styleSelect = document.getElementById('settingsDefaultTravelStyle');
   const prefsToggle = document.getElementById('settingsShowPreferences');
   const status = document.getElementById('settingsSaveStatus');
   if (homeInput) homeInput.value = settings.homeAddress;
+  if (workInput) workInput.value = settings.workAddress;
   if (airportSelect) airportSelect.value = settings.defaultAirport;
   if (styleSelect) styleSelect.value = settings.travelStyle;
   if (prefsToggle) prefsToggle.checked = settings.showPreferences;
@@ -218,6 +224,7 @@ function initializeSettingsUI() {
     event.preventDefault();
     const settings = writeUserSettings({
       homeAddress: document.getElementById('settingsHomeAddressInput')?.value || '',
+      workAddress: document.getElementById('settingsWorkAddressInput')?.value || '',
       defaultAirport: document.getElementById('settingsDefaultAirport')?.value || 'JFK',
       travelStyle: document.getElementById('settingsDefaultTravelStyle')?.value || 'Balanced',
       showPreferences: document.getElementById('settingsShowPreferences')?.checked !== false,
@@ -1829,6 +1836,12 @@ function formatAddressForDisplay(value) {
   return s.trim();
 }
 
+function formatHeroOriginAddress(value) {
+  const display = formatAddressForDisplay(value);
+  if (!display) return '';
+  return display.split(',')[0].trim();
+}
+
 function ensureHtmlResultContainer() {
   const resultSection = document.getElementById('result');
   if (!resultSection) return null;
@@ -1864,7 +1877,7 @@ function buildResultHtml(result, options = {}) {
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
   const flightType = normalizeFlightType(result.flightType || form.flightType || 'Domestic');
   const flightNumber = String(result.flightNumber || form.flightNumber || '').trim().toUpperCase();
-  const startForDisplay = formatAddressForDisplay(result.origin || form.startLocation || '').trim();
+  const startForHeroDisplay = formatHeroOriginAddress(result.origin || form.startLocation || '').trim();
   const transportMode = String(result.transportMode || '').trim();
   const pickupForUber = formatAddressForDisplay(result.origin || form.startLocation || '').trim();
   const destinationForUber = formatAddressForDisplay(
@@ -1907,12 +1920,10 @@ function buildResultHtml(result, options = {}) {
   const heroFlightSubject = flightNumber ? `${flightNumber} flight` : `${flightType.toLowerCase()} flight`;
   const heroFlightDepartLine = `Your ${heroFlightSubject} departs at ${scheduledFlightTime || '7:30 PM'}`;
   const planningHeroDepartLine = `Departs ${scheduledFlightTime || '7:30 PM'}${flightDateContext ? ` · ${flightDateContext}` : ''}`;
-  const heroFlightMetaLine = isPlanningMode
-    ? `${airportLabel} · ${terminalLabel}`
-    : `${airportLabel} · ${terminalLabel} · Gate`;
+  const heroFlightMetaLine = `${airportLabel} · ${terminalLabel}`;
   const planningHeroDetailsLine = `${flightType} flight · ${heroFlightMetaLine}`;
   const heroOriginPrefix = getTransportOriginPrefix(result.transportMode);
-  const heroOriginLine = (heroOriginPrefix && startForDisplay) ? `${heroOriginPrefix} ${startForDisplay}` : '';
+  const heroOriginLine = (heroOriginPrefix && startForHeroDisplay) ? `${heroOriginPrefix} ${startForHeroDisplay}` : '';
   const heroMetaBlockClass = isPlanningMode
     ? 'resultHtmlMetaBlock resultHtmlMetaBlock--planning'
     : 'resultHtmlMetaBlock';
@@ -1957,9 +1968,9 @@ function buildResultHtml(result, options = {}) {
   return `
     ${embedded ? '' : `<div class="resultHtmlHeader">
       <h2 class="resultHtmlTitle">Your ETA</h2>
-      <div class="resultHtmlActions">
-        ${actionsHtml}
-      </div>
+    </div>
+    <div class="resultHtmlActions">
+      ${actionsHtml}
     </div>`}
     <div class="resultHeroCard tripStateHero--${escapeHtml(urgency.tripState)}">
       <div class="resultHtmlEyebrow">${escapeHtml(urgency.leaveLabel)}</div>
