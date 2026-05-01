@@ -2262,10 +2262,8 @@ input{
 
 #trips .tripsExpandedResult{
   width:100%;
-  margin-top:var(--space-3);
   display:flex;
   flex-direction:column;
-  gap:15px;
 }
 
 .etaResultView .resultHeroCard,
@@ -3983,7 +3981,7 @@ body{
 }
 
 #result.useHtmlResult .resultHeroCard.tripStateHero--upcoming + .resultBreakdownCard.tripStateBreakdown--upcoming,
-.etaResultView .resultHeroCard.tripStateHero--upcoming + .resultBreakdownCard.tripStateBreakdown--upcoming{
+.etaResultView:not(.etaCards--embedded) .resultHeroCard.tripStateHero--upcoming + .resultBreakdownCard.tripStateBreakdown--upcoming{
   margin-top:-11px;
 }
 
@@ -4050,8 +4048,8 @@ body{
 
 #result.useHtmlResult .resultHeroCard + .resultBreakdownCard,
 #result.useHtmlResult .resultBreakdownCard + .resultLiveCard,
-.etaResultView .resultHeroCard + .resultBreakdownCard,
-.etaResultView .resultBreakdownCard + .resultLiveCard{
+.etaResultView:not(.etaCards--embedded) .resultHeroCard + .resultBreakdownCard,
+.etaResultView:not(.etaCards--embedded) .resultBreakdownCard + .resultLiveCard{
   margin-top:-11px;
 }
 
@@ -4209,7 +4207,7 @@ body{
 
 /* ETA card system consolidation: layout is shared, colors are state-specific */
 #result.useHtmlResult .etaResultView,
-.etaResultView{
+.etaResultView:not(.etaCards--embedded){
   gap:15px;
 }
 
@@ -4246,10 +4244,10 @@ body{
 #result.useHtmlResult .etaResultView .resultBreakdownCard + .resultUberCard,
 #result.useHtmlResult .etaResultView .resultBreakdownCard + .resultLiveCard,
 #result.useHtmlResult .etaResultView .resultUberCard + .resultLiveCard,
-.etaResultView .resultHeroCard + .resultBreakdownCard,
-.etaResultView .resultBreakdownCard + .resultUberCard,
-.etaResultView .resultBreakdownCard + .resultLiveCard,
-.etaResultView .resultUberCard + .resultLiveCard{
+.etaResultView:not(.etaCards--embedded) .resultHeroCard + .resultBreakdownCard,
+.etaResultView:not(.etaCards--embedded) .resultBreakdownCard + .resultUberCard,
+.etaResultView:not(.etaCards--embedded) .resultBreakdownCard + .resultLiveCard,
+.etaResultView:not(.etaCards--embedded) .resultUberCard + .resultLiveCard{
   margin-top:-11px;
 }
 
@@ -4750,8 +4748,8 @@ body{
 }
 
 #result.useHtmlResult .resultHtmlContainer,
-.etaResultView,
-#trips .tripsExpandedResult{
+.etaResultView:not(.etaCards--embedded),
+#trips .tripsExpandedResult:not(.etaCards--embedded){
   gap:var(--mobile-card-gap);
 }
 
@@ -4835,8 +4833,8 @@ body{
 }
 
 #result.useHtmlResult .resultHtmlContainer,
-.etaResultView,
-#trips .tripsExpandedResult{
+.etaResultView:not(.etaCards--embedded),
+#trips .tripsExpandedResult:not(.etaCards--embedded){
   gap:var(--mobile-card-gap);
 }
 
@@ -4844,10 +4842,10 @@ body{
 #result.useHtmlResult .resultBreakdownCard + .resultUberCard,
 #result.useHtmlResult .resultBreakdownCard + .resultLiveCard,
 #result.useHtmlResult .resultUberCard + .resultLiveCard,
-.etaResultView .resultHeroCard + .resultBreakdownCard,
-.etaResultView .resultBreakdownCard + .resultUberCard,
-.etaResultView .resultBreakdownCard + .resultLiveCard,
-.etaResultView .resultUberCard + .resultLiveCard{
+.etaResultView:not(.etaCards--embedded) .resultHeroCard + .resultBreakdownCard,
+.etaResultView:not(.etaCards--embedded) .resultBreakdownCard + .resultUberCard,
+.etaResultView:not(.etaCards--embedded) .resultBreakdownCard + .resultLiveCard,
+.etaResultView:not(.etaCards--embedded) .resultUberCard + .resultLiveCard{
   margin-top:0;
 }
 
@@ -4871,6 +4869,9 @@ body{
   --eta-hero-padding:26px 20px 19px;
   --eta-card-padding:22px 18px 18px;
   --eta-bottom-clearance:calc(148px + var(--safe-area-bottom));
+  --trips-expanded-header-to-hero:24px;
+  --trips-expanded-hero-to-breakdown:8px;
+  --trips-expanded-to-next-trip-row:24px;
 }
 
 .calcContent,
@@ -4882,17 +4883,9 @@ body{
 }
 
 #result.useHtmlResult .resultHtmlContainer,
-.etaResultView,
-#trips .tripsExpandedResult{
+.etaResultView:not(.etaCards--embedded),
+#trips .tripsExpandedResult:not(.etaCards--embedded){
   gap:var(--eta-card-gap);
-}
-
-#trips .tripsExpandedResult{
-  margin-top:var(--eta-card-gap);
-}
-
-#trips .tripsTripRow.isExpanded{
-  margin-bottom:var(--eta-card-gap);
 }
 
 #result.useHtmlResult .resultHeroCard,
@@ -4919,9 +4912,46 @@ body{
 #result.useHtmlResult .resultBreakdownCard + .resultUberCard,
 #result.useHtmlResult .resultBreakdownCard + .resultLiveCard,
 #result.useHtmlResult .resultUberCard + .resultLiveCard,
-.etaResultView .resultHeroCard + .resultBreakdownCard,
-.etaResultView .resultBreakdownCard + .resultUberCard,
-.etaResultView .resultBreakdownCard + .resultLiveCard,
-.etaResultView .resultUberCard + .resultLiveCard{
+.etaResultView:not(.etaCards--embedded) .resultHeroCard + .resultBreakdownCard,
+.etaResultView:not(.etaCards--embedded) .resultBreakdownCard + .resultUberCard,
+.etaResultView:not(.etaCards--embedded) .resultBreakdownCard + .resultLiveCard,
+.etaResultView:not(.etaCards--embedded) .resultUberCard + .resultLiveCard{
   margin-top:0;
+}
+
+/* Trips expanded spacing system — source of truth: --trips-expanded-* tokens (:root above); Trips-only .etaCards--embedded opts out of page .etaResultView gaps / stack margins. */
+
+#trips .tripsTripRow{
+  margin-bottom:var(--trips-expanded-to-next-trip-row) !important;
+}
+
+#trips .tripsTripRow:last-child{
+  margin-bottom:0 !important;
+}
+
+#trips .tripsExpandedResult.etaCards--embedded{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  box-sizing:border-box;
+  width:100%;
+  gap:0 !important;
+  padding:0 !important;
+  margin:var(--trips-expanded-header-to-hero) 0 0 0 !important;
+}
+
+#trips .tripsExpandedResult.etaCards--embedded > .resultHeroCard{
+  margin:0 !important;
+}
+
+#trips .tripsExpandedResult.etaCards--embedded > .resultBreakdownCard,
+#trips .tripsExpandedResult.etaCards--embedded > .resultUberCard{
+  margin:var(--trips-expanded-hero-to-breakdown) 0 0 0 !important;
+}
+
+#trips .tripsExpandedResult.etaCards--embedded > .resultHeroCard + .resultBreakdownCard,
+#trips .tripsExpandedResult.etaCards--embedded > .resultBreakdownCard + .resultUberCard,
+#trips .tripsExpandedResult.etaCards--embedded > .resultBreakdownCard + .resultLiveCard,
+#trips .tripsExpandedResult.etaCards--embedded > .resultUberCard + .resultLiveCard{
+  margin-top:var(--trips-expanded-hero-to-breakdown) !important;
 }

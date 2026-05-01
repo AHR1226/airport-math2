@@ -1693,6 +1693,7 @@ function renderTripCard(trip) {
     )
     : '';
 
+  // Trips expanded spacing system: `etaCards--embedded` + main.css --trips-expanded-* tokens.
   return `
     <article class="tripsTripRow${isExpanded ? ' isExpanded' : ''}">
       <button type="button" class="tripsTripHeader" onclick="toggleSavedTrip('${escapeHtml(trip.id)}')" aria-expanded="${escapeHtml(String(isExpanded))}">
@@ -1702,7 +1703,7 @@ function renderTripCard(trip) {
         </div>
         <span class="tripsTripChevron" aria-hidden="true"></span>
       </button>
-      ${isExpanded ? `<div class="tripsExpandedResult etaResultView">${expandedResult}</div>` : ''}
+      ${isExpanded ? `<div class="tripsExpandedResult etaResultView etaCards--embedded">${expandedResult}</div>` : ''}
     </article>
   `;
 }
