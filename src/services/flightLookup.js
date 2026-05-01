@@ -1,6 +1,7 @@
 /**
  * Flight lookup service v1 — mock-backed, API-ready.
- * Mirror of `public/scripts/services/flightLookup.js`; the app loads the public path in the browser.
+ * Not loaded by the calculate screen currently; reserved for future API wiring.
+ * Mirror of `public/scripts/services/flightLookup.js`.
  * Keep in sync until a bundler imports from here.
  */
 (function (global) {

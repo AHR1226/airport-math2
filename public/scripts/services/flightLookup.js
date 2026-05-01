@@ -1,6 +1,7 @@
 /**
  * Flight lookup service v1 — mock-backed, API-ready.
- * Served from `/scripts/services/flightLookup.js` for the static app.
+ * Not loaded by the app currently; wire via `<script>` when re-enabling autofill.
+ * Served path would be `/scripts/services/flightLookup.js`.
  * Mirror: `src/services/flightLookup.js` (keep in sync until a bundler owns one path).
  */
 (function (global) {

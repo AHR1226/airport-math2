@@ -7,11 +7,7 @@ window.appState = {
     flightNumber: '',
     airport: 'JFK',
     terminal: 'Terminal 4',
-    startLocation: '',
-    arrivalAirport: '',
-    airline: '',
-    gate: '',
-    flightStatus: ''
+    startLocation: ''
   },
   selections: {
     transport: 'Rideshare',
@@ -65,14 +61,6 @@ window.stateApi = {
     if (startLocationEl) {
       window.appState.form.startLocation = startLocationEl.value.trim();
     }
-    const arrEl = document.getElementById('flightArrivalInput');
-    const alEl = document.getElementById('flightAirlineInput');
-    const gateEl = document.getElementById('flightGateInput');
-    const statEl = document.getElementById('flightStatusInput');
-    if (arrEl) window.appState.form.arrivalAirport = arrEl.value.trim();
-    if (alEl) window.appState.form.airline = alEl.value.trim();
-    if (gateEl) window.appState.form.gate = gateEl.value.trim();
-    if (statEl) window.appState.form.flightStatus = statEl.value.trim();
   },
   setEta(eta) {
     window.appState.eta = { ...window.appState.eta, ...eta };
