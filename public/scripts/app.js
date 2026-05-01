@@ -2304,154 +2304,234 @@ function formatFlightDateContext(result) {
   });
 }
 
-function getUrgencyPresentation(result) {
-  const now = new Date();
-  const flightDate = parseFlightDepartureDate(result) || parseClockTimeToday(result?.flightTime);
-  const leaveDate = parseClockTimeToday(result?.leaveBy);
-  const calculationMode = String(result?.calculationMode || getDepartureCalculationMode(flightDate, now));
-  const minutesUntilFlight = flightDate
-    ? Math.round((flightDate.getTime() - now.getTime()) / 60000)
-    : null;
-
-  const travelMinutes = Number.isFinite(Number(result?.travel)) ? Math.round(Number(result.travel)) : 0;
-  const securityMinutes = Number.isFinite(Number(result?.securityResolvedMinutes))
-    ? Math.round(Number(result.securityResolvedMinutes))
-    : 0;
-  const walkMinutes = Number.isFinite(Number(result?.lgaWalkToGate)) ? Math.round(Number(result.lgaWalkToGate)) : 0;
-  const bufferMinutes = Number.isFinite(Number(result?.buffer)) ? Math.round(Number(result.buffer)) : 0;
-  const boardingCutoffAllowance = Number.isFinite(Number(result?.boardingCutoffAllowance))
-    ? Math.max(0, Math.round(Number(result.boardingCutoffAllowance)))
-    : Math.max(
-      0,
-      Math.round((Number(result?.airportTime) || 0) - securityMinutes - walkMinutes)
+/**
+ * Parses a clock time (e.g. from formatTime) on the same calendar day as the flight.
+ * Avoids parseClockTimeToday() when leave is “tonight” but flight is tomorrow morning.
+ */
+function parseTimeOnFlightDay(rawTime, anchorFlightDate) {
+  if (!(anchorFlightDate instanceof Date) || Number.isNaN(anchorFlightDate.getTime())) return null;
+  let value = String(rawTime || '').trim().replace(/\s+/g, ' ');
+  if (!value) return null;
+  const compact = value.replace(/\./g, '').replace(/\s+/g, ' ').toUpperCase();
+  const twelve = compact.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+  if (twelve) {
+    let h = Number(twelve[1]);
+    const min = Number(twelve[2]);
+    const mer = twelve[3];
+    if (!Number.isFinite(h) || !Number.isFinite(min)) return null;
+    if (h === 12) h = 0;
+    if (mer === 'PM') h += 12;
+    return new Date(
+      anchorFlightDate.getFullYear(),
+      anchorFlightDate.getMonth(),
+      anchorFlightDate.getDate(),
+      h, min, 0, 0
     );
-  const totalTripMinutesRemaining = travelMinutes + securityMinutes + walkMinutes + bufferMinutes + boardingCutoffAllowance;
-  const remainingCushionMinutes = Number.isFinite(minutesUntilFlight)
-    ? Math.round(minutesUntilFlight - totalTripMinutesRemaining)
-    : null;
+  }
+  const twentyFour = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (twentyFour) {
+    const h = Number(twentyFour[1]);
+    const min = Number(twentyFour[2]);
+    if (!Number.isFinite(h) || !Number.isFinite(min)) return null;
+    return new Date(
+      anchorFlightDate.getFullYear(),
+      anchorFlightDate.getMonth(),
+      anchorFlightDate.getDate(),
+      h, min, 0, 0
+    );
+  }
+  return null;
+}
+
+function getRecommendedLeaveDateTime(result, flightDate) {
+  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return null;
+  const parsed = parseTimeOnFlightDay(result?.leaveBy, flightDate);
+  if (parsed) return parsed;
+  const totalMin = Math.round(Number(result?.total));
+  if (Number.isFinite(totalMin) && totalMin > 0) {
+    return new Date(flightDate.getTime() - totalMin * 60000);
+  }
+  return null;
+}
+
+/**
+ * Minutes of slack: target latest gate arrival minus projected gate arrival (leave + travel + in-airport w/o boarding dwell).
+ * Positive => on time or early to gate target; negative => late vs gate target.
+ */
+function getGateSlackMinutes(result, leaveInstant, flightDate) {
+  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return null;
+  if (!(leaveInstant instanceof Date) || Number.isNaN(leaveInstant.getTime())) return null;
+  const boardingLead = getGateArrivalLeadMinutes(result, result?.flightType);
+  const travelMinutes = Number.isFinite(Number(result?.travel)) ? Math.round(Number(result.travel)) : 0;
+  const walkMinutes = Number.isFinite(Number(result?.lgaWalkToGate)) ? Math.round(Number(result.lgaWalkToGate)) : 0;
+  const airportTimeTotal = Number.isFinite(Number(result?.airportTime)) ? Math.max(0, Math.round(Number(result.airportTime))) : 0;
+  const curbToGate = Math.max(0, airportTimeTotal - boardingLead + walkMinutes);
+  const processingMs = (travelMinutes + curbToGate) * 60000;
+
+  const targetGateMs = flightDate.getTime() - boardingLead * 60000;
+  const projectedGateMs = leaveInstant.getTime() + processingMs;
+  return Math.round((targetGateMs - projectedGateMs) / 60000);
+}
+
+/**
+ * Single source for hero eyebrow, monitoring pill, and trip modifiers (SAFE / TIGHT / RISK / LATE + planning / past).
+ */
+function computeEtaHeroStatus(result, now = new Date()) {
+  const flightDate = parseFlightDepartureDate(result);
   const flightTimePassed = Boolean(flightDate && flightDate.getTime() < now.getTime());
-  const leaveTimePassed = Boolean(leaveDate && leaveDate.getTime() <= now.getTime());
+  const calculationMode = String(
+    result?.calculationMode || getDepartureCalculationMode(flightDate, now)
+  );
+
+  if (flightTimePassed || calculationMode === 'past_flight') {
+    return {
+      leaveLabel: 'CHECK FLIGHT TIME',
+      pillCopy: 'This flight time has passed',
+      helperCopy: 'Are you planning a future flight?',
+      statusClassName: 'resultHtmlStatus--pastFlight',
+      tripState: 'live',
+      urgencyState: 'past_flight',
+      etaStatus: 'past_flight',
+      remainingCushionMinutes: null,
+      reason: 'flight_time_passed'
+    };
+  }
+
   const hoursUntilDeparture = flightDate
     ? (flightDate.getTime() - now.getTime()) / (60 * 60 * 1000)
     : null;
-  const hasHeavyTrafficSpike = (
-    Number.isFinite(Number(result?.travel))
-    && Number.isFinite(Number(result?.travelTypical))
-    && (Number(result.travel) - Number(result.travelTypical)) >= 15
-  );
-
-  let urgencyState = 'SAFE';
-  let reason = 'cushion_over_30';
-  if (calculationMode === 'past_flight' || flightTimePassed) {
-    urgencyState = 'past_flight';
-    reason = 'flight_time_passed';
-    console.log('[urgency-debug] past flight time detected', {
-      selectedFlightTime: result?.flightTime || null,
-      selectedDepartureAt: result?.flightDepartureAt || null,
-      remainingCushionMinutes: Number.isFinite(remainingCushionMinutes) ? remainingCushionMinutes : null
-    });
-  } else if (calculationMode === 'planning') {
-    urgencyState = 'planning';
-    reason = 'future_flight_planning_mode';
-  } else if (leaveTimePassed) {
-    urgencyState = 'CRITICAL';
-    reason = 'leave_time_passed';
-  } else if (!Number.isFinite(remainingCushionMinutes)) {
-    urgencyState = 'SAFE';
-    reason = 'missing_time_inputs_default_safe';
-  } else if (remainingCushionMinutes < 10) {
-    urgencyState = 'CRITICAL';
-    reason = 'cushion_under_10';
-  } else if (remainingCushionMinutes <= 30) {
-    urgencyState = 'CAUTION';
-    reason = 'cushion_between_10_and_30';
-  } else if (hasHeavyTrafficSpike) {
-    urgencyState = 'CAUTION';
-    reason = 'heavy_traffic_spike';
-  }
-
   const baseTripState = Number.isFinite(hoursUntilDeparture) && hoursUntilDeparture > 24
     ? 'upcoming'
     : 'live';
+
+  if (
+    calculationMode === 'planning'
+    || baseTripState === 'upcoming'
+  ) {
+    return {
+      leaveLabel: 'LEAVE AT',
+      pillCopy: 'Timing looks good',
+      statusClassName: baseTripState === 'upcoming'
+        ? 'resultHtmlStatus--upcoming'
+        : 'resultHtmlStatus--safe',
+      tripState: baseTripState,
+      urgencyState: 'planning',
+      etaStatus: 'SAFE',
+      remainingCushionMinutes: null,
+      reason: 'planning_or_upcoming'
+    };
+  }
+
+  const recommendedLeave = getRecommendedLeaveDateTime(result, flightDate);
+  if (!recommendedLeave || !flightDate) {
+    return {
+      leaveLabel: 'LEAVE AT',
+      pillCopy: 'Timing looks good',
+      statusClassName: 'resultHtmlStatus--safe',
+      tripState: 'live',
+      urgencyState: 'SAFE',
+      etaStatus: 'SAFE',
+      remainingCushionMinutes: null,
+      reason: 'missing_leave_anchor'
+    };
+  }
+
+  const slackNow = getGateSlackMinutes(result, now, flightDate);
+  const slackIfLeaveOnSchedule = getGateSlackMinutes(result, recommendedLeave, flightDate);
+  const minutesToRecommendedLeave = Math.round(
+    (recommendedLeave.getTime() - now.getTime()) / 60000
+  );
+  const pastRecommendedLeave = minutesToRecommendedLeave < 0;
+
+  if (!Number.isFinite(slackNow)) {
+    return {
+      leaveLabel: 'LEAVE AT',
+      pillCopy: 'Timing looks good',
+      statusClassName: 'resultHtmlStatus--safe',
+      tripState: 'live',
+      urgencyState: 'SAFE',
+      etaStatus: 'SAFE',
+      remainingCushionMinutes: null,
+      reason: 'slack_unavailable'
+    };
+  }
+
+  let etaStatus = 'SAFE';
+  let reason = 'slack_ok';
+  if (slackNow < 0) {
+    etaStatus = 'LATE';
+    reason = 'late_vs_target_gate';
+  } else if (slackNow < 5) {
+    etaStatus = 'RISK';
+    reason = 'slack_under_5';
+  } else if (slackNow < 10) {
+    etaStatus = 'TIGHT';
+    reason = 'slack_5_to_10';
+  }
+
+  let leaveLabel = 'LEAVE AT';
+  let pillCopy = 'Timing looks good';
+  let statusClassName = 'resultHtmlStatus--safe';
+
+  if (etaStatus === 'LATE') {
+    leaveLabel = 'LEAVE NOW';
+    pillCopy = 'May arrive late';
+    statusClassName = 'resultHtmlStatus--risk';
+  } else if (etaStatus === 'RISK') {
+    leaveLabel = 'LEAVE NOW';
+    pillCopy = 'Timing at risk';
+    statusClassName = 'resultHtmlStatus--risk';
+  } else if (etaStatus === 'TIGHT') {
+    leaveLabel = 'LEAVE SOON';
+    pillCopy = 'Little margin remaining';
+    statusClassName = 'resultHtmlStatus--caution';
+  } else {
+    if (
+      pastRecommendedLeave
+      && Number.isFinite(slackIfLeaveOnSchedule)
+      && slackIfLeaveOnSchedule >= 0
+    ) {
+      leaveLabel = 'LEAVE SOON';
+    } else if (minutesToRecommendedLeave > 0 && minutesToRecommendedLeave <= 10) {
+      leaveLabel = 'LEAVE SOON';
+    } else {
+      leaveLabel = 'LEAVE AT';
+    }
+    pillCopy = 'Timing looks good';
+    statusClassName = 'resultHtmlStatus--safe';
+  }
+
   const tripState = (
     baseTripState === 'live'
-    && ['CAUTION', 'CRITICAL'].includes(urgencyState)
-    && !flightTimePassed
+    && (etaStatus === 'RISK' || etaStatus === 'LATE')
   )
     ? 'risk'
     : baseTripState;
 
-  const copyByState = {
-    SAFE: {
-      leaveLabel: 'LEAVE AT',
-      pillCopy: 'Monitoring live traffic',
-      statusClassName: 'resultHtmlStatus--safe'
-    },
-    CAUTION: {
-      leaveLabel: 'LEAVE SOON',
-      pillCopy: 'Traffic could impact arrival',
-      statusClassName: 'resultHtmlStatus--caution'
-    },
-    CRITICAL: {
-      leaveLabel: 'LEAVE NOW',
-      pillCopy: 'Arrival window at risk',
-      statusClassName: 'resultHtmlStatus--critical'
-    },
-    past_flight: {
-      leaveLabel: 'CHECK FLIGHT TIME',
-      pillCopy: 'This flight time has passed',
-      helperCopy: 'Are you planning a future flight?',
-      statusClassName: 'resultHtmlStatus--pastFlight'
-    },
-    planning: {
-      leaveLabel: "YOU'D LEAVE AT",
-      pillCopy: 'Estimating typical traffic patterns',
-      statusClassName: 'resultHtmlStatus--safe'
-    }
-  };
-  const selectedCopy = copyByState[urgencyState] || copyByState.SAFE;
-  const tripStateCopy = {
-    upcoming: {
-      leaveLabel: "YOU'D LEAVE AT",
-      pillCopy: 'Estimating typical traffic patterns',
-      statusClassName: 'resultHtmlStatus--upcoming'
-    },
-    live: {
-      leaveLabel: selectedCopy.leaveLabel,
-      pillCopy: 'Monitoring live traffic & airport conditions',
-      statusClassName: 'resultHtmlStatus--live'
-    },
-    risk: {
-      leaveLabel: selectedCopy.leaveLabel,
-      pillCopy: reason === 'heavy_traffic_spike'
-        ? 'Heavy traffic detected'
-        : urgencyState === 'CAUTION'
-          ? 'Arrival window tightening'
-          : 'Arrival window at risk',
-      statusClassName: 'resultHtmlStatus--risk'
-    }
-  };
-  const finalCopy = flightTimePassed
-    ? selectedCopy
-    : {
-      ...selectedCopy,
-      ...tripStateCopy[tripState]
-    };
-
-  console.log('[urgency-debug]', {
-    remainingCushionMinutes: Number.isFinite(remainingCushionMinutes) ? remainingCushionMinutes : null,
+  console.log('[eta-hero-status]', {
+    etaStatus,
+    slackNow,
+    slackIfLeaveOnSchedule,
+    minutesToRecommendedLeave,
+    pastRecommendedLeave,
     tripState,
-    urgencyState,
     reason
   });
 
   return {
-    ...finalCopy,
+    leaveLabel,
+    pillCopy,
+    statusClassName,
     tripState,
-    urgencyState,
-    remainingCushionMinutes,
+    urgencyState: etaStatus,
+    etaStatus,
+    remainingCushionMinutes: slackNow,
     reason
   };
+}
+
+function getUrgencyPresentation(result) {
+  return computeEtaHeroStatus(result, new Date());
 }
 
 function parseFlightDepartureDate(result) {
