@@ -5,8 +5,7 @@
     security: 'security',
     terminalFlow: 'terminalFlow',
     behavioral: 'behavioral',
-    preference: 'preference',
-    confidenceBuffer: 'confidenceBuffer'
+    preference: 'preference'
   };
 
   const CAPS = {
@@ -17,10 +16,6 @@
     preference: {
       Domestic: 45,
       International: 45
-    },
-    confidenceBuffer: {
-      Domestic: 20,
-      International: 30
     },
     style: {
       Domestic: 20,
@@ -73,15 +68,39 @@
     return 'PreCheck';
   }
 
-  function isPeakDepartureWindow(departureDate) {
+  /** Minutes since local midnight for departure (flight local time). */
+  function minutesSinceMidnight(departureDate) {
+    if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) return null;
+    return departureDate.getHours() * 60 + departureDate.getMinutes();
+  }
+
+  /**
+   * Weekday peak commute windows only (Mon–Fri). Excludes early-morning trips before 6:30 AM.
+   * 6:30–9:30 AM and 4:00–7:30 PM.
+   */
+  function isWeekdayPeakDepartureWindow(departureDate) {
     if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) return false;
     const day = departureDate.getDay();
-    const hour = departureDate.getHours();
-    return (
-      (day === 5 && hour >= 15)
-      || (day === 0 && hour >= 12 && hour <= 21)
-      || (day >= 1 && day <= 5 && hour >= 6 && hour < 9)
-    );
+    if (day === 0 || day === 6) return false;
+    const m = minutesSinceMidnight(departureDate);
+    if (m == null) return false;
+    const morningStart = 6 * 60 + 30;
+    const morningEnd = 9 * 60 + 30;
+    const eveningStart = 16 * 60;
+    const eveningEnd = 19 * 60 + 30;
+    return (m >= morningStart && m <= morningEnd) || (m >= eveningStart && m <= eveningEnd);
+  }
+
+  /**
+   * When peak-style surface/street congestion timing applies.
+   * Weekday windows OR explicit holiday / congestion / weather spikes (feature flags until data-backed).
+   */
+  function isPeakTravelContext(departureDate, inputs) {
+    if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) return false;
+    if (inputs.holidayTravelSpike || inputs.severeWeatherDisruption || inputs.airportCongestionSpike) {
+      return true;
+    }
+    return isWeekdayPeakDepartureWindow(departureDate);
   }
 
   function normalizeAirportComplexity(value) {
@@ -120,22 +139,6 @@
     ));
   }
 
-  function addCappedLayerTotal(acc, capName, layer, ruleName, label, desiredMinutes, currentTotal, cap, visible = true) {
-    const desired = Math.max(0, Math.round(Number(desiredMinutes) || 0));
-    const available = Math.max(0, cap - currentTotal);
-    const applied = Math.min(desired, available);
-    if (applied <= 0) {
-      skipRule(acc, ruleName, `${capName} cap already reached`);
-      acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied: 0, max: cap });
-      return currentTotal;
-    }
-    addRule(acc, ruleName, { label, minutes: applied, layer, visible });
-    if (applied < desired) {
-      acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied, max: cap });
-    }
-    return currentTotal + applied;
-  }
-
   function createAccumulator(inputs) {
     return {
       inputs,
@@ -155,8 +158,7 @@
         securityTime: 0,
         terminalFlowTime: 0,
         behavioralTime: 0,
-        preferenceTime: 0,
-        confidenceBufferTime: 0
+        preferenceTime: 0
       }
     };
   }
@@ -261,28 +263,6 @@
     return null;
   }
 
-  function calculateConfidenceBuffer(inputs, peakWindow) {
-    const cap = CAPS.confidenceBuffer[inputs.flightType];
-    const requestedRows = [{ label: 'Normal confidence buffer', minutes: 5, reason: 'normal' }];
-    if (inputs.highTrafficVolatility) requestedRows.push({ label: 'Traffic volatility buffer', minutes: 10, reason: 'high traffic volatility' });
-    if (inputs.airportAdvisory) requestedRows.push({ label: 'Airport advisory buffer', minutes: 15, reason: 'airport advisory' });
-    if (peakWindow) {
-      requestedRows.push({
-        label: 'Peak travel window',
-        minutes: inputs.flightType === 'International' ? 15 : 10,
-        reason: 'holiday/peak travel window'
-      });
-    }
-    const requested = requestedRows.reduce((sum, row) => sum + row.minutes, 0);
-    return {
-      requestedRows,
-      requested,
-      applied: Math.min(requested, cap),
-      cap,
-      peakWindow
-    };
-  }
-
   function calculate(input = {}) {
     const inputs = {
       transport: String(input.transport || 'Rideshare').trim(),
@@ -295,8 +275,10 @@
       departureDate: input.departureDate instanceof Date ? input.departureDate : null,
       securityWaitMinutes: Number.isFinite(Number(input.securityWaitMinutes)) ? Number(input.securityWaitMinutes) : 25,
       airportComplexity: normalizeAirportComplexity(input.airportComplexity),
-      highTrafficVolatility: Boolean(input.highTrafficVolatility),
-      airportAdvisory: Boolean(input.airportAdvisory)
+      airportAdvisory: Boolean(input.airportAdvisory),
+      holidayTravelSpike: Boolean(input.holidayTravelSpike),
+      airportCongestionSpike: Boolean(input.airportCongestionSpike),
+      severeWeatherDisruption: Boolean(input.severeWeatherDisruption)
     };
     const acc = createAccumulator(inputs);
 
@@ -352,6 +334,27 @@
       visible: true
     });
 
+    const peakTravelContext = isPeakTravelContext(inputs.departureDate, inputs);
+    if (peakTravelContext) {
+      addRule(acc, 'peak-travel-window', {
+        label: 'Peak travel window',
+        minutes: inputs.flightType === 'International' ? 15 : 10,
+        layer: LAYERS.terminalFlow,
+        visible: true
+      });
+    } else {
+      skipRule(acc, 'peak-travel-window', 'Outside weekday peak windows and no surge flags');
+    }
+
+    if (inputs.airportAdvisory) {
+      addRule(acc, 'airport-advisory', {
+        label: 'Airport advisory',
+        minutes: 10,
+        layer: LAYERS.airportProcessing,
+        visible: true
+      });
+    }
+
     // 3. Behavioral modifiers
     const behavioralCap = CAPS.behavioral[inputs.flightType];
     let behavioralTotal = 0;
@@ -401,33 +404,6 @@
       skipRule(acc, 'timing-style', 'Balanced style selected');
     }
 
-    // 6. Confidence buffers
-    const peakWindow = isPeakDepartureWindow(inputs.departureDate);
-    const confidenceBuffer = calculateConfidenceBuffer(inputs, peakWindow);
-    let confidenceTotal = 0;
-    confidenceBuffer.requestedRows.forEach((row) => {
-      confidenceTotal = addCappedLayerTotal(
-        acc,
-        'confidenceBufferTime',
-        LAYERS.confidenceBuffer,
-        `confidence-${row.reason}`,
-        row.label === 'Normal confidence buffer' ? 'Confidence buffer' : row.label,
-        row.minutes,
-        confidenceTotal,
-        confidenceBuffer.cap,
-        row.label !== 'Normal confidence buffer' || confidenceBuffer.requestedRows.length === 1
-      );
-    });
-    if (confidenceBuffer.requested > confidenceTotal) {
-      acc.capsApplied.push({
-        cap: 'confidenceBufferTime',
-        rule: 'confidence-buffer',
-        requested: confidenceBuffer.requested,
-        applied: confidenceTotal,
-        max: confidenceBuffer.cap
-      });
-    }
-
     const finalRecommendationMinutes = Object.values(acc.layerTotals).reduce((sum, value) => sum + value, 0);
     return {
       layers: { ...acc.layerTotals },
@@ -457,6 +433,8 @@
     calculate,
     LAYERS,
     CAPS,
-    BASE
+    BASE,
+    isWeekdayPeakDepartureWindow,
+    isPeakTravelContext
   };
 })();

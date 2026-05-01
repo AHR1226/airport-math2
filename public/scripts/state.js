@@ -27,7 +27,7 @@ window.appState = {
     airport: 'JFK',
     travel: null,
     airportTime: 35,
-    buffer: 15,
+    buffer: 0,
     total: 95,
     style: 'Balanced'
   }

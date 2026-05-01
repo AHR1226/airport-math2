@@ -889,14 +889,36 @@ function normalizeFlightType(raw) {
     : 'Domestic';
 }
 
-function isPeakDepartureWindow(departureDate) {
-  if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) return false;
-  const day = departureDate.getDay();
-  const hour = departureDate.getHours();
-  const isFridayAfterThree = day === 5 && hour >= 15;
-  const isSundayAfternoonEvening = day === 0 && hour >= 12 && hour <= 21;
-  const isWeekdayMorning = day >= 1 && day <= 5 && hour >= 6 && hour < 9;
-  return isFridayAfterThree || isSundayAfternoonEvening || isWeekdayMorning;
+/**
+ * Single route-level traffic cushion on top of provider duration (traffic-aware routes already embed delay).
+ * Caps: low/early ≤3 min, standard ≤5 min, severe ≤10 min; pre–6:30 AM departures never exceed 3 min added.
+ */
+function getRouteTrafficPaddingMinutes(departureDate, routeMin, typicalMin) {
+  if (!(departureDate instanceof Date) || Number.isNaN(departureDate.getTime())) return 0;
+  if (!Number.isFinite(routeMin) || routeMin <= 0) return 0;
+  const clock = departureDate.getHours() * 60 + departureDate.getMinutes();
+  const beforeMorningPeak = clock < (6 * 60 + 30);
+  if (!Number.isFinite(typicalMin) || typicalMin <= 0) return 0;
+  const delta = routeMin - typicalMin;
+  if (delta <= 0) return 0;
+  const ratio = routeMin / typicalMin;
+  let tierCap = 5;
+  if (delta >= 15 || ratio >= 1.25) tierCap = 10;
+  else if (delta < 5 && ratio < 1.1) tierCap = 3;
+  if (beforeMorningPeak) tierCap = Math.min(tierCap, 3);
+  const scaled = Math.round(delta * 0.4);
+  return Math.max(0, Math.min(tierCap, scaled));
+}
+
+function peakTravelContextForOptions(departureDate, options = {}) {
+  const rules = window.AirportMathTimingRules;
+  if (!rules?.isPeakTravelContext) return false;
+  return rules.isPeakTravelContext(departureDate, {
+    airportAdvisory: Boolean(options.airportAdvisory),
+    holidayTravelSpike: Boolean(options.holidayTravelSpike),
+    airportCongestionSpike: Boolean(options.airportCongestionSpike),
+    severeWeatherDisruption: Boolean(options.severeWeatherDisruption)
+  });
 }
 
 function minutesForSelection(options = {}) {
@@ -926,8 +948,10 @@ function minutesForSelection(options = {}) {
     departureDate,
     securityWaitMinutes: options.securityWaitMinutes,
     airportComplexity: options.airportComplexity,
-    highTrafficVolatility: options.highTrafficVolatility,
-    airportAdvisory: options.airportAdvisory
+    airportAdvisory: options.airportAdvisory,
+    holidayTravelSpike: options.holidayTravelSpike,
+    airportCongestionSpike: options.airportCongestionSpike,
+    severeWeatherDisruption: options.severeWeatherDisruption
   });
   if (!rulesResult) {
     throw new Error('AirportMath timing rules engine is not loaded.');
@@ -942,7 +966,7 @@ function minutesForSelection(options = {}) {
     + (Number(layers.behavioralTime) || 0)
     + (Number(layers.preferenceTime) || 0)
   ));
-  const buffer = Math.round(Number(layers.confidenceBufferTime) || 0);
+  const buffer = 0;
   const timingAdjustmentReasons = (rulesResult.rows || []).map((row) => ({
     label: row.label,
     minutes: row.minutes,
@@ -973,7 +997,7 @@ function minutesForSelection(options = {}) {
     securityStatus: security,
     travelStyle: style,
     travelComplexity: complexity,
-    peakWindow: isPeakDepartureWindow(departureDate),
+    peakWindow: peakTravelContextForOptions(departureDate, options),
     internationalBuffer,
     luggageBuffer,
     securityBuffer,
@@ -1395,18 +1419,6 @@ async function calculateETA() {
   const routeApiStaticDuration = Number.isFinite(Number(travelApi?.typicalMinutes))
     ? Math.round(Number(travelApi.typicalMinutes))
     : null;
-  const hasHighTrafficVolatility = (
-    Number.isFinite(routeApiDuration)
-    && Number.isFinite(routeApiStaticDuration)
-    && routeApiStaticDuration > 0
-    && (routeApiDuration - routeApiStaticDuration >= 15 || routeApiDuration / routeApiStaticDuration >= 1.25)
-  );
-  if (hasHighTrafficVolatility) {
-    timing = minutesForSelection({
-      ...timingOptions,
-      highTrafficVolatility: true
-    });
-  }
   const fallbackDuration = fallbackTravelEstimateMinutes({
     airport: selectedAirport,
     transportMode: selectedTransport,
@@ -1418,7 +1430,10 @@ async function calculateETA() {
     ? `${travelApi?.provider || 'route'} ${travelApi?.status || 'duration'} duration`
     : 'fallback duration';
   if (Number.isFinite(finalTravelTime) && finalTravelTime > 0) {
-    timing.travel = Math.round(finalTravelTime);
+    const trafficPadding = (isLiveMode && routeApiDuration)
+      ? getRouteTrafficPaddingMinutes(flight, routeApiDuration, routeApiStaticDuration)
+      : 0;
+    timing.travel = Math.round(finalTravelTime + trafficPadding);
     timing.total = timing.travel + timing.airport + timing.buffer;
     if (timing.timingLayers) timing.timingLayers.travelTime = timing.travel;
     if (timing.timingRulesDebug?.layerTotals) {
@@ -2073,17 +2088,17 @@ function getRenderableTimingReasonRows(reasons) {
   if (!Array.isArray(reasons)) return [];
   return reasons.filter((item) => {
     if (!Number.isFinite(Number(item?.minutes)) || !String(item?.label || '').trim()) return false;
+    const labelLower = String(item.label || '').trim().toLowerCase();
+    if (labelLower.includes('confidence buffer')) return false;
+    if (labelLower.includes('traffic volatility buffer')) return false;
+    if (labelLower.includes('airport advisory buffer')) return false;
     if (item?.visible !== false) return true;
     return isHiddenAirportTimingRowIncluded(item);
   });
 }
 
-function isHiddenAirportTimingRowIncluded(item) {
-  if (!item || item.visible !== false) return false;
-  const layer = String(item.layer || '').trim();
-  const label = String(item.label || '').trim().toLowerCase();
-  if (layer === 'confidenceBuffer') return true;
-  return label.includes('confidence buffer') || label.includes('peak travel window');
+function isHiddenAirportTimingRowIncluded(_item) {
+  return false;
 }
 
 function getAirportTimingAudit(result) {
@@ -2683,8 +2698,10 @@ async function refreshEtaMonitoring() {
       return;
     }
 
-    const airportTime = Number(result.airportTime) || 35;
-    const buffer = Number(result.buffer) || 15;
+    const airportTimeRaw = Number(result.airportTime);
+    const airportTime = Number.isFinite(airportTimeRaw) && airportTimeRaw > 0 ? airportTimeRaw : 35;
+    const buffer = Number(result.buffer);
+    const safeBuffer = Number.isFinite(buffer) && buffer >= 0 ? buffer : 0;
     const nextTotal = roundedTravel + airportTime + buffer;
     const priorLeaveDate = parseClockTimeToday(result.leaveBy);
     const nextLeaveDate = priorLeaveDate ? new Date(priorLeaveDate.getTime() - (delta * 60000)) : null;
