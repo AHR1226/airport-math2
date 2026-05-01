@@ -1993,7 +1993,7 @@ function buildResultHtml(result, options = {}) {
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Arrive at airport</span><strong>${escapeHtml(arriveAtAirportTime)}</strong></div>
       <div class="resultBreakdownRow resultBreakdownRow--support"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
-      <div class="resultBreakdownRow resultBreakdownRow--support"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
+      <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
       ${timingReasonRows}
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Flight departs</span><strong>${escapeHtml(flightDepartureTime)}</strong></div>
@@ -2329,7 +2329,7 @@ function getUrgencyPresentation(result) {
       statusClassName: 'resultHtmlStatus--pastFlight'
     },
     planning: {
-      leaveLabel: 'PLANNED DEPARTURE',
+      leaveLabel: "YOU'D LEAVE AT",
       pillCopy: 'Estimating typical traffic patterns',
       statusClassName: 'resultHtmlStatus--safe'
     }
@@ -2337,7 +2337,7 @@ function getUrgencyPresentation(result) {
   const selectedCopy = copyByState[urgencyState] || copyByState.SAFE;
   const tripStateCopy = {
     upcoming: {
-      leaveLabel: 'LEAVE AT',
+      leaveLabel: "YOU'D LEAVE AT",
       pillCopy: 'Estimating typical traffic patterns',
       statusClassName: 'resultHtmlStatus--upcoming'
     },

@@ -4273,7 +4273,7 @@ body{
 .etaResultView .resultHtmlTime{
   font-size:65px;
   margin-top:11px;
-  margin-bottom:48px;
+  margin-bottom:38px;
   letter-spacing:-0.04em;
 }
 
@@ -4357,7 +4357,7 @@ body{
 #result.useHtmlResult .etaResultView .resultBreakdownRow--support,
 .etaResultView .resultBreakdownRow--support{
   margin-top:-4px;
-  padding:0 0 5px 14px;
+  padding:0 0 5px;
 }
 
 #result.useHtmlResult .etaResultView .resultBreakdownRow--support,
