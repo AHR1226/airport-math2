@@ -4955,3 +4955,12 @@ body{
 #trips .tripsExpandedResult.etaCards--embedded > .resultUberCard + .resultLiveCard{
   margin-top:var(--trips-expanded-hero-to-breakdown) !important;
 }
+
+/* Calculate page: tighter stacked white cards; more space below hero (internal card padding unchanged) */
+#calculate.calcScreen .calcDecisionSection{
+  margin-bottom:calc(var(--mobile-card-gap) / 3) !important;
+}
+
+#calculate.calcScreen .calcContent h1.calcHeroTitle{
+  margin-bottom:calc(30px * 1.66) !important;
+}
