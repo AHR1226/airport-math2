@@ -2302,7 +2302,7 @@ input{
 #tripsDeleteConfirmDialog.tripsDeleteDialog{
   margin:0;
   border:1px solid rgba(6,72,25,0.06);
-  border-radius:var(--radius-card);
+  border-radius:28px;
   background:#FFFFFF;
   color:#0E3F1E;
   box-sizing:border-box;
@@ -2311,20 +2311,36 @@ input{
     0 8px 28px rgba(14,63,30,0.07);
 }
 
-#tripsDeleteConfirmDialog.tripsDeleteDialog[open]{
-  margin:auto;
-  padding:15px 19px 15px;
-  width:min(68vw, 300px);
-  height:auto;
-  min-height:0;
+/* Compact card: avoid UA dialog[inset:0 + margin:auto] stretching full viewport height. */
+#tripsDeleteConfirmDialog.delete-confirm-modal.tripsDeleteDialog[open]{
+  position:fixed;
+  left:50%;
+  top:50%;
+  right:auto;
+  bottom:auto;
+  transform:translate(-50%, -50%);
+  margin:0;
+  padding:24px 28px;
+  width:min(68vw, 300px) !important;
+  max-width:min(68vw, 300px) !important;
+  height:auto !important;
+  min-height:unset !important;
+  max-height:none !important;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
-  gap:12px;
+  gap:14px;
+  box-sizing:border-box;
+}
+
+#tripsDeleteConfirmDialog.delete-confirm-modal.tripsDeleteDialog[open] *{
+  flex-shrink:0;
 }
 
 #tripsDeleteConfirmDialog.tripsDeleteDialog::backdrop{
+  position:fixed;
+  inset:0;
   background:rgba(14,63,30,0.14);
 }
 
