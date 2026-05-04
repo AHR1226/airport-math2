@@ -823,10 +823,6 @@ button.tap{
   padding-bottom:calc(96px + env(safe-area-inset-bottom));
 }
 
-#settings .pageHeader{
-  margin-bottom:30px !important;
-}
-
 #settings .appCard{
   background:#FFFFFF;
   border:1px solid rgba(6,72,25,0.08);
@@ -3236,10 +3232,6 @@ textarea{
   margin-bottom:18px !important;
 }
 
-#calculate.calcScreen .calcContent h1{
-  margin-bottom:30px !important;
-}
-
 #calculate.calcScreen .card h2{
   font-size:13px;
   margin:0 0 8px;
@@ -3377,23 +3369,11 @@ textarea{
   gap:16px;
 }
 
-/* Header stack rhythm (~2×): Trips, Airports, Settings, ETA result only */
-#trips.screen .screenContent,
-#airports.screen .screenContent,
-#settings.screen .screenContent,
+/* Header stack rhythm (~2×): ETA result HTML container only (tab pages use --app-editorial-page-top) */
 #result.useHtmlResult .resultHtmlContainer{
   padding-top:calc(var(--page-top-padding) * 2) !important;
 }
 
-#trips.screen .pageSubtitle,
-#airports.screen .pageSubtitle,
-#settings.screen .pageSubtitle{
-  margin-top:16px !important;
-}
-
-#trips .pageHeader,
-#airports .pageHeader,
-#settings .pageHeader,
 #result.useHtmlResult .resultHtmlHeader{
   margin-bottom:36px !important;
 }
@@ -3497,11 +3477,7 @@ textarea{
   max-width:56%;
 }
 
-/* Main page titles: Instrument Serif (Calculate, Trips, Airports, Settings, ETA result only) */
-#calculate.calcScreen .calcContent h1,
-#trips .pageTitle,
-#airports .pageTitle,
-#settings .pageTitle,
+/* Main page titles: Instrument Serif (ETA result HTML mode) */
 #result.useHtmlResult .resultHtmlTitle{
   font-family:"Instrument Serif", serif !important;
   font-size:34px !important;
@@ -3510,16 +3486,6 @@ textarea{
   font-weight:400 !important;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-}
-
-#calculate.calcScreen .calcContent h1,
-#trips .pageTitle,
-#airports .pageTitle,
-#settings .pageTitle{
-  color:#064819 !important;
-}
-
-#result.useHtmlResult .resultHtmlTitle{
   color:#053F17 !important;
 }
 
@@ -4674,31 +4640,6 @@ body{
   color:rgba(38,79,53,0.66);
 }
 
-/* Calculate hero header + CTA refresh */
-#calculate.calcScreen .calcContent{
-  padding-top:96px !important;
-}
-
-#calculate.calcScreen .calcContent .calcHeroTitle{
-  margin:0 0 90px;
-  font-family:"Instrument Serif", serif !important;
-  font-size:52px !important;
-  line-height:46px !important;
-  letter-spacing:-1.5px !important;
-  font-weight:400 !important;
-  color:#064819;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-}
-
-#calculate.calcScreen .calcHeroTitleLine{
-  display:block;
-}
-
-#calculate.calcScreen .calcHeroTitleLine--greeting{
-  color:#B8F336;
-}
-
 #calculate.calcScreen .calcDecisionSection{
   margin-bottom:3.75px;
 }
@@ -4752,10 +4693,6 @@ body{
   box-shadow:none;
 }
 
-#calculate.calcScreen .calcContent .calcHeroTitle{
-  margin-bottom:110px;
-}
-
 #calculate.calcScreen .ctaButton{
   margin-top:24px;
 }
@@ -4801,11 +4738,6 @@ body{
 /* Global UI refinement pass */
 :root{
   --radius-card: 19.2px;
-}
-
-#calculate.calcScreen .calcContent .calcHeroTitle{
-  line-height:47px !important;
-  margin-bottom:220px;
 }
 
 .bottomNav{
@@ -4909,10 +4841,6 @@ body{
 
 #result.useHtmlResult .resultHtmlHeader{
   margin-bottom:var(--mobile-header-gap) !important;
-}
-
-#calculate.calcScreen .calcContent .calcHeroTitle{
-  margin-bottom:var(--mobile-header-gap);
 }
 
 .card,
@@ -5157,6 +5085,50 @@ body{
   margin-bottom:calc(var(--mobile-card-gap) / 3) !important;
 }
 
-#calculate.calcScreen .calcContent h1.calcHeroTitle{
-  margin-bottom:calc(30px * 1.66) !important;
+/* ------------------------------------------------------------------
+   App editorial headers (Calculate, Trips, Airports, Settings)
+   Tokens + component — must load after mobile padding overrides.
+   ------------------------------------------------------------------ */
+:root{
+  --app-editorial-page-top:100px;
+  --app-editorial-header-line-gap:7px;
+  --app-editorial-header-to-content:52px;
+}
+
+#calculate.calcScreen .calcContent,
+#trips.screen .screenContent,
+#airports.screen .screenContent,
+#settings.screen .screenContent{
+  padding-top:calc(var(--app-editorial-page-top) + env(safe-area-inset-top, 0px)) !important;
+}
+
+.appEditorialHeader{
+  margin:0 auto var(--app-editorial-header-to-content);
+  max-width:100%;
+  width:100%;
+  text-align:center;
+  box-sizing:border-box;
+}
+
+.appEditorialHeader__accent{
+  margin:0;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:15px;
+  line-height:1.25;
+  font-weight:400;
+  letter-spacing:-0.015em;
+  color:#B8F336;
+}
+
+.appEditorialHeader__title{
+  margin:var(--app-editorial-header-line-gap) 0 0 !important;
+  padding:0;
+  font-family:"Instrument Serif", serif !important;
+  font-size:36px !important;
+  line-height:1.05 !important;
+  letter-spacing:-0.02em !important;
+  font-weight:400 !important;
+  color:#064819 !important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
