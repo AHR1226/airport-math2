@@ -5095,6 +5095,7 @@ body{
   --app-editorial-header-to-content:52px;
   --app-editorial-header-font-size:52px;
   --app-editorial-header-line-height:0.95;
+  --app-editorial-header-letter-spacing:-0.5px;
 }
 
 #calculate.calcScreen .calcContent,
@@ -5118,7 +5119,7 @@ body{
   font-family:"Instrument Serif", serif !important;
   font-size:var(--app-editorial-header-font-size) !important;
   line-height:var(--app-editorial-header-line-height) !important;
-  letter-spacing:-0.02em !important;
+  letter-spacing:var(--app-editorial-header-letter-spacing) !important;
   font-weight:400 !important;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
