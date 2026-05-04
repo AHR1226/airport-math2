@@ -1804,9 +1804,6 @@ function renderTripCard(trip) {
         </div>
         <span class="tripsTripChevron" aria-hidden="true"></span>
       </button>
-      <div class="tripsTripRowActions">
-        <button type="button" class="tripsTripDelete" data-trip-delete-id="${escapeHtml(trip.id)}" aria-label="Delete this saved trip">Delete</button>
-      </div>
       ${isExpanded ? `<div class="tripsExpandedResult etaResultView etaCards--embedded">${expandedResult}</div>` : ''}
     </article>
   `;
@@ -1827,7 +1824,7 @@ function initSavedTripsDeleteDelegation() {
   if (!list || list.dataset.deleteDelegationBound === 'true') return;
   list.dataset.deleteDelegationBound = 'true';
   list.addEventListener('click', (event) => {
-    const btn = event.target.closest('.tripsTripDelete');
+    const btn = event.target.closest('.tripsEmbeddedHeroDelete');
     if (!btn) return;
     event.preventDefault();
     event.stopPropagation();
@@ -2048,6 +2045,7 @@ function buildResultHtml(result, options = {}) {
   result = normalizeEtaBehavioralDisplayMinutes(result && typeof result === 'object' ? result : {});
   const form = options.form || window.appState?.form || {};
   const embedded = Boolean(options.embedded);
+  const tripIdForDelete = embedded ? String(options.tripId || '').trim() : '';
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
   const terminalLabel = (result.terminal || form.terminal || 'Terminal 4').trim();
   const scheduledFlightTime = formatFlightTimeForDisplay(result.flightTime || form.flightTime);
@@ -2141,6 +2139,17 @@ function buildResultHtml(result, options = {}) {
     <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
   `;
 
+  const embeddedHeroDeleteHtml = tripIdForDelete
+    ? `<button type="button" class="tripsEmbeddedHeroDelete" data-trip-delete-id="${escapeHtml(tripIdForDelete)}" aria-label="Delete this trip">
+        <svg class="tripsEmbeddedHeroDeleteIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+      </button>`
+    : '';
+
   return `
     ${embedded ? '' : `<div class="resultHtmlHeader">
       <h2 class="resultHtmlTitle">Your ETA</h2>
@@ -2148,7 +2157,8 @@ function buildResultHtml(result, options = {}) {
     <div class="resultHtmlActions">
       ${actionsHtml}
     </div>`}
-    <div class="resultHeroCard tripStateHero--${escapeHtml(urgency.tripState)}">
+    <div class="resultHeroCard tripStateHero--${escapeHtml(urgency.tripState)}${tripIdForDelete ? ' resultHeroCard--tripDeletable' : ''}">
+      ${embeddedHeroDeleteHtml}
       <div class="resultHtmlEyebrow">${escapeHtml(urgency.leaveLabel)}</div>
       <div class="resultHeroClock" aria-hidden="true">
         <svg viewBox="0 0 24 24">
