@@ -2295,19 +2295,28 @@ input{
   opacity:0.75;
 }
 
-#trips .tripsDeleteDialog{
-  margin:auto;
+#tripsDeleteConfirmDialog.tripsDeleteDialog:not([open]){
+  display:none !important;
+}
+
+#tripsDeleteConfirmDialog.tripsDeleteDialog{
+  margin:0;
   border:1px solid rgba(6,72,25,0.06);
   border-radius:var(--radius-card);
-  padding:18px 24px 20px;
-  max-width:min(92vw, 541px);
-  min-height:178px;
   background:#FFFFFF;
   color:#0E3F1E;
   box-sizing:border-box;
   box-shadow:
     0 1px 0 rgba(255,255,255,0.9) inset,
     0 8px 28px rgba(14,63,30,0.07);
+}
+
+#tripsDeleteConfirmDialog.tripsDeleteDialog[open]{
+  margin:auto;
+  padding:17px 22px 18px;
+  width:min(88vw, 432px);
+  max-width:none;
+  min-height:160px;
   display:flex;
   flex-direction:column;
   justify-content:center;
@@ -2315,11 +2324,11 @@ input{
   gap:14px;
 }
 
-#trips .tripsDeleteDialog::backdrop{
+#tripsDeleteConfirmDialog.tripsDeleteDialog::backdrop{
   background:rgba(14,63,30,0.14);
 }
 
-#trips .tripsDeleteDialogTitle{
+#tripsDeleteConfirmDialog .tripsDeleteDialogTitle{
   margin:0;
   padding:0 6px;
   font-family:"IBM Plex Sans", sans-serif;
@@ -2331,7 +2340,7 @@ input{
   color:rgba(14,63,30,0.92);
 }
 
-#trips .tripsDeleteDialogActions{
+#tripsDeleteConfirmDialog .tripsDeleteDialogActions{
   display:flex;
   flex-direction:row;
   justify-content:center;
@@ -2342,8 +2351,8 @@ input{
   padding:0;
 }
 
-#trips .tripsDeleteDialogCancel,
-#trips .tripsDeleteDialogConfirm{
+#tripsDeleteConfirmDialog .tripsDeleteDialogCancel,
+#tripsDeleteConfirmDialog .tripsDeleteDialogConfirm{
   margin:0;
   box-sizing:border-box;
   min-width:0;
@@ -2364,13 +2373,13 @@ input{
   -webkit-tap-highlight-color:transparent;
 }
 
-#trips .tripsDeleteDialogCancel{
+#tripsDeleteConfirmDialog .tripsDeleteDialogCancel{
   background:#FFFFFF;
   color:rgba(38,79,53,0.82);
   border-color:rgba(6,72,25,0.1);
 }
 
-#trips .tripsDeleteDialogConfirm{
+#tripsDeleteConfirmDialog .tripsDeleteDialogConfirm{
   background:rgba(14,63,30,0.06);
   color:rgba(14,63,30,0.9);
   border-color:rgba(6,72,25,0.09);

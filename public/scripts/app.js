@@ -12,7 +12,7 @@ let etaMonitorTimerId = null;
 let etaMonitorKey = '';
 let etaMonitorInFlight = false;
 let expandedSavedTripId = '';
-let pendingDeleteTripId = '';
+let tripPendingDelete = null;
 const calculateManualOverrides = {
   homeAddress: false,
   airport: false,
@@ -272,6 +272,11 @@ initializeAirportsConditions();
 if (typeof window.show === 'function') {
   const baseShow = window.show;
   window.show = (id) => {
+    if (id !== 'trips') {
+      const d = document.getElementById('tripsDeleteConfirmDialog');
+      if (d?.open) d.close();
+      tripPendingDelete = null;
+    }
     if (id !== 'result') stopEtaMonitoring();
     const shown = baseShow(id);
     if (id === 'trips') renderTripsList();
@@ -284,6 +289,7 @@ if (typeof window.show === 'function') {
   };
 }
 renderTripsList();
+resetTripsDeleteModalState();
 initSavedTripsDeleteDelegation();
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -1819,6 +1825,15 @@ function toggleSavedTrip(id) {
   }
 }
 
+function resetTripsDeleteModalState() {
+  tripPendingDelete = null;
+  try {
+    document.getElementById('tripsDeleteConfirmDialog')?.close?.();
+  } catch {
+    /* ignore */
+  }
+}
+
 function initSavedTripsDeleteDelegation() {
   const list = document.getElementById('tripsList');
   if (!list || list.dataset.deleteDelegationBound === 'true') return;
@@ -1836,7 +1851,7 @@ function initSavedTripsDeleteDelegation() {
   if (dlg && dlg.dataset.pendingResetBound !== 'true') {
     dlg.dataset.pendingResetBound = 'true';
     dlg.addEventListener('close', () => {
-      pendingDeleteTripId = '';
+      tripPendingDelete = null;
     });
   }
 }
@@ -1844,7 +1859,7 @@ function initSavedTripsDeleteDelegation() {
 function requestDeleteSavedTripDialog(tripId) {
   const id = String(tripId || '').trim();
   if (!id) return;
-  pendingDeleteTripId = id;
+  tripPendingDelete = id;
   const dlg = document.getElementById('tripsDeleteConfirmDialog');
   if (dlg && typeof dlg.showModal === 'function') {
     try {
@@ -1855,25 +1870,26 @@ function requestDeleteSavedTripDialog(tripId) {
     }
   }
   const proceed = window.confirm('Delete this trip?');
-  pendingDeleteTripId = '';
+  tripPendingDelete = null;
   if (proceed) performDeleteSavedTrip(id);
 }
 
 function cancelDeleteSavedTripDialog() {
-  pendingDeleteTripId = '';
+  tripPendingDelete = null;
   document.getElementById('tripsDeleteConfirmDialog')?.close?.();
 }
 
 function submitDeleteSavedTripDialog() {
-  const id = pendingDeleteTripId;
-  pendingDeleteTripId = '';
+  const id = tripPendingDelete;
+  tripPendingDelete = null;
   document.getElementById('tripsDeleteConfirmDialog')?.close?.();
-  if (id) performDeleteSavedTrip(id);
+  if (typeof id === 'string' && id.length) performDeleteSavedTrip(id);
 }
 
 function performDeleteSavedTrip(id) {
   const sid = String(id || '').trim();
   if (!sid) return;
+  tripPendingDelete = null;
   const next = readSavedTrips().filter((t) => String(t.id) !== sid);
   writeSavedTrips(next);
   if (expandedSavedTripId === sid) {
