@@ -293,7 +293,7 @@ button.tap{
   box-sizing:border-box;
 }
 
-.calcContent h1{
+.calcContent h1:not(.appEditorialHeader__title){
   font-size:36px;
   line-height:0.9;
   letter-spacing:-0.04em;
@@ -2775,7 +2775,7 @@ html,body{
 }
 
 /* Title/body/section rhythm */
-.calcContent h1,
+.calcContent h1:not(.appEditorialHeader__title),
 .pageTitle{
   font-size:var(--text-title);
 }
@@ -3015,7 +3015,7 @@ textarea{
 }
 
 /* 3) Global header weight normalization */
-.calcContent h1,
+.calcContent h1:not(.appEditorialHeader__title),
 .pageTitle,
 #result.useHtmlResult .resultHtmlTitle{
   font-weight:400;
@@ -3167,7 +3167,7 @@ textarea{
   padding-top:var(--page-top-padding) !important;
 }
 
-.calcContent h1,
+.calcContent h1:not(.appEditorialHeader__title),
 .pageTitle,
 #result.useHtmlResult .resultHtmlTitle{
   font-family:"IBM Plex Sans", sans-serif !important;
@@ -5108,16 +5108,19 @@ body{
   width:100%;
   text-align:center;
   box-sizing:border-box;
+  font-family:"Instrument Serif", serif;
 }
 
 .appEditorialHeader__accent{
   margin:0;
-  font-family:"IBM Plex Sans", sans-serif;
+  font-family:"Instrument Serif", serif !important;
   font-size:15px;
   line-height:1.25;
   font-weight:400;
-  letter-spacing:-0.015em;
+  letter-spacing:-0.02em;
   color:#B8F336;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
 
 .appEditorialHeader__title{
