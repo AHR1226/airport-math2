@@ -5091,10 +5091,10 @@ body{
    ------------------------------------------------------------------ */
 :root{
   --app-editorial-page-top:100px;
-  --app-editorial-header-line-gap:9px;
+  --app-editorial-header-line-gap:4px;
   --app-editorial-header-to-content:52px;
   --app-editorial-header-font-size:39px;
-  --app-editorial-header-line-height:1.08;
+  --app-editorial-header-line-height:1.02;
 }
 
 #calculate.calcScreen .calcContent,
