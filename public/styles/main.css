@@ -2313,14 +2313,15 @@ input{
 
 #tripsDeleteConfirmDialog.tripsDeleteDialog[open]{
   margin:auto;
-  padding:17px 22px 18px;
-  width:min(78vw, 340px);
-  min-height:160px;
+  padding:15px 19px 15px;
+  width:min(68vw, 300px);
+  height:auto;
+  min-height:0;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
-  gap:14px;
+  gap:12px;
 }
 
 #tripsDeleteConfirmDialog.tripsDeleteDialog::backdrop{
@@ -2344,7 +2345,7 @@ input{
   flex-direction:row;
   justify-content:center;
   align-items:center;
-  gap:14px;
+  gap:15px;
   flex-wrap:wrap;
   margin:0;
   padding:0;
@@ -2355,9 +2356,9 @@ input{
   margin:0;
   box-sizing:border-box;
   min-width:0;
-  min-height:40px;
-  height:40px;
-  padding:0 11px;
+  min-height:38px;
+  height:38px;
+  padding:0 24px;
   border:1px solid rgba(6,72,25,0.11);
   border-radius:999px;
   font:inherit;
