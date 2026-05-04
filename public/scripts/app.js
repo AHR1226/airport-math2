@@ -279,7 +279,7 @@ if (typeof window.show === 'function') {
     }
     if (id !== 'result') stopEtaMonitoring();
     const shown = baseShow(id);
-    if (id === 'trips') renderTripsList();
+    if (id === 'trips') renderTripsList({ preflightLoading: true });
     if (id === 'calculate') {
       applySavedSettingsToCalculate();
       updateCalculateProgressiveUI();
@@ -1735,11 +1735,37 @@ function saveCurrentTrip(button, event) {
   }
 }
 
-function renderTripsList() {
+function renderTripsListLoadingMarkup() {
+  return `
+    <div class="appCard tripsLoadingCard" aria-busy="true">
+      <div class="tripsLoadingText">Loading trips…</div>
+    </div>
+  `;
+}
+
+function renderTripsList(options = {}) {
   const container = document.getElementById('tripsList');
   if (!container) return;
 
-  const trips = readSavedTrips()
+  if (options.preflightLoading) {
+    container.innerHTML = renderTripsListLoadingMarkup();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        renderTripsList({ ...options, preflightLoading: false });
+      });
+    });
+    return;
+  }
+
+  let rawTrips = [];
+  try {
+    rawTrips = readSavedTrips();
+  } catch {
+    rawTrips = [];
+  }
+
+  const trips = rawTrips
+    .filter((trip) => trip && typeof trip === 'object')
     .map((trip) => ({ ...trip, status: getTripStatus(trip.eta) }))
     .sort((a, b) => {
       const aTime = new Date(a.eta?.flightDepartureAt || 0).getTime();
@@ -1751,11 +1777,17 @@ function renderTripsList() {
     window.appState.savedTrips = trips.map((t) => ({ ...t }));
   }
 
+  if (expandedSavedTripId && !trips.some((t) => String(t.id) === String(expandedSavedTripId))) {
+    expandedSavedTripId = '';
+  }
+
   if (!trips.length) {
+    expandedSavedTripId = '';
     container.innerHTML = `
-      <div class="appCard tripsEmptyCard">
-        <div class="rowTitle">No saved trips yet</div>
-        <div class="rowSub">Calculate an ETA, then save it here for later.</div>
+      <div class="appCard tripsEmptyCard tripsEmptyCard--polished">
+        <div class="rowTitle">No trips saved yet</div>
+        <div class="rowSub">Calculate your next airport plan and save it here for later.</div>
+        <button type="button" class="primaryButton" onclick="show('calculate')">Plan a trip</button>
       </div>
     `;
     return;
@@ -1773,40 +1805,59 @@ function renderTripsSection(title, trips) {
   if (!trips.length) return '';
   return `
     <div class="sectionLabel">${escapeHtml(title)}</div>
-    ${trips.map(renderTripCard).join('')}
+    ${trips.map((trip, index) => renderTripCard(trip, index)).join('')}
   `;
 }
 
-function renderTripCard(trip) {
-  const eta = trip.eta || {};
-  const form = trip.form || {};
-  const airport = eta.airport || form.airport || 'JFK';
-  const flightDate = parseFlightDepartureDate(eta);
-  const dateLabel = formatTripDateLabel(flightDate);
-  const flightTime = formatMilestoneTime(flightDate) || eta.flightTime || '7:30 PM';
-  const isExpanded = expandedSavedTripId === trip.id;
-  const expandedResult = isExpanded
-    ? buildResultHtml(
-      {
-        ...eta,
-        savedTripId: trip.id,
-        transportMode: eta.transportMode || trip.selections?.transport || null
-      },
-      {
-        form,
-        embedded: true,
-        tripId: trip.id
-      }
-    )
-    : '';
+function renderTripCard(trip, rowIndex = 0) {
+  const eta = trip && typeof trip === 'object' ? trip.eta || {} : {};
+  const form = trip && typeof trip === 'object' ? trip.form || {} : {};
+  const tripId = String(trip?.id || trip?.key || '').trim() || `trip_row_${rowIndex}`;
+  const airportRaw = String(eta.airport ?? form.airport ?? '').trim();
+  const airport = airportRaw || 'Airport TBD';
 
-  // Trips expanded spacing system: `etaCards--embedded` + main.css --trips-expanded-* tokens.
+  let flightDate = null;
+  try {
+    flightDate = parseFlightDepartureDate(eta);
+  } catch {
+    flightDate = null;
+  }
+  const hasValidDate = flightDate instanceof Date && !Number.isNaN(flightDate.getTime());
+  const dateLabel = hasValidDate ? formatTripDateLabel(flightDate) : 'Date TBD';
+  const timeFallback = String(eta.flightTime || form.flightTime || '').trim();
+  const flightTime = hasValidDate
+    ? (formatMilestoneTime(flightDate) || timeFallback || 'Time TBD')
+    : (timeFallback || 'Time TBD');
+
+  const secondLine = `${escapeHtml(flightTime)} flight`;
+
+  const isExpanded = expandedSavedTripId === tripId;
+  let expandedResult = '';
+  if (isExpanded) {
+    try {
+      expandedResult = buildResultHtml(
+        {
+          ...eta,
+          savedTripId: tripId,
+          transportMode: eta.transportMode || trip.selections?.transport || null
+        },
+        {
+          form,
+          embedded: true,
+          tripId
+        }
+      );
+    } catch {
+      expandedResult = '<div class="appCard tripsExpandFallback"><div class="rowSub">Trip details are unavailable for this saved plan.</div></div>';
+    }
+  }
+
   return `
     <article class="tripsTripRow${isExpanded ? ' isExpanded' : ''}">
-      <button type="button" class="tripsTripHeader" onclick="toggleSavedTrip('${escapeHtml(trip.id)}')" aria-expanded="${escapeHtml(String(isExpanded))}">
+      <button type="button" class="tripsTripHeader" onclick="toggleSavedTrip('${escapeHtml(tripId)}')" aria-expanded="${escapeHtml(String(isExpanded))}">
         <div>
           <div class="tripsAirportCode">${escapeHtml(airport)} · ${escapeHtml(dateLabel)}</div>
-          <div class="tripsAirportName">${escapeHtml(flightTime)} flight</div>
+          <div class="tripsAirportName">${secondLine}</div>
         </div>
         <span class="tripsTripChevron" aria-hidden="true"></span>
       </button>
@@ -1892,7 +1943,11 @@ function performDeleteSavedTrip(id) {
   tripPendingDelete = null;
   const next = readSavedTrips().filter((t) => String(t.id) !== sid);
   writeSavedTrips(next);
-  if (expandedSavedTripId === sid) {
+  if (!next.length) {
+    expandedSavedTripId = '';
+  } else if (expandedSavedTripId === sid) {
+    expandedSavedTripId = '';
+  } else if (expandedSavedTripId && !next.some((t) => String(t.id) === String(expandedSavedTripId))) {
     expandedSavedTripId = '';
   }
   try {
@@ -1918,7 +1973,9 @@ function performDeleteSavedTrip(id) {
 }
 
 function openSavedTrip(id) {
-  const trip = readSavedTrips().find((item) => item.id === id);
+  const sid = String(id || '').trim();
+  if (!sid) return;
+  const trip = readSavedTrips().find((item) => String(item?.id) === sid || String(item?.key) === sid);
   if (!trip) return;
   restoreTripState(trip);
   show('result');
