@@ -12,6 +12,7 @@ let etaMonitorTimerId = null;
 let etaMonitorKey = '';
 let etaMonitorInFlight = false;
 let expandedSavedTripId = '';
+let pendingDeleteTripId = '';
 const calculateManualOverrides = {
   homeAddress: false,
   airport: false,
@@ -283,6 +284,7 @@ if (typeof window.show === 'function') {
   };
 }
 renderTripsList();
+initSavedTripsDeleteDelegation();
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     stopEtaMonitoring();
@@ -1802,6 +1804,9 @@ function renderTripCard(trip) {
         </div>
         <span class="tripsTripChevron" aria-hidden="true"></span>
       </button>
+      <div class="tripsTripRowActions">
+        <button type="button" class="tripsTripDelete" data-trip-delete-id="${escapeHtml(trip.id)}" aria-label="Delete this saved trip">Delete</button>
+      </div>
       ${isExpanded ? `<div class="tripsExpandedResult etaResultView etaCards--embedded">${expandedResult}</div>` : ''}
     </article>
   `;
@@ -1814,6 +1819,88 @@ function toggleSavedTrip(id) {
     window.requestAnimationFrame(() => {
       document.querySelector('#trips .tripsTripRow.isExpanded')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
+  }
+}
+
+function initSavedTripsDeleteDelegation() {
+  const list = document.getElementById('tripsList');
+  if (!list || list.dataset.deleteDelegationBound === 'true') return;
+  list.dataset.deleteDelegationBound = 'true';
+  list.addEventListener('click', (event) => {
+    const btn = event.target.closest('.tripsTripDelete');
+    if (!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const tripId = btn.getAttribute('data-trip-delete-id');
+    if (tripId) requestDeleteSavedTripDialog(tripId);
+  });
+
+  const dlg = document.getElementById('tripsDeleteConfirmDialog');
+  if (dlg && dlg.dataset.pendingResetBound !== 'true') {
+    dlg.dataset.pendingResetBound = 'true';
+    dlg.addEventListener('close', () => {
+      pendingDeleteTripId = '';
+    });
+  }
+}
+
+function requestDeleteSavedTripDialog(tripId) {
+  const id = String(tripId || '').trim();
+  if (!id) return;
+  pendingDeleteTripId = id;
+  const dlg = document.getElementById('tripsDeleteConfirmDialog');
+  if (dlg && typeof dlg.showModal === 'function') {
+    try {
+      dlg.showModal();
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+  const proceed = window.confirm('Delete this trip?');
+  pendingDeleteTripId = '';
+  if (proceed) performDeleteSavedTrip(id);
+}
+
+function cancelDeleteSavedTripDialog() {
+  pendingDeleteTripId = '';
+  document.getElementById('tripsDeleteConfirmDialog')?.close?.();
+}
+
+function submitDeleteSavedTripDialog() {
+  const id = pendingDeleteTripId;
+  pendingDeleteTripId = '';
+  document.getElementById('tripsDeleteConfirmDialog')?.close?.();
+  if (id) performDeleteSavedTrip(id);
+}
+
+function performDeleteSavedTrip(id) {
+  const sid = String(id || '').trim();
+  if (!sid) return;
+  const next = readSavedTrips().filter((t) => String(t.id) !== sid);
+  writeSavedTrips(next);
+  if (expandedSavedTripId === sid) {
+    expandedSavedTripId = '';
+  }
+  try {
+    const raw = localStorage.getItem('etaResult');
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (String(parsed.savedTripId || '') === sid) {
+      parsed.savedTripId = '';
+      localStorage.setItem('etaResult', JSON.stringify(parsed));
+      if (window.appState?.eta) {
+        window.appState.eta = { ...window.appState.eta, savedTripId: '' };
+      }
+      if (window.stateApi) {
+        window.stateApi.setEta({ savedTripId: '' });
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  renderTripsList();
+  if (window.appState?.currentScreen === 'result') {
+    renderResult();
   }
 }
 

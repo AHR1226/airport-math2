@@ -245,6 +245,14 @@
     </div>
 
     <div id="tripsList"></div>
+
+    <dialog id="tripsDeleteConfirmDialog" class="tripsDeleteDialog" aria-labelledby="tripsDeleteConfirmTitle">
+      <p id="tripsDeleteConfirmTitle" class="tripsDeleteDialogTitle">Delete this trip?</p>
+      <div class="tripsDeleteDialogActions">
+        <button type="button" class="tripsDeleteDialogCancel" onclick="cancelDeleteSavedTripDialog()">Cancel</button>
+        <button type="button" class="tripsDeleteDialogConfirm" onclick="submitDeleteSavedTripDialog()">Delete</button>
+      </div>
+    </dialog>
   </div>
 </section>
 <section id="airports" class="screen scroll">

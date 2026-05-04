@@ -2260,6 +2260,94 @@ input{
   color:rgba(38,79,53,0.78);
 }
 
+#trips .tripsTripRowActions{
+  display:flex;
+  justify-content:flex-end;
+  padding:0 20px 12px;
+  margin-top:-2px;
+}
+
+#trips .tripsTripDelete{
+  margin:0;
+  border:none;
+  padding:2px 0;
+  background:transparent;
+  font:inherit;
+  font-size:13px;
+  font-weight:400;
+  letter-spacing:-0.01em;
+  color:rgba(38,79,53,0.5);
+  text-decoration:underline;
+  text-underline-offset:2px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+
+#trips .tripsTripDelete:hover{
+  color:rgba(38,79,53,0.68);
+}
+
+#trips .tripsTripDelete:active{
+  opacity:0.75;
+}
+
+#trips .tripsDeleteDialog{
+  margin:auto;
+  border:1px solid rgba(6,72,25,0.1);
+  border-radius:var(--radius-card);
+  padding:22px 20px 18px;
+  max-width:min(92vw, 320px);
+  background:#FFFFFF;
+  color:#0E3F1E;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 16px 40px rgba(0,0,0,0.12);
+}
+
+#trips .tripsDeleteDialog::backdrop{
+  background:rgba(14,63,30,0.22);
+}
+
+#trips .tripsDeleteDialogTitle{
+  margin:0 0 18px;
+  font-family:"IBM Plex Sans", sans-serif;
+  font-size:16px;
+  font-weight:500;
+  line-height:1.3;
+  color:#0E3F1E;
+}
+
+#trips .tripsDeleteDialogActions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+#trips .tripsDeleteDialogCancel,
+#trips .tripsDeleteDialogConfirm{
+  margin:0;
+  border:1px solid rgba(6,72,25,0.14);
+  border-radius:999px;
+  padding:8px 16px;
+  font:inherit;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+
+#trips .tripsDeleteDialogCancel{
+  background:#FFFFFF;
+  color:rgba(38,79,53,0.85);
+}
+
+#trips .tripsDeleteDialogConfirm{
+  background:rgba(14,63,30,0.08);
+  color:#0E3F1E;
+  border-color:rgba(6,72,25,0.12);
+}
+
 #trips .tripsExpandedResult{
   width:100%;
   display:flex;
