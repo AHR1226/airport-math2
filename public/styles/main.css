@@ -2299,15 +2299,20 @@ input{
   margin:auto;
   border:1px solid rgba(6,72,25,0.06);
   border-radius:var(--radius-card);
-  padding:16px 20px 17px;
-  max-width:min(92vw, 416px);
-  min-height:148px;
+  padding:18px 24px 20px;
+  max-width:min(92vw, 541px);
+  min-height:178px;
   background:#FFFFFF;
   color:#0E3F1E;
   box-sizing:border-box;
   box-shadow:
     0 1px 0 rgba(255,255,255,0.9) inset,
     0 8px 28px rgba(14,63,30,0.07);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:14px;
 }
 
 #trips .tripsDeleteDialog::backdrop{
@@ -2315,10 +2320,10 @@ input{
 }
 
 #trips .tripsDeleteDialogTitle{
-  margin:0 0 13px;
-  padding:0 2px;
+  margin:0;
+  padding:0 6px;
   font-family:"IBM Plex Sans", sans-serif;
-  font-size:13px;
+  font-size:11px;
   font-weight:500;
   line-height:1.35;
   letter-spacing:-0.012em;
@@ -2328,24 +2333,27 @@ input{
 
 #trips .tripsDeleteDialogActions{
   display:flex;
+  flex-direction:row;
   justify-content:center;
   align-items:center;
-  gap:8px;
+  gap:14px;
   flex-wrap:wrap;
   margin:0;
-  padding:0 0 1px;
+  padding:0;
 }
 
 #trips .tripsDeleteDialogCancel,
 #trips .tripsDeleteDialogConfirm{
   margin:0;
   box-sizing:border-box;
+  min-width:0;
   min-height:40px;
-  padding:0 14px;
+  height:40px;
+  padding:0 11px;
   border:1px solid rgba(6,72,25,0.11);
   border-radius:999px;
   font:inherit;
-  font-size:13px;
+  font-size:11px;
   font-weight:500;
   letter-spacing:-0.01em;
   line-height:1.2;
