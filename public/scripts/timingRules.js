@@ -191,16 +191,28 @@
     }
   }
 
+  /**
+   * Human-friendly behavioral modifier minutes: nearest 5, without exceeding remaining headroom under the cap.
+   */
+  function roundBehavioralMinutesAfterCap(applied, remainingUnderCap) {
+    if (!(applied > 0)) return 0;
+    const rounded = Math.round(applied / 5) * 5;
+    return Math.min(rounded, Math.max(0, remainingUnderCap));
+  }
+
   function applyCappedRule(acc, ruleName, capName, row, currentTotal, cap) {
     const desired = Math.max(0, Math.round(Number(row.minutes) || 0));
     const available = Math.max(0, cap - currentTotal);
     const applied = Math.min(desired, available);
+    const finalApplied = (capName === 'behavioralTime' && applied > 0)
+      ? roundBehavioralMinutesAfterCap(applied, available)
+      : applied;
     recordCappedTotal(acc, capName, {
       rule: ruleName,
       requested: desired,
-      applied,
+      applied: finalApplied,
       previousTotal: currentTotal,
-      resultingTotal: currentTotal + applied,
+      resultingTotal: currentTotal + finalApplied,
       max: cap
     });
     if (applied <= 0) {
@@ -208,11 +220,16 @@
       acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied: 0, max: cap });
       return currentTotal;
     }
-    addRule(acc, ruleName, { ...row, minutes: applied });
-    if (applied < desired) {
-      acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied, max: cap });
+    if (finalApplied <= 0) {
+      skipRule(acc, ruleName, `${capName} rounded to zero`);
+      acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied: 0, max: cap });
+      return currentTotal;
     }
-    return currentTotal + applied;
+    addRule(acc, ruleName, { ...row, minutes: finalApplied });
+    if (applied < desired || finalApplied !== applied) {
+      acc.capsApplied.push({ cap: capName, rule: ruleName, requested: desired, applied: finalApplied, max: cap });
+    }
+    return currentTotal + finalApplied;
   }
 
   function recordCappedTotal(acc, capName, payload) {
@@ -431,6 +448,7 @@
 
   window.AirportMathTimingRules = {
     calculate,
+    roundBehavioralMinutesAfterCap,
     LAYERS,
     CAPS,
     BASE,

@@ -1553,12 +1553,88 @@ function renderResult() {
   syncEtaMonitoring(result);
 }
 
+function behavioralDisplayCapMinutes(flightType) {
+  const caps = window.AirportMathTimingRules?.CAPS?.behavioral;
+  const ft = normalizeFlightType(flightType || 'Domestic');
+  if (caps && Number.isFinite(Number(caps[ft]))) {
+    return Math.max(0, Math.round(Number(caps[ft])));
+  }
+  return ft === 'International' ? 30 : 20;
+}
+
+/**
+ * Legacy snapshots (e.g. saved trips) may predate nearest-5 behavioral display. Align breakdown,
+ * airport totals, and leave time with the same rounding used in the timing rules engine.
+ */
+function normalizeEtaBehavioralDisplayMinutes(result) {
+  if (!result || !Array.isArray(result.timingAdjustmentReasons)) return result;
+  const roundFn = window.AirportMathTimingRules?.roundBehavioralMinutesAfterCap;
+  if (typeof roundFn !== 'function') return result;
+
+  const cap = behavioralDisplayCapMinutes(result.flightType);
+  const behavioralIndices = [];
+  let rawSum = 0;
+  result.timingAdjustmentReasons.forEach((row, i) => {
+    if (String(row.layer) === 'behavioral') {
+      behavioralIndices.push(i);
+      rawSum += Math.max(0, Math.round(Number(row.minutes) || 0));
+    }
+  });
+  if (!behavioralIndices.length || rawSum <= 0) return result;
+
+  const roundedSum = roundFn(rawSum, cap);
+  if (roundedSum === rawSum) return result;
+
+  const flightDate = parseFlightDepartureDate(result);
+  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return result;
+
+  const delta = roundedSum - rawSum;
+  const firstIdx = behavioralIndices[0];
+  const rest = new Set(behavioralIndices.slice(1));
+
+  const timingAdjustmentReasons = result.timingAdjustmentReasons.map((row, i) => {
+    if (rest.has(i)) return { ...row, minutes: 0 };
+    if (i === firstIdx) return { ...row, minutes: roundedSum };
+    return row;
+  });
+
+  const airportTime = Math.max(0, Math.round(Number(result.airportTime) || 0) + delta);
+  const buffer = Math.max(0, Math.round(Number(result.buffer) || 0));
+  const travel = Math.max(0, Math.round(Number(result.travel) || 0));
+  const total = Math.max(0, travel + airportTime + buffer);
+
+  const leaveBy = Number.isFinite(total)
+    ? formatTime(new Date(flightDate.getTime() - total * 60000))
+    : result.leaveBy;
+
+  const next = {
+    ...result,
+    timingAdjustmentReasons,
+    airportTime,
+    total,
+    leaveBy
+  };
+
+  if (next.timingLayers && typeof next.timingLayers === 'object') {
+    next.timingLayers = { ...next.timingLayers, behavioralTime: roundedSum };
+  }
+  if (next.timingRulesDebug?.layerTotals) {
+    next.timingRulesDebug = {
+      ...next.timingRulesDebug,
+      layerTotals: { ...next.timingRulesDebug.layerTotals, behavioralTime: roundedSum },
+      finalRecommendationMinutes: total
+    };
+  }
+  return next;
+}
+
 function getLatestEtaResult() {
   const stored = JSON.parse(localStorage.getItem('etaResult') || '{}');
-  return {
+  const merged = {
     ...stored,
     ...(window.appState?.eta || {})
   };
+  return normalizeEtaBehavioralDisplayMinutes(merged);
 }
 
 function escapeHtml(value) {
@@ -1876,6 +1952,7 @@ function renderHtmlResult(result) {
 }
 
 function buildResultHtml(result, options = {}) {
+  result = normalizeEtaBehavioralDisplayMinutes(result && typeof result === 'object' ? result : {});
   const form = options.form || window.appState?.form || {};
   const embedded = Boolean(options.embedded);
   const airportLabel = (result.airport || form.airport || 'JFK').trim();
