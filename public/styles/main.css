@@ -2314,8 +2314,7 @@ input{
 #tripsDeleteConfirmDialog.tripsDeleteDialog[open]{
   margin:auto;
   padding:17px 22px 18px;
-  width:min(88vw, 432px);
-  max-width:none;
+  width:min(78vw, 340px);
   min-height:160px;
   display:flex;
   flex-direction:column;
