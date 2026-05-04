@@ -32,9 +32,11 @@ window.navigationApi = (() => {
   }
 
   function bindBottomNav() {
-    document.querySelectorAll('.bottomNav button').forEach(btn => {
+    document.querySelectorAll('.bottomNav button').forEach((btn) => {
       btn.addEventListener('click', () => {
-        show(btn.getAttribute('data-to'));
+        const target = btn.getAttribute('data-to');
+        const navigate = typeof window.show === 'function' ? window.show : show;
+        navigate(target);
       });
     });
   }

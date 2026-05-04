@@ -17,6 +17,8 @@ window.appState = {
     complexity: 'Just me',
     style: 'Balanced'
   },
+  /** Mirrors `eta_saved_trips` in localStorage; updated whenever the trips list is rendered. */
+  savedTrips: [],
   eta: {
     leaveBy: '5:42 PM',
     flightDate: '',

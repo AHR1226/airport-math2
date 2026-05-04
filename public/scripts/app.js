@@ -282,6 +282,7 @@ if (typeof window.show === 'function') {
     return shown;
   };
 }
+renderTripsList();
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     stopEtaMonitoring();
@@ -1729,6 +1730,7 @@ function saveCurrentTrip(button, event) {
 function renderTripsList() {
   const container = document.getElementById('tripsList');
   if (!container) return;
+
   const trips = readSavedTrips()
     .map((trip) => ({ ...trip, status: getTripStatus(trip.eta) }))
     .sort((a, b) => {
@@ -1736,6 +1738,10 @@ function renderTripsList() {
       const bTime = new Date(b.eta?.flightDepartureAt || 0).getTime();
       return a.status === 'completed' ? bTime - aTime : aTime - bTime;
     });
+
+  if (window.appState) {
+    window.appState.savedTrips = trips.map((t) => ({ ...t }));
+  }
 
   if (!trips.length) {
     container.innerHTML = `
