@@ -2225,7 +2225,7 @@ function buildResultHtml(result, options = {}) {
 
   return `
     ${embedded ? '' : `<header class="appEditorialHeader appEditorialHeader--etaReveal" aria-label="ETA">
-      <p class="appEditorialHeader__accent">Ta-da!</p>
+      <p class="appEditorialHeader__accent">Ta-da</p>
       <h1 class="appEditorialHeader__title">Here’s your ETA</h1>
     </header>
     <div class="resultHtmlActions">

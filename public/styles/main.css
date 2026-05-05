@@ -4614,8 +4614,12 @@ body{
 #result.useHtmlResult .resultHtmlActions{
   justify-content:flex-start;
   align-items:center;
-  margin:0 0 10px;
+  margin:0;
   width:100%;
+}
+
+#result.useHtmlResult .resultHtmlActions + .resultHeroCard{
+  margin-top:-4px;
 }
 
 #settings .primaryButton{
