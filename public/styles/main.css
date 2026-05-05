@@ -5070,3 +5070,44 @@ body{
   padding:0;
   color:#064819 !important;
 }
+
+/* ETA result only: subtle two-line reveal when HTML is injected */
+@keyframes etaHeaderLineReveal{
+  from{
+    opacity:0;
+    transform:translate3d(0, 6px, 0);
+  }
+  to{
+    opacity:1;
+    transform:translate3d(0, 0, 0);
+  }
+}
+
+@keyframes etaHeaderLineRevealReduced{
+  from{
+    opacity:0;
+  }
+  to{
+    opacity:1;
+  }
+}
+
+#result.useHtmlResult .appEditorialHeader--etaReveal .appEditorialHeader__accent{
+  opacity:0;
+  animation:etaHeaderLineReveal 0.23s ease-out forwards;
+}
+
+#result.useHtmlResult .appEditorialHeader--etaReveal .appEditorialHeader__title{
+  opacity:0;
+  animation:etaHeaderLineReveal 0.23s ease-out 0.09s forwards;
+}
+
+@media (prefers-reduced-motion: reduce){
+  #result.useHtmlResult .appEditorialHeader--etaReveal .appEditorialHeader__accent{
+    animation:etaHeaderLineRevealReduced 0.2s ease-out forwards;
+  }
+
+  #result.useHtmlResult .appEditorialHeader--etaReveal .appEditorialHeader__title{
+    animation:etaHeaderLineRevealReduced 0.2s ease-out 0.085s forwards;
+  }
+}
