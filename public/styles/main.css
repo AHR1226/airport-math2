@@ -1507,8 +1507,10 @@ input{
 .resultHtmlActions{
   display:flex;
   align-items:center;
-  justify-content:center;
-  gap:8px;
+  justify-content:flex-start;
+  gap:10px;
+  width:100%;
+  box-sizing:border-box;
 }
 
 .resultHtmlSaveTrip.isSaved{
@@ -4610,9 +4612,10 @@ body{
 
 /* Multi-page refinement pass */
 #result.useHtmlResult .resultHtmlActions{
-  justify-content:center;
+  justify-content:flex-start;
   align-items:center;
   margin:0 0 10px;
+  width:100%;
 }
 
 #settings .primaryButton{
@@ -4707,10 +4710,6 @@ body{
   background:transparent;
   color:#032A10;
   font-weight:600;
-}
-
-#result.useHtmlResult .resultHtmlActions{
-  margin-bottom:5px;
 }
 
 #result.useHtmlResult .resultBreakdownCard,
