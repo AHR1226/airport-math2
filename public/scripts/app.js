@@ -2224,9 +2224,10 @@ function buildResultHtml(result, options = {}) {
     : '';
 
   return `
-    ${embedded ? '' : `<div class="resultHtmlHeader">
-      <h2 class="resultHtmlTitle">Your ETA</h2>
-    </div>
+    ${embedded ? '' : `<header class="appEditorialHeader" aria-label="ETA">
+      <p class="appEditorialHeader__accent">Your</p>
+      <h1 class="appEditorialHeader__title">ETA</h1>
+    </header>
     <div class="resultHtmlActions">
       ${actionsHtml}
     </div>`}

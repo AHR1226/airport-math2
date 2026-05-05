@@ -1484,26 +1484,6 @@ input{
   gap:10px;
 }
 
-.resultHtmlHeader{
-  width:100%;
-  margin:0;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  pointer-events:auto;
-}
-
-.resultHtmlTitle{
-  margin:0;
-  font-family:"Instrument Serif", serif;
-  font-size:34px;
-  line-height:0.94;
-  letter-spacing:-0.02em;
-  font-weight:400;
-  color:#053F17;
-}
-
 .resultHtmlEdit{
   position:relative;
   z-index:50;
@@ -1527,6 +1507,7 @@ input{
 .resultHtmlActions{
   display:flex;
   align-items:center;
+  justify-content:center;
   gap:8px;
 }
 
@@ -2850,17 +2831,6 @@ html,body{
   gap:var(--space-4);
 }
 
-#result.useHtmlResult .resultHtmlHeader{
-  gap:var(--space-4);
-  margin-bottom:22px;
-}
-
-#result.useHtmlResult .resultHtmlTitle{
-  font-size:var(--text-title);
-  line-height:1;
-  font-weight:400;
-}
-
 #result.useHtmlResult .resultHeroCard,
 #result.useHtmlResult .resultBreakdownCard,
 #result.useHtmlResult .resultLiveCard{
@@ -3016,8 +2986,7 @@ textarea{
 
 /* 3) Global header weight normalization */
 .calcContent h1:not(.appEditorialHeader__title),
-.pageTitle,
-#result.useHtmlResult .resultHtmlTitle{
+.pageTitle{
   font-weight:400;
 }
 
@@ -3168,8 +3137,7 @@ textarea{
 }
 
 .calcContent h1:not(.appEditorialHeader__title),
-.pageTitle,
-#result.useHtmlResult .resultHtmlTitle{
+.pageTitle{
   font-family:"IBM Plex Sans", sans-serif !important;
   font-size:34px !important;
   line-height:0.92 !important;
@@ -3185,8 +3153,7 @@ textarea{
   line-height:1.4 !important;
 }
 
-.pageHeader,
-#result.useHtmlResult .resultHtmlHeader{
+.pageHeader{
   margin-bottom:22px !important;
 }
 
@@ -3227,8 +3194,7 @@ textarea{
   margin-bottom:18px !important;
 }
 
-.pageHeader,
-#result.useHtmlResult .resultHtmlHeader{
+.pageHeader{
   margin-bottom:18px !important;
 }
 
@@ -3369,15 +3335,7 @@ textarea{
   gap:16px;
 }
 
-/* Header stack rhythm (~2×): ETA result HTML container only (tab pages use --app-editorial-page-top) */
-#result.useHtmlResult .resultHtmlContainer{
-  padding-top:calc(var(--page-top-padding) * 2) !important;
-}
-
-#result.useHtmlResult .resultHtmlHeader{
-  margin-bottom:36px !important;
-}
-
+/* Header stack rhythm: ETA result uses --app-editorial-page-top (see editorial block at file end) */
 /* ETA result: Trip Breakdown + Live Conditions shared rhythm (HTML result only) */
 #result.useHtmlResult .resultBreakdownCard,
 #result.useHtmlResult .resultLiveCard{
@@ -3475,18 +3433,6 @@ textarea{
 #result.useHtmlResult .resultLiveValue.text{
   min-width:0;
   max-width:56%;
-}
-
-/* Main page titles: Instrument Serif (ETA result HTML mode) */
-#result.useHtmlResult .resultHtmlTitle{
-  font-family:"Instrument Serif", serif !important;
-  font-size:34px !important;
-  line-height:0.94 !important;
-  letter-spacing:-0.02em !important;
-  font-weight:400 !important;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  color:#053F17 !important;
 }
 
 #calculate.calcScreen [data-group="style"] .chip--travelStyle{
@@ -4663,12 +4609,8 @@ body{
 }
 
 /* Multi-page refinement pass */
-#result.useHtmlResult .resultHtmlHeader{
-  margin-bottom:10px !important;
-}
-
 #result.useHtmlResult .resultHtmlActions{
-  justify-content:flex-start;
+  justify-content:center;
   align-items:center;
   margin:0 0 10px;
 }
@@ -4799,10 +4741,6 @@ body{
   margin-bottom:44px !important;
 }
 
-#result.useHtmlResult .resultHtmlHeader{
-  margin-bottom:20px !important;
-}
-
 .card,
 .appCard,
 .appCardDark,
@@ -4836,10 +4774,6 @@ body{
 }
 
 .pageHeader{
-  margin-bottom:var(--mobile-header-gap) !important;
-}
-
-#result.useHtmlResult .resultHtmlHeader{
   margin-bottom:var(--mobile-header-gap) !important;
 }
 
@@ -5091,7 +5025,7 @@ body{
    ------------------------------------------------------------------ */
 :root{
   --app-editorial-page-top:100px;
-  --app-editorial-header-line-gap:1px;
+  --app-editorial-header-line-gap:2px;
   --app-editorial-header-to-content:52px;
   --app-editorial-header-font-size:52px;
   --app-editorial-header-line-height:0.95;
@@ -5101,7 +5035,8 @@ body{
 #calculate.calcScreen .calcContent,
 #trips.screen .screenContent,
 #airports.screen .screenContent,
-#settings.screen .screenContent{
+#settings.screen .screenContent,
+#result.useHtmlResult .resultHtmlContainer{
   padding-top:calc(var(--app-editorial-page-top) + env(safe-area-inset-top, 0px)) !important;
 }
 
