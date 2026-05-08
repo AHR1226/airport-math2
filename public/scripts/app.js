@@ -1530,6 +1530,14 @@ async function calculateETA() {
 
   localStorage.setItem('etaResult', JSON.stringify(etaResult));
 
+  const calcPass = window.__analyticsEtaCalcFromCalculateCount || 0;
+  if (calcPass > 0) {
+    window.trackTripRecalculated?.();
+  } else {
+    window.trackTripCalculated?.();
+  }
+  window.__analyticsEtaCalcFromCalculateCount = calcPass + 1;
+
   show('loading');
 
   // TEMP: loading screen visibility delay for UI refinement
@@ -1726,6 +1734,7 @@ function saveCurrentTrip(button, event) {
   if (window.stateApi) window.stateApi.setEta({ savedTripId: trip.id });
   localStorage.setItem('etaResult', JSON.stringify({ ...getLatestEtaResult(), savedTripId: trip.id }));
   writeSavedTrips(trips);
+  window.trackTripSaved?.();
   renderTripsList();
   if (button) {
     button.textContent = '✓ Saved trip';
@@ -1867,7 +1876,11 @@ function renderTripCard(trip, rowIndex = 0) {
 }
 
 function toggleSavedTrip(id) {
+  const willExpand = expandedSavedTripId !== id;
   expandedSavedTripId = expandedSavedTripId === id ? '' : id;
+  if (willExpand && expandedSavedTripId === id) {
+    window.trackTripViewedAgain?.();
+  }
   renderTripsList();
   if (expandedSavedTripId) {
     window.requestAnimationFrame(() => {
@@ -2628,7 +2641,34 @@ function getGateSlackMinutes(result, leaveInstant, flightDate) {
 }
 
 /**
- * Single source for hero eyebrow, monitoring pill, and trip modifiers (SAFE / TIGHT / RISK / LATE + planning / past).
+ * bufferMin = minutes from projected gate arrival to gate deadline (gateTime - arrival at gate).
+ * > 15 → safe, 0–15 → tight, < 0 → miss.
+ */
+function classifyEtaBufferMinutes(bufferMin) {
+  if (!Number.isFinite(bufferMin)) return null;
+  if (bufferMin > 15) {
+    return {
+      key: 'safe',
+      pillCopy: 'Timing looks good',
+      statusClassName: 'resultHtmlStatus--safe'
+    };
+  }
+  if (bufferMin >= 0) {
+    return {
+      key: 'tight',
+      pillCopy: 'Tight timing — risk of delay',
+      statusClassName: 'resultHtmlStatus--tight'
+    };
+  }
+  return {
+    key: 'miss',
+    pillCopy: 'Will likely miss this flight',
+    statusClassName: 'resultHtmlStatus--miss'
+  };
+}
+
+/**
+ * Single source for hero eyebrow, monitoring pill, and trip modifiers (safe / tight / miss + planning / past).
  */
 function computeEtaHeroStatus(result, now = new Date()) {
   const flightDate = parseFlightDepartureDate(result);
@@ -2658,25 +2698,41 @@ function computeEtaHeroStatus(result, now = new Date()) {
     ? 'upcoming'
     : 'live';
 
-  if (
-    calculationMode === 'planning'
-    || baseTripState === 'upcoming'
-  ) {
+  const recommendedLeave = getRecommendedLeaveDateTime(result, flightDate);
+
+  if (calculationMode === 'planning' || baseTripState === 'upcoming') {
+    let bufferMin = null;
+    if (recommendedLeave && flightDate) {
+      bufferMin = getGateSlackMinutes(result, recommendedLeave, flightDate);
+    }
+    if (!Number.isFinite(bufferMin)) {
+      return {
+        leaveLabel: 'LEAVE AT',
+        pillCopy: 'Timing looks good',
+        statusClassName: baseTripState === 'upcoming'
+          ? 'resultHtmlStatus--upcoming'
+          : 'resultHtmlStatus--safe',
+        tripState: baseTripState,
+        urgencyState: 'planning',
+        etaStatus: 'SAFE',
+        remainingCushionMinutes: null,
+        reason: 'planning_or_upcoming'
+      };
+    }
+    const tier = classifyEtaBufferMinutes(bufferMin);
+    const leaveLabel = tier.key === 'miss' ? 'YOU SHOULD HAVE LEFT' : 'LEAVE AT';
     return {
-      leaveLabel: 'LEAVE AT',
-      pillCopy: 'Timing looks good',
-      statusClassName: baseTripState === 'upcoming'
-        ? 'resultHtmlStatus--upcoming'
-        : 'resultHtmlStatus--safe',
+      leaveLabel,
+      pillCopy: tier.pillCopy,
+      statusClassName: tier.statusClassName,
       tripState: baseTripState,
-      urgencyState: 'planning',
-      etaStatus: 'SAFE',
-      remainingCushionMinutes: null,
-      reason: 'planning_or_upcoming'
+      urgencyState: tier.key,
+      etaStatus: tier.key.toUpperCase(),
+      remainingCushionMinutes: bufferMin,
+      reason: 'planning_buffer'
     };
   }
 
-  const recommendedLeave = getRecommendedLeaveDateTime(result, flightDate);
   if (!recommendedLeave || !flightDate) {
     return {
       leaveLabel: 'LEAVE AT',
@@ -2690,14 +2746,8 @@ function computeEtaHeroStatus(result, now = new Date()) {
     };
   }
 
-  const slackNow = getGateSlackMinutes(result, now, flightDate);
-  const slackIfLeaveOnSchedule = getGateSlackMinutes(result, recommendedLeave, flightDate);
-  const minutesToRecommendedLeave = Math.round(
-    (recommendedLeave.getTime() - now.getTime()) / 60000
-  );
-  const pastRecommendedLeave = minutesToRecommendedLeave < 0;
-
-  if (!Number.isFinite(slackNow)) {
+  const bufferMin = getGateSlackMinutes(result, now, flightDate);
+  if (!Number.isFinite(bufferMin)) {
     return {
       leaveLabel: 'LEAVE AT',
       pillCopy: 'Timing looks good',
@@ -2710,77 +2760,45 @@ function computeEtaHeroStatus(result, now = new Date()) {
     };
   }
 
-  let etaStatus = 'SAFE';
-  let reason = 'slack_ok';
-  if (slackNow < 0) {
-    etaStatus = 'LATE';
-    reason = 'late_vs_target_gate';
-  } else if (slackNow < 5) {
-    etaStatus = 'RISK';
-    reason = 'slack_under_5';
-  } else if (slackNow < 10) {
-    etaStatus = 'TIGHT';
-    reason = 'slack_5_to_10';
-  }
+  const tier = classifyEtaBufferMinutes(bufferMin);
+  const slackIfLeaveOnSchedule = getGateSlackMinutes(result, recommendedLeave, flightDate);
+  const minutesToRecommendedLeave = Math.round(
+    (recommendedLeave.getTime() - now.getTime()) / 60000
+  );
+  const pastRecommendedLeave = minutesToRecommendedLeave < 0;
 
   let leaveLabel = 'LEAVE AT';
-  let pillCopy = 'Timing looks good';
-  let statusClassName = 'resultHtmlStatus--safe';
-
-  if (etaStatus === 'LATE') {
-    leaveLabel = 'LEAVE NOW';
-    pillCopy = 'May arrive late';
-    statusClassName = 'resultHtmlStatus--risk';
-  } else if (etaStatus === 'RISK') {
-    leaveLabel = 'LEAVE NOW';
-    pillCopy = 'Timing at risk';
-    statusClassName = 'resultHtmlStatus--risk';
-  } else if (etaStatus === 'TIGHT') {
-    leaveLabel = 'LEAVE SOON';
-    pillCopy = 'Little margin remaining';
-    statusClassName = 'resultHtmlStatus--caution';
-  } else {
-    if (
-      pastRecommendedLeave
-      && Number.isFinite(slackIfLeaveOnSchedule)
-      && slackIfLeaveOnSchedule >= 0
-    ) {
-      leaveLabel = 'LEAVE SOON';
-    } else if (minutesToRecommendedLeave > 0 && minutesToRecommendedLeave <= 10) {
+  if (tier.key === 'miss') {
+    leaveLabel = 'YOU SHOULD HAVE LEFT';
+  } else if (tier.key === 'tight') {
+    if (!Number.isFinite(minutesToRecommendedLeave) || minutesToRecommendedLeave > 10) {
       leaveLabel = 'LEAVE SOON';
     } else {
-      leaveLabel = 'LEAVE AT';
+      leaveLabel = minutesToRecommendedLeave <= 0 ? 'LEAVE NOW' : 'LEAVE SOON';
     }
-    pillCopy = 'Timing looks good';
-    statusClassName = 'resultHtmlStatus--safe';
+  } else if (
+    pastRecommendedLeave
+    && Number.isFinite(slackIfLeaveOnSchedule)
+    && slackIfLeaveOnSchedule >= 0
+  ) {
+    leaveLabel = 'LEAVE SOON';
+  } else if (minutesToRecommendedLeave > 0 && minutesToRecommendedLeave <= 10) {
+    leaveLabel = 'LEAVE SOON';
+  } else {
+    leaveLabel = 'LEAVE AT';
   }
 
-  const tripState = (
-    baseTripState === 'live'
-    && (etaStatus === 'RISK' || etaStatus === 'LATE')
-  )
-    ? 'risk'
-    : baseTripState;
-
-  console.log('[eta-hero-status]', {
-    etaStatus,
-    slackNow,
-    slackIfLeaveOnSchedule,
-    minutesToRecommendedLeave,
-    pastRecommendedLeave,
-    tripState,
-    reason
-  });
+  const tripState = tier.key === 'miss' ? 'risk' : 'live';
 
   return {
     leaveLabel,
-    pillCopy,
-    statusClassName,
+    pillCopy: tier.pillCopy,
+    statusClassName: tier.statusClassName,
     tripState,
-    urgencyState: etaStatus,
-    etaStatus,
-    remainingCushionMinutes: slackNow,
-    reason
+    urgencyState: tier.key,
+    etaStatus: tier.key.toUpperCase(),
+    remainingCushionMinutes: bufferMin,
+    reason: 'live_buffer'
   };
 }
 

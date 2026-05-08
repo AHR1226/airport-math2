@@ -2570,6 +2570,26 @@ input{
   box-shadow:0 0 0 2px rgba(45,79,141,0.12);
 }
 
+.etaResultView .resultHtmlStatus--tight{
+  color:#7A4B00;
+  background:#FFF4CC;
+}
+
+.etaResultView .resultHtmlStatus--tight .resultHtmlStatusDot{
+  background:rgba(199,125,0,0.85);
+  box-shadow:0 0 0 2px rgba(199,125,0,0.14);
+}
+
+.etaResultView .resultHtmlStatus--miss{
+  color:#8A1123;
+  background:#FEE3E8;
+}
+
+.etaResultView .resultHtmlStatus--miss .resultHtmlStatusDot{
+  background:rgba(201,35,67,0.9);
+  box-shadow:0 0 0 2px rgba(201,35,67,0.16);
+}
+
 .etaResultView .resultHtmlStatus--risk,
 .etaResultView .resultHtmlStatus--caution,
 .etaResultView .resultHtmlStatus--critical{
@@ -3668,6 +3688,26 @@ textarea{
 #result.useHtmlResult .resultHtmlStatus--caution .resultHtmlStatusDot{
   background:rgba(199,125,0,0.85);
   box-shadow:0 0 0 2px rgba(199,125,0,0.14);
+}
+
+#result.useHtmlResult .resultHtmlStatus--tight{
+  color:#7A4B00;
+  background:#FFF4CC;
+}
+
+#result.useHtmlResult .resultHtmlStatus--tight .resultHtmlStatusDot{
+  background:rgba(199,125,0,0.85);
+  box-shadow:0 0 0 2px rgba(199,125,0,0.14);
+}
+
+#result.useHtmlResult .resultHtmlStatus--miss{
+  color:#8A1123;
+  background:#FEE3E8;
+}
+
+#result.useHtmlResult .resultHtmlStatus--miss .resultHtmlStatusDot{
+  background:rgba(201,35,67,0.9);
+  box-shadow:0 0 0 2px rgba(201,35,67,0.16);
 }
 
 #result.useHtmlResult .resultHtmlStatus--critical{
