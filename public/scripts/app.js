@@ -2152,6 +2152,7 @@ function buildResultHtml(result, options = {}) {
   });
   const hasValidUberLink = isValidUberDeepLink(uberDeepLink);
   const urgency = getUrgencyPresentation(result);
+  const showMonitoringPill = shouldShowEtaMonitoringPill(result, urgency, new Date());
   const showUberCtaForState = urgency.tripState === 'live' || urgency.tripState === 'risk';
   const showUberCta = (
     !embedded
@@ -2294,10 +2295,12 @@ function buildResultHtml(result, options = {}) {
         ${heroOriginLine ? `<div class="resultHtmlMetaLine">${escapeHtml(heroOriginLine)}</div>` : ''}
         `}
       </div>
+      ${showMonitoringPill ? `
       <div class="resultHtmlStatus ${escapeHtml(urgency.statusClassName)}" aria-live="polite">
         <span class="resultHtmlStatusDot" aria-hidden="true"></span>
         <span>${escapeHtml(urgency.pillCopy)}</span>
       </div>
+      ` : ''}
       ${urgency.helperCopy ? `<div class="resultUrgencyHelper">${escapeHtml(urgency.helperCopy)}</div>` : ''}
       ${modeContextLine ? `<div class="resultModeContext">${escapeHtml(modeContextLine)}</div>` : ''}
       ${showUrgencyDebug ? `<div class="resultUrgencyDebug">DEBUG · ${escapeHtml(urgency.tripState)} · ${escapeHtml(urgency.urgencyState)} · Cushion ${escapeHtml(formatDebugMinutes(urgency.remainingCushionMinutes))} · ${escapeHtml(String(urgency.reason || 'n/a'))}</div>` : ''}
@@ -2842,6 +2845,13 @@ function isEtaLiveMonitoringContext(flightDate, now = new Date()) {
   const m = getMinutesToDeparture(flightDate, now);
   if (m === null || m < 0) return false;
   return m < ETA_LIVE_MONITORING_THRESHOLD_MIN;
+}
+
+/** Show hero monitoring pill only in live window or for past-flight messaging (never for far-future planning). */
+function shouldShowEtaMonitoringPill(result, urgency, now = new Date()) {
+  if (urgency?.urgencyState === 'past_flight') return true;
+  const flightDate = parseFlightDepartureDate(result);
+  return isEtaLiveMonitoringContext(flightDate, now);
 }
 
 function getEtaTierPillCopy(tierKey, isLiveMonitoring) {
