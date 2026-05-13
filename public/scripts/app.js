@@ -2202,7 +2202,10 @@ function buildResultHtml(result, options = {}) {
   const walkTag = isLga ? 'Estimated' : 'Estimated';
   const travelDuration = formatDurationMinutes(result.travel);
   const arriveAtAirportTime = formatMilestoneTime(getAirportArrivalTime(result)) || '--';
-  const airportTimingDuration = formatDurationMinutes(getAirportTimingMinutes(result));
+  const isMissUrgency = urgency.urgencyState === 'miss';
+  const airportTimingDuration = formatDurationMinutes(
+    isMissUrgency ? getAirportTimingMinutesCore(result) : getAirportTimingMinutes(result)
+  );
   const trafficTag = (result.travelStatus === 'live' && ['google', 'mapbox'].includes(String(result.travelProvider || '').toLowerCase()))
     ? 'Live'
     : 'Estimated';
@@ -2217,9 +2220,9 @@ function buildResultHtml(result, options = {}) {
   const conditionsAirportTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--faa';
   const conditionsWeatherTagLabel = isPlanningMode ? 'WEATHER EST.' : 'Clear';
   const conditionsWeatherTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--clear';
-  const airportTimingAudit = getAirportTimingAudit(result);
+  const airportTimingAudit = getAirportTimingAudit(result, isMissUrgency);
   logTimeAtAirportDebug(airportTimingAudit);
-  const timingReasonRows = renderTimingReasonRows(result.timingAdjustmentReasons);
+  const timingReasonRows = renderTimingReasonRows(result.timingAdjustmentReasons, isMissUrgency);
   const actionsHtml = `
     <button type="button" class="resultHtmlEdit resultHtmlSaveTrip${isSavedTrip ? ' isSaved' : ''}" ${isSavedTrip ? 'disabled aria-label="Trip saved"' : 'onclick="saveCurrentTrip(this, event)"'}>${isSavedTrip ? '✓ Saved trip' : 'Save trip'}</button>
     <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
@@ -2336,9 +2339,9 @@ function buildResultHtml(result, options = {}) {
   `;
 }
 
-function renderTimingReasonRows(reasons) {
+function renderTimingReasonRows(reasons, forMissState = false) {
   if (!Array.isArray(reasons)) return '';
-  const rows = aggregateTimingReasonRows(reasons);
+  const rows = aggregateTimingReasonRows(reasons, { forMissState });
   if (!rows.length) return '';
 
   return rows.map((item) => {
@@ -2368,14 +2371,18 @@ function isHiddenAirportTimingRowIncluded(_item) {
   return false;
 }
 
-function getAirportTimingAudit(result) {
-  const rows = aggregateTimingReasonRows(result?.timingAdjustmentReasons);
+function getAirportTimingAudit(result, missBreakdown = false) {
+  const rows = aggregateTimingReasonRows(result?.timingAdjustmentReasons, {
+    forMissState: missBreakdown
+  });
   const visibleRows = rows.map((row) => ({
     label: row.label,
     minutes: Math.round(Number(row.minutes) || 0)
   }));
   const visibleRowsTotal = visibleRows.reduce((sum, row) => sum + row.minutes, 0);
-  const displayedTimeAtAirport = getAirportTimingMinutes(result);
+  const displayedTimeAtAirport = missBreakdown
+    ? getAirportTimingMinutesCore(result)
+    : getAirportTimingMinutes(result);
   const hiddenRowsIncluded = getRenderableTimingReasonRows(result?.timingAdjustmentReasons)
     .filter((row) => row?.visible === false)
     .map((row) => ({
@@ -2406,11 +2413,48 @@ function logTimeAtAirportDebug(audit) {
   }
 }
 
-function aggregateTimingReasonRows(reasons) {
+/** Discretionary / cushion timing layers hidden in ETA breakdown when flight is already missed. */
+const MISS_EXCLUDED_TIMING_GROUP_KEYS = new Set([
+  'confidence-buffer',
+  'avoid-panic-buffer',
+  'peak-travel-window',
+  'hudson-news-stop',
+  'family-children',
+  'traveling-with-pets',
+  'group-travel',
+  'lounge-time',
+  'cutting-it-close'
+]);
+
+/** Core airport processing rows still shown for missed flights (drive & terminal structure are separate rows). */
+const MISS_ALLOWED_TIMING_GROUP_KEYS = new Set([
+  'international-bag-drop-check-in',
+  'international-check-in',
+  'bag-handling',
+  'standard-security',
+  'clear-precheck',
+  'clear',
+  'precheck',
+  'terminal-navigation',
+  'boarding-window',
+  'accessibility-mobility'
+]);
+
+function isTimingLayerExcludedForMissedFlight(group, originalLabel) {
+  if (MISS_ALLOWED_TIMING_GROUP_KEYS.has(group.key)) return false;
+  if (MISS_EXCLUDED_TIMING_GROUP_KEYS.has(group.key)) return true;
+  const nl = String(originalLabel || '').trim().toLowerCase();
+  if (!nl) return false;
+  return /\b(buffer|cushion|panic|relaxed|lounge|peak travel|confidence|hudson|grab food|cutting it close|avoid panic|extra time|family|pets|group travel)\b/i.test(nl);
+}
+
+function aggregateTimingReasonRows(reasons, options = {}) {
+  const { forMissState = false } = options;
   const groups = new Map();
   getRenderableTimingReasonRows(reasons)
     .forEach((item) => {
       const group = getTimingReasonGroup(item.label);
+      if (forMissState && isTimingLayerExcludedForMissedFlight(group, item.label)) return;
       const current = groups.get(group.key) || {
         label: group.label,
         minutes: 0,
@@ -2525,6 +2569,13 @@ function getAirportTimingMinutes(result) {
   const safeAirportTime = Number.isFinite(airportTime) && airportTime >= 0 ? airportTime : 0;
   const safeBuffer = Number.isFinite(buffer) && buffer >= 0 ? buffer : 0;
   return safeAirportTime + safeBuffer;
+}
+
+/** Airport dwell total without discretionary `buffer` (for missed-flight breakdown only). */
+function getAirportTimingMinutesCore(result) {
+  const airportTime = Number(result?.airportTime);
+  const safeAirportTime = Number.isFinite(airportTime) && airportTime >= 0 ? airportTime : 0;
+  return safeAirportTime;
 }
 
 function getAirportArrivalTime(result) {
