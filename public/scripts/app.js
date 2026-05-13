@@ -2174,6 +2174,11 @@ function buildResultHtml(result, options = {}) {
       ? 'Live Timing Breakdown'
       : 'Trip Breakdown';
   const flightDepartureDate = parseFlightDepartureDate(result);
+  const now = new Date();
+  const minutesToDeparture = (flightDepartureDate instanceof Date && !Number.isNaN(flightDepartureDate.getTime()))
+    ? (flightDepartureDate.getTime() - now.getTime()) / 60000
+    : NaN;
+  const isLive = Number.isFinite(minutesToDeparture) && minutesToDeparture >= 0 && minutesToDeparture < 120;
   const flightDepartureTime = formatMilestoneTime(flightDepartureDate) || scheduledFlightTime || '7:30 PM';
   const gateArrivalTarget = getGateArrivalTarget(result, flightType);
   const gateArrivalTime = formatMilestoneTime(gateArrivalTarget) || '--';
@@ -2304,7 +2309,7 @@ function buildResultHtml(result, options = {}) {
       ${urgency.helperCopy ? `<div class="resultUrgencyHelper">${escapeHtml(urgency.helperCopy)}</div>` : ''}
       ${modeContextLine ? `<div class="resultModeContext">${escapeHtml(modeContextLine)}</div>` : ''}
       ${showUrgencyDebug ? `<div class="resultUrgencyDebug">DEBUG · ${escapeHtml(urgency.tripState)} · ${escapeHtml(urgency.urgencyState)} · Cushion ${escapeHtml(formatDebugMinutes(urgency.remainingCushionMinutes))} · ${escapeHtml(String(urgency.reason || 'n/a'))}</div>` : ''}
-      <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
+      ${isLive ? `<div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>` : ''}
     </div>
     <div class="resultBreakdownCard tripStateBreakdown--${escapeHtml(urgency.tripState)}">
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitleEffective)}</div>
