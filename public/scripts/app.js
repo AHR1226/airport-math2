@@ -2720,7 +2720,7 @@ function computeEtaHeroStatus(result, now = new Date()) {
       };
     }
     const tier = classifyEtaBufferMinutes(bufferMin);
-    const leaveLabel = tier.key === 'miss' ? 'YOU SHOULD HAVE LEFT' : 'LEAVE AT';
+    const leaveLabel = tier.key === 'miss' ? 'YOU SHOULD HAVE LEFT AT' : 'LEAVE AT';
     return {
       leaveLabel,
       pillCopy: tier.pillCopy,
@@ -2769,7 +2769,7 @@ function computeEtaHeroStatus(result, now = new Date()) {
 
   let leaveLabel = 'LEAVE AT';
   if (tier.key === 'miss') {
-    leaveLabel = 'YOU SHOULD HAVE LEFT';
+    leaveLabel = 'YOU SHOULD HAVE LEFT AT';
   } else if (tier.key === 'tight') {
     if (!Number.isFinite(minutesToRecommendedLeave) || minutesToRecommendedLeave > 10) {
       leaveLabel = 'LEAVE SOON';
