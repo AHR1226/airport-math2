@@ -2807,28 +2807,58 @@ function getGateSlackMinutes(result, leaveInstant, flightDate) {
 /**
  * bufferMin = minutes from projected gate arrival to gate deadline (gateTime - arrival at gate).
  * > 15 → safe, 0–15 → tight, < 0 → miss.
+ * Pill copy is chosen separately via getEtaTierPillCopy(tierKey, isLiveMonitoring).
  */
 function classifyEtaBufferMinutes(bufferMin) {
   if (!Number.isFinite(bufferMin)) return null;
   if (bufferMin > 15) {
     return {
       key: 'safe',
-      pillCopy: 'Timing looks good',
       statusClassName: 'resultHtmlStatus--safe'
     };
   }
   if (bufferMin >= 0) {
     return {
       key: 'tight',
-      pillCopy: 'Tight timing — risk of delay',
       statusClassName: 'resultHtmlStatus--tight'
     };
   }
   return {
     key: 'miss',
-    pillCopy: 'Will likely miss this flight',
     statusClassName: 'resultHtmlStatus--miss'
   };
+}
+
+/** Within this many minutes of scheduled departure, status pill uses live monitoring copy. */
+const ETA_LIVE_MONITORING_THRESHOLD_MIN = 120;
+
+function getMinutesToDeparture(flightDate, now = new Date()) {
+  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return null;
+  return Math.round((flightDate.getTime() - now.getTime()) / 60000);
+}
+
+/** True when departure is in the near future (live ETA / conditions), not long-range planning. */
+function isEtaLiveMonitoringContext(flightDate, now = new Date()) {
+  const m = getMinutesToDeparture(flightDate, now);
+  if (m === null || m < 0) return false;
+  return m < ETA_LIVE_MONITORING_THRESHOLD_MIN;
+}
+
+function getEtaTierPillCopy(tierKey, isLiveMonitoring) {
+  if (isLiveMonitoring) {
+    if (tierKey === 'safe') return 'Timing looks good';
+    if (tierKey === 'tight') return 'Tight timing — risk of delay';
+    if (tierKey === 'miss') return 'Will likely miss this flight';
+  } else {
+    if (tierKey === 'safe') return 'You’re well-timed for this trip';
+    if (tierKey === 'tight') return 'This timing may be tight';
+    if (tierKey === 'miss') return 'This timing is likely too late';
+  }
+  return isLiveMonitoring ? 'Timing looks good' : 'You’re well-timed for this trip';
+}
+
+function getEtaSafeDefaultPillCopy(isLiveMonitoring) {
+  return isLiveMonitoring ? 'Timing looks good' : 'You’re well-timed for this trip';
 }
 
 /**
@@ -2862,6 +2892,8 @@ function computeEtaHeroStatus(result, now = new Date()) {
     ? 'upcoming'
     : 'live';
 
+  const isLiveMonitoring = isEtaLiveMonitoringContext(flightDate, now);
+
   const recommendedLeave = getRecommendedLeaveDateTime(result, flightDate);
 
   if (calculationMode === 'planning' || baseTripState === 'upcoming') {
@@ -2872,7 +2904,7 @@ function computeEtaHeroStatus(result, now = new Date()) {
     if (!Number.isFinite(bufferMin)) {
       return {
         leaveLabel: 'LEAVE AT',
-        pillCopy: 'Timing looks good',
+        pillCopy: getEtaSafeDefaultPillCopy(isLiveMonitoring),
         statusClassName: baseTripState === 'upcoming'
           ? 'resultHtmlStatus--upcoming'
           : 'resultHtmlStatus--safe',
@@ -2887,7 +2919,7 @@ function computeEtaHeroStatus(result, now = new Date()) {
     const leaveLabel = tier.key === 'miss' ? 'YOU SHOULD HAVE LEFT AT' : 'LEAVE AT';
     return {
       leaveLabel,
-      pillCopy: tier.pillCopy,
+      pillCopy: getEtaTierPillCopy(tier.key, isLiveMonitoring),
       statusClassName: tier.statusClassName,
       tripState: baseTripState,
       urgencyState: tier.key,
@@ -2900,7 +2932,7 @@ function computeEtaHeroStatus(result, now = new Date()) {
   if (!recommendedLeave || !flightDate) {
     return {
       leaveLabel: 'LEAVE AT',
-      pillCopy: 'Timing looks good',
+      pillCopy: getEtaSafeDefaultPillCopy(isLiveMonitoring),
       statusClassName: 'resultHtmlStatus--safe',
       tripState: 'live',
       urgencyState: 'SAFE',
@@ -2914,7 +2946,7 @@ function computeEtaHeroStatus(result, now = new Date()) {
   if (!Number.isFinite(bufferMin)) {
     return {
       leaveLabel: 'LEAVE AT',
-      pillCopy: 'Timing looks good',
+      pillCopy: getEtaSafeDefaultPillCopy(isLiveMonitoring),
       statusClassName: 'resultHtmlStatus--safe',
       tripState: 'live',
       urgencyState: 'SAFE',
@@ -2956,7 +2988,7 @@ function computeEtaHeroStatus(result, now = new Date()) {
 
   return {
     leaveLabel,
-    pillCopy: tier.pillCopy,
+    pillCopy: getEtaTierPillCopy(tier.key, isLiveMonitoring),
     statusClassName: tier.statusClassName,
     tripState,
     urgencyState: tier.key,
