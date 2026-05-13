@@ -2222,7 +2222,33 @@ function buildResultHtml(result, options = {}) {
   const conditionsWeatherTagClass = isPlanningMode ? 'resultLiveTag--estimated' : 'resultLiveTag--clear';
   const airportTimingAudit = getAirportTimingAudit(result, isMissUrgency);
   logTimeAtAirportDebug(airportTimingAudit);
-  const timingReasonRows = renderTimingReasonRows(result.timingAdjustmentReasons, isMissUrgency);
+  const missTimingAggregates = isMissUrgency
+    ? aggregateTimingReasonRows(result.timingAdjustmentReasons, { forMissState: true })
+    : [];
+  const missDominant = isMissUrgency
+    ? computeMissBreakdownDominant(result, missTimingAggregates)
+    : null;
+  const breakdownTitleEffective = isMissUrgency
+    ? 'Where time was lost'
+    : breakdownTitle;
+  const missBreakdownHint = isMissUrgency && missDominant
+    ? getMissBreakdownDominantHint(missDominant)
+    : '';
+  const travelRowClass = classMissBreakdownDurationRow(
+    'resultBreakdownRow resultBreakdownRow--support',
+    'travel',
+    missDominant
+  );
+  const airportRowClass = classMissBreakdownDurationRow(
+    'resultBreakdownRow resultBreakdownRow--milestone',
+    'airport',
+    missDominant
+  );
+  const timingReasonRows = renderTimingReasonRows(
+    result.timingAdjustmentReasons,
+    isMissUrgency,
+    missDominant
+  );
   const actionsHtml = `
     <button type="button" class="resultHtmlEdit resultHtmlSaveTrip${isSavedTrip ? ' isSaved' : ''}" ${isSavedTrip ? 'disabled aria-label="Trip saved"' : 'onclick="saveCurrentTrip(this, event)"'}>${isSavedTrip ? '✓ Saved trip' : 'Save trip'}</button>
     <button class="resultHtmlEdit" onclick="show('calculate')">Edit</button>
@@ -2278,11 +2304,12 @@ function buildResultHtml(result, options = {}) {
       <div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>
     </div>
     <div class="resultBreakdownCard tripStateBreakdown--${escapeHtml(urgency.tripState)}">
-      <div class="resultBreakdownTitle">${escapeHtml(breakdownTitle)}</div>
+      <div class="resultBreakdownTitle">${escapeHtml(breakdownTitleEffective)}</div>
+      ${missBreakdownHint ? `<div class="resultBreakdownMissHint">${escapeHtml(missBreakdownHint)}</div>` : ''}
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Leave Home</span><strong>${escapeHtml(result.leaveBy || '5:42 PM')}</strong></div>
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Arrive at airport</span><strong>${escapeHtml(arriveAtAirportTime)}</strong></div>
-      <div class="resultBreakdownRow resultBreakdownRow--support"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
-      <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
+      <div class="${escapeHtml(travelRowClass)}"><span>Travel to airport</span><strong>${escapeHtml(travelDuration)}</strong></div>
+      <div class="${escapeHtml(airportRowClass)}"><span>Time at airport</span><strong>${escapeHtml(airportTimingDuration)}</strong></div>
       ${timingReasonRows}
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Get to gate by</span><strong>${escapeHtml(gateArrivalTime)}</strong></div>
       <div class="resultBreakdownRow resultBreakdownRow--milestone"><span>Flight departs</span><strong>${escapeHtml(flightDepartureTime)}</strong></div>
@@ -2339,19 +2366,103 @@ function buildResultHtml(result, options = {}) {
   `;
 }
 
-function renderTimingReasonRows(reasons, forMissState = false) {
+function renderTimingReasonRows(reasons, forMissState = false, missDominant = null) {
   if (!Array.isArray(reasons)) return '';
   const rows = aggregateTimingReasonRows(reasons, { forMissState });
   if (!rows.length) return '';
 
   return rows.map((item) => {
+    const baseRow =
+      'resultBreakdownRow resultBreakdownRow--support resultBreakdownRow--timingReason';
+    const rowClass = classMissBreakdownDurationRow(
+      baseRow,
+      { kind: 'timing', groupKey: item.groupKey },
+      forMissState ? missDominant : null
+    );
     return `
-        <div class="resultBreakdownRow resultBreakdownRow--support resultBreakdownRow--timingReason">
+        <div class="${rowClass}">
           <span>${escapeHtml(item.label)}</span>
           <strong>${escapeHtml(formatSignedMinutes(item.minutes))}</strong>
         </div>
       `;
   }).join('');
+}
+
+/**
+ * For missed-flight breakdown: pick the largest contributor among drive, airport total (if no sub-rows),
+ * or each airport sub-component (if rows exist — avoids the airport sum always winning).
+ */
+function computeMissBreakdownDominant(result, aggregatedTimingRows) {
+  const travelMin = Math.max(0, Math.round(Number(result?.travel)) || 0);
+  const airportCore = Math.max(0, getAirportTimingMinutesCore(result));
+  const rows = Array.isArray(aggregatedTimingRows) ? aggregatedTimingRows : [];
+
+  const timingCandidates = rows.map((r) => ({
+    kind: 'timing',
+    groupKey: r.groupKey,
+    minutes: Math.max(0, Math.round(Number(r.minutes) || 0))
+  }));
+
+  const candidates = timingCandidates.length > 0
+    ? [{ kind: 'travel', minutes: travelMin }, ...timingCandidates]
+    : [
+        { kind: 'travel', minutes: travelMin },
+        { kind: 'airport', minutes: airportCore }
+      ];
+
+  const maxMin = Math.max(0, ...candidates.map((c) => c.minutes));
+  if (maxMin <= 0) return null;
+
+  return candidates.reduce((best, c) => (c.minutes > best.minutes ? c : best));
+}
+
+function getMissBreakdownDominantHint(dominant) {
+  if (!dominant) return '';
+  if (dominant.kind === 'travel') {
+    return 'Most of your time was spent getting to the airport.';
+  }
+  if (dominant.kind === 'airport') {
+    return 'Most of your time was spent at the airport.';
+  }
+  const gk = String(dominant.groupKey || '');
+  if (
+    gk === 'standard-security'
+    || gk === 'clear'
+    || gk === 'precheck'
+    || gk === 'clear-precheck'
+  ) {
+    return 'Security and screening were the biggest factor.';
+  }
+  if (gk === 'terminal-navigation') {
+    return 'Getting through the terminal took the most time.';
+  }
+  if (gk === 'boarding-window') {
+    return 'The boarding window needed the largest block of time.';
+  }
+  if (gk.includes('bag') || gk.includes('international')) {
+    return 'Check-in and bags used the biggest share of airport time.';
+  }
+  if (gk === 'accessibility-mobility') {
+    return 'Accessibility and mobility time was the largest factor.';
+  }
+  return 'This step used the largest share of time.';
+}
+
+function classMissBreakdownDurationRow(baseClass, rowRole, missDominant) {
+  if (!missDominant) return baseClass;
+  let focused = false;
+  if (rowRole === 'travel' && missDominant.kind === 'travel') focused = true;
+  else if (rowRole === 'airport' && missDominant.kind === 'airport') focused = true;
+  else if (
+    typeof rowRole === 'object'
+    && rowRole?.kind === 'timing'
+    && missDominant.kind === 'timing'
+    && rowRole.groupKey === missDominant.groupKey
+  ) {
+    focused = true;
+  }
+  const mod = focused ? ' resultBreakdownRow--missFocus' : ' resultBreakdownRow--missMuted';
+  return baseClass + mod;
 }
 
 function getRenderableTimingReasonRows(reasons) {
@@ -2456,6 +2567,7 @@ function aggregateTimingReasonRows(reasons, options = {}) {
       const group = getTimingReasonGroup(item.label);
       if (forMissState && isTimingLayerExcludedForMissedFlight(group, item.label)) return;
       const current = groups.get(group.key) || {
+        groupKey: group.key,
         label: group.label,
         minutes: 0,
         order: group.order
@@ -2477,6 +2589,7 @@ function combineInternationalBagTiming(groups) {
   if (!internationalCheckIn || !bagHandling) return;
 
   groups.set('international-bag-drop-check-in', {
+    groupKey: 'international-bag-drop-check-in',
     label: 'International bag drop/check-in',
     minutes: internationalCheckIn.minutes + bagHandling.minutes,
     order: 10
