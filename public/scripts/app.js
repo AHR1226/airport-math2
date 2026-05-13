@@ -2174,11 +2174,6 @@ function buildResultHtml(result, options = {}) {
       ? 'Live Timing Breakdown'
       : 'Trip Breakdown';
   const flightDepartureDate = parseFlightDepartureDate(result);
-  const now = new Date();
-  const minutesToDeparture = (flightDepartureDate instanceof Date && !Number.isNaN(flightDepartureDate.getTime()))
-    ? (flightDepartureDate.getTime() - now.getTime()) / 60000
-    : NaN;
-  const isLive = Number.isFinite(minutesToDeparture) && minutesToDeparture >= 0 && minutesToDeparture < 120;
   const flightDepartureTime = formatMilestoneTime(flightDepartureDate) || scheduledFlightTime || '7:30 PM';
   const gateArrivalTarget = getGateArrivalTarget(result, flightType);
   const gateArrivalTime = formatMilestoneTime(gateArrivalTarget) || '--';
@@ -2309,7 +2304,7 @@ function buildResultHtml(result, options = {}) {
       ${urgency.helperCopy ? `<div class="resultUrgencyHelper">${escapeHtml(urgency.helperCopy)}</div>` : ''}
       ${modeContextLine ? `<div class="resultModeContext">${escapeHtml(modeContextLine)}</div>` : ''}
       ${showUrgencyDebug ? `<div class="resultUrgencyDebug">DEBUG · ${escapeHtml(urgency.tripState)} · ${escapeHtml(urgency.urgencyState)} · Cushion ${escapeHtml(formatDebugMinutes(urgency.remainingCushionMinutes))} · ${escapeHtml(String(urgency.reason || 'n/a'))}</div>` : ''}
-      ${isLive ? `<div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>` : ''}
+      ${showMonitoringPill ? `<div class="resultMonitorUpdated">${escapeHtml(monitorUpdatedLabel)}</div>` : ''}
     </div>
     <div class="resultBreakdownCard tripStateBreakdown--${escapeHtml(urgency.tripState)}">
       <div class="resultBreakdownTitle">${escapeHtml(breakdownTitleEffective)}</div>
@@ -2837,26 +2832,20 @@ function classifyEtaBufferMinutes(bufferMin) {
   };
 }
 
-/** Within this many minutes of scheduled departure, status pill uses live monitoring copy. */
-const ETA_LIVE_MONITORING_THRESHOLD_MIN = 120;
-
-function getMinutesToDeparture(flightDate, now = new Date()) {
-  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return null;
-  return Math.round((flightDate.getTime() - now.getTime()) / 60000);
+/** Flight departs on the same local calendar day as `now` (day-of monitoring UI). */
+function isEtaDayOfTrip(flightDate, now = new Date()) {
+  if (!(flightDate instanceof Date) || Number.isNaN(flightDate.getTime())) return false;
+  return (
+    flightDate.getFullYear() === now.getFullYear()
+    && flightDate.getMonth() === now.getMonth()
+    && flightDate.getDate() === now.getDate()
+  );
 }
 
-/** True when departure is in the near future (live ETA / conditions), not long-range planning. */
-function isEtaLiveMonitoringContext(flightDate, now = new Date()) {
-  const m = getMinutesToDeparture(flightDate, now);
-  if (m === null || m < 0) return false;
-  return m < ETA_LIVE_MONITORING_THRESHOLD_MIN;
-}
-
-/** Show hero monitoring pill only in live window or for past-flight messaging (never for far-future planning). */
-function shouldShowEtaMonitoringPill(result, urgency, now = new Date()) {
-  if (urgency?.urgencyState === 'past_flight') return true;
+/** Show hero monitoring pill only on the flight's calendar day (hide for future-dated trips). */
+function shouldShowEtaMonitoringPill(result, _urgency, now = new Date()) {
   const flightDate = parseFlightDepartureDate(result);
-  return isEtaLiveMonitoringContext(flightDate, now);
+  return isEtaDayOfTrip(flightDate, now);
 }
 
 function getEtaTierPillCopy(tierKey, isLiveMonitoring) {
@@ -2907,7 +2896,7 @@ function computeEtaHeroStatus(result, now = new Date()) {
     ? 'upcoming'
     : 'live';
 
-  const isLiveMonitoring = isEtaLiveMonitoringContext(flightDate, now);
+  const isLiveMonitoring = isEtaDayOfTrip(flightDate, now);
 
   const recommendedLeave = getRecommendedLeaveDateTime(result, flightDate);
 
